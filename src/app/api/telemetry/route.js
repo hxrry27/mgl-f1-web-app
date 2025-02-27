@@ -1,38 +1,29 @@
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: 5432, // default PostgreSQL port
+});
+
 export async function GET(request) {
-    // Dummy data: an array of telemetry rows
-    const dummyData = [
-      {
-        id: 1,
-        session_id: "1234567890",
-        index_id: 0,
-        speed: 200,
-        throttle: 0.85,
-        steer: 0.05,
-        brake: 0.1,
-        gear: 5,
-        engine_rpm: 7000,
-        drs: 0,
-        created_at: new Date().toISOString()
-      },
-      {
-        id: 2,
-        session_id: "1234567890",
-        index_id: 1,
-        speed: 180,
-        throttle: 0.8,
-        steer: -0.03,
-        brake: 0.2,
-        gear: 4,
-        engine_rpm: 6500,
-        drs: 0,
-        created_at: new Date().toISOString()
-      }
-      // Add more rows as needed for testing.
-    ];
-  
-    return new Response(JSON.stringify(dummyData), {
+  try {
+    // Query the most recent 100 rows from the cartelemetrydata table
+    const result = await pool.query(
+      'SELECT * FROM cartelemetrydata ORDER BY created_at DESC LIMIT 100'
+    );
+    
+    return new Response(JSON.stringify(result.rows), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (error) {
+    console.error("Error querying telemetry data:", error);
+    return new Response(JSON.stringify({ error: "Failed to fetch telemetry data" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
     });
   }
-  
+}

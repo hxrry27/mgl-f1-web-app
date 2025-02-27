@@ -9,7 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/inter": "^5.1.1",
+    "@mui/icons-material": "^6.4.5",
+    "@mui/joy": "^5.0.0-beta.51",
+    "@mui/material": "^6.4.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "next": "15.1.7",
+    "pg": "^8.13.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "swr": "^2.3.2"
