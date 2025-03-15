@@ -1,11 +1,10 @@
-// src/app/auth/verify-email/page.jsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Box, Typography, CircularProgress, Alert } from '@mui/material';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const email = searchParams.get('email');
@@ -33,6 +32,36 @@ export default function VerifyEmailPage() {
   return (
     <Box
       sx={{
+        border: '1px solid #444',
+        borderRadius: 1,
+        p: 3,
+        width: 'fit-content',
+        maxWidth: '400px',
+        backgroundColor: '#0a0e27',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100px',
+      }}
+    >
+      {loading ? (
+        <CircularProgress sx={{ color: '#00A0F0' }} />
+      ) : (
+        <Alert
+          severity={severity}
+          sx={{ color: 'white', backgroundColor: severity === 'success' ? '#1b5e20' : '#b71c1c' }}
+        >
+          {message}
+        </Alert>
+      )}
+    </Box>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Box
+      sx={{
         pt: 15,
         display: 'flex',
         flexDirection: 'column',
@@ -45,31 +74,9 @@ export default function VerifyEmailPage() {
       <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
         Verify Email Change
       </Typography>
-      <Box
-        sx={{
-          border: '1px solid #444',
-          borderRadius: 1,
-          p: 3,
-          width: 'fit-content',
-          maxWidth: '400px',
-          backgroundColor: '#0a0e27',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100px',
-        }}
-      >
-        {loading ? (
-          <CircularProgress sx={{ color: '#00A0F0' }} />
-        ) : (
-          <Alert
-            severity={severity}
-            sx={{ color: 'white', backgroundColor: severity === 'success' ? '#1b5e20' : '#b71c1c' }}
-          >
-            {message}
-          </Alert>
-        )}
-      </Box>
+      <Suspense fallback={<CircularProgress sx={{ color: '#00A0F0' }} />}>
+        <VerifyEmailContent />
+      </Suspense>
     </Box>
   );
 }
