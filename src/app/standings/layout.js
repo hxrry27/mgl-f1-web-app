@@ -6,27 +6,27 @@ import Link from 'next/link';
 import { Box, Divider, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
 import Header from '@/components/Header';
 
-const seasons = [...Array(10)].map((_, i) => i + 1); // Seasons 1-9
+const seasons = [...Array(11)].map((_, i) => i + 1); // Seasons 1-9
 
 export default function StandingsLayout({ children }) {
   return (
     <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      minHeight: '100vh', 
-      backgroundColor: '#0a0e27', 
-      color: 'white',
-    }}>
+          display: 'flex', 
+          flexDirection: 'column', 
+          minHeight: '100vh', 
+          backgroundColor: '#0a0e27', 
+          color: 'white',
+        }}>
       {/* Fixed Header and Banner */}
-      <Box sx={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 1100, // Above content but below potential modals
-      }}>
-        <Header />
-      </Box>
+            <Box sx={{ 
+              position: 'fixed', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              zIndex: 1100, // Above content but below potential modals
+            }}>
+              <Header />
+            </Box>
 
       {/* Main Layout Container */}
       <Box sx={{ 

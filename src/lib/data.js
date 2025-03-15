@@ -1,46 +1,70 @@
-export const drivers = [
+const drivers = [
   'Andi3810', 'Evil Tactician', 'hxrry27', 'Jober', 'Kesla', 'Kol_ri', 'Kyuubi0kid', 'LFFPicard', 
   'MagicallyMichael', 'SeerUK', 'Spacey', 'Thorston', 'Timmeh1090', 'Totsuka', 'Xerxes'
 ];
 
-export const teams = [
+const teams = [
   'Williams', 'Renault', 'McLaren', 'Haas', 'Alfa Romeo', 'Alpha Tauri', 'Aston Martin',
-  'Alpine', 'Mercedes', 'Ferrari', 'Red Bull', 'Racing Point', 'Toro Rosso'
+  'Alpine', 'Mercedes', 'Ferrari', 'Red Bull', 'Racing Point', 'Toro Rosso', 'Racing Bulls', 'Kick Sauber'
 ];
 
-export const trackData = {
-  bahrain: { country: 'BAHRAIN', name: 'Bahrain International Circuit', length: 5.412, turns: 15, firstGrandPrix: 2004, laps: 57 },
-  jeddah: { country: 'SAUDI ARABIA', name: 'Jeddah Corniche Circuit', length: 6.174, turns: 27, firstGrandPrix: 2021, laps: 50 },
-  melbourne: { country: 'AUSTRALIA', name: 'Albert Park Circuit', length: 5.278, turns: 14, firstGrandPrix: 1996, laps: 58 },
-  baku: { country: 'AZERBAIJAN', name: 'Baku City Circuit', length: 6.003, turns: 20, firstGrandPrix: 2016, laps: 51 },
-  miami: { country: 'MIAMI', name: 'Miami International Autodrome', length: 5.412, turns: 19, firstGrandPrix: 2022, laps: 57 },
-  imola: { country: 'EMILIA-ROMAGNA', name: 'Imola', length: 4.909, turns: 19, firstGrandPrix: 1980, laps: 63 },
-  monaco: { country: 'MONACO', name: 'Circuit de Monaco', length: 3.337, turns: 19, firstGrandPrix: 1950, laps: 78 },
-  barcelona: { country: 'SPAIN', name: 'Circuit de Barcelona-Catalunya', length: 4.657, turns: 14, firstGrandPrix: 1991, laps: 66 },
-  montreal: { country: 'CANADA', name: 'Circuit Gilles Villeneuve', length: 4.361, turns: 14, firstGrandPrix: 1978, laps: 70 },
-  spielberg: { country: 'AUSTRIA', name: 'Red Bull Ring', length: 4.318, turns: 10, firstGrandPrix: 1970, laps: 71 },
-  silverstone: { country: 'GREAT BRITAIN', name: 'Silverstone', length: 5.891, turns: 18, firstGrandPrix: 1950, laps: 52 },
-  hungaroring: { country: 'HUNGARY', name: 'Hungaroring', length: 4.381, turns: 14, firstGrandPrix: 1986, laps: 70 },
-  'spa-francorchamps': { country: 'BELGIUM', name: 'Circuit de Spa-Francorchamps', length: 7.004, turns: 19, firstGrandPrix: 1950, laps: 44 },
-  zandvoort: { country: 'NETHERLANDS', name: 'Circuit Zandvoort', length: 4.259, turns: 14, firstGrandPrix: 1952, laps: 72 },
-  monza: { country: 'ITALY', name: 'Monza', length: 5.793, turns: 11, firstGrandPrix: 1950, laps: 53 },
-  singapore: { country: 'SINGAPORE', name: 'Marina Bay Street Circuit', length: 4.94, turns: 19, firstGrandPrix: 2008, laps: 62 },
-  suzuka: { country: 'JAPAN', name: 'Suzuka', length: 5.807, turns: 18, firstGrandPrix: 1987, laps: 53 },
-  losail: { country: 'QATAR', name: 'Lusail International Circuit', length: 5.419, turns: 16, firstGrandPrix: 2021, laps: 57 },
-  austin: { country: 'AUSTIN', name: 'Circuit of the Americas', length: 5.513, turns: 20, firstGrandPrix: 2012, laps: 56 },
-  mexico: { country: 'MEXICO', name: 'Autódromo Hermanos Rodríguez', length: 4.304, turns: 17, firstGrandPrix: 1963, laps: 71 },
-  interlagos: { country: 'BRAZIL', name: 'Interlagos', length: 4.309, turns: 15, firstGrandPrix: 1973, laps: 71 },
-  'las-vegas': { country: 'LAS VEGAS', name: 'Las Vegas Street Circuit', length: 6.201, turns: 17, firstGrandPrix: 2023, laps: 50 },
-  'yas-marina': { country: 'ABU DHABI', name: 'Yas Marina Circuit', length: 5.281, turns: 16, firstGrandPrix: 2009, laps: 58 },
-  portimao: { country: 'PORTUGAL', name: 'Algarve International Circuit', length: 4.653, turns: 15, firstGrandPrix: 2020, laps: 66 },
-  'paul-ricard': { country: 'FRANCE', name: 'Paul Ricard', length: 5.842, turns: 15, firstGrandPrix: 1971, laps: 53 },
-  shanghai: { country: 'CHINA', name: 'Shanghai International Circuit', length: 5.451, turns: 16, firstGrandPrix: 2004, laps: 56 },
-  russia: { country: 'RUSSIA', name: 'Sochi Autodrom', length: 5.848, turns: 18, firstGrandPrix: 2014, laps: 53 },
+const headerResults = {
+  '8': {}, '9': {}, '10': {}, '11': {}
+}
+
+const teamColors = {
+  'Williams': '#64C4FF',
+  'Renault': '#FFF500',
+  'McLaren': '#FF8000',
+  'Haas': '#B6BABD',
+  'Alfa Romeo': '#900000',
+  'Alpha Tauri': '#2B4562',
+  'Aston Martin': '#229971',
+  'Alpine': '#0093CC',
+  'Mercedes': '#27F4D2',
+  'Ferrari': '#E80020',
+  'Red Bull': '#3671C6',
+  'Racing Point': '#F596C8',
+  'Toro Rosso': '#0000FF',
+  'Racing Bulls': '#6692FF',
+  'Kick Sauber': '#52E252'
+};
+
+const lightTeams = ['Haas', 'Mercedes', 'Renault', 'McLaren', 'Kick Sauber'];
+
+const trackData = {
+  bahrain: { country: 'BAHRAIN', name: 'Bahrain International Circuit', length: 5.412, turns: 15, firstGrandPrix: 2004, laps: 57, openYear: 2004, elevation: 16.8, topSpeed: 327.0, fact1: '', fact2: '', fact3: '', },
+  jeddah: { country: 'SAUDI ARABIA', name: 'Jeddah Corniche Circuit', length: 6.174, turns: 27, firstGrandPrix: 2021, laps: 50, openYear: 2021, elevation: 26.96, topSpeed: 334.6, fact1: '', fact2: '', fact3: '',  },
+  melbourne: { country: 'AUSTRALIA', name: 'Albert Park Circuit', length: 5.278, turns: 14, firstGrandPrix: 1996, laps: 58, openYear: 1953, elevation: 2.44, topSpeed: 326.2, fact1: '', fact2: '', fact3: '',   },
+  baku: { country: 'AZERBAIJAN', name: 'Baku City Circuit', length: 6.003, turns: 20, firstGrandPrix: 2016, laps: 51, openYear: 2006, elevation: 26.96, topSpeed: 351.8, fact1: '', fact2: '', fact3: '',   },
+  miami: { country: 'MIAMI', name: 'Miami International Autodrome', length: 5.412, turns: 19, firstGrandPrix: 2022, laps: 57, openYear: 2022, elevation: 3.53, topSpeed: 349.3, fact1: '', fact2: '', fact3: '',   },
+  imola: { country: 'EMILIA-ROMAGNA', name: 'Imola', length: 4.909, turns: 19, firstGrandPrix: 1980, laps: 63, openYear: 1953, elevation: 12.48, topSpeed: 356.4, fact1: '', fact2: '', fact3: '',   },
+  monaco: { country: 'MONACO', name: 'Circuit de Monaco', length: 3.337, turns: 19, firstGrandPrix: 1950, laps: 78, openYear: 1929, elevation: 41.95, topSpeed: 289.0, fact1: '', fact2: '', fact3: '',   },
+  barcelona: { country: 'SPAIN', name: 'Circuit de Barcelona-Catalunya', length: 4.657, turns: 14, firstGrandPrix: 1991, laps: 66, openYear: 1991, elevation: 29.63, topSpeed: 307.2, fact1: '', fact2: '', fact3: '',   },
+  montreal: { country: 'CANADA', name: 'Circuit Gilles Villeneuve', length: 4.361, turns: 14, firstGrandPrix: 1978, laps: 70, openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  spielberg: { country: 'AUSTRIA', name: 'Red Bull Ring', length: 4.318, turns: 10, firstGrandPrix: 1970, laps: 71, openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  silverstone: { country: 'GREAT BRITAIN', name: 'Silverstone', length: 5.891, turns: 18, firstGrandPrix: 1950, laps: 52,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  hungaroring: { country: 'HUNGARY', name: 'Hungaroring', length: 4.381, turns: 14, firstGrandPrix: 1986, laps: 70,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  'spa-francorchamps': { country: 'BELGIUM', name: 'Circuit de Spa-Francorchamps', length: 7.004, turns: 19, firstGrandPrix: 1950, laps: 44,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  zandvoort: { country: 'NETHERLANDS', name: 'Circuit Zandvoort', length: 4.259, turns: 14, firstGrandPrix: 1952, laps: 72,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  monza: { country: 'ITALY', name: 'Monza', length: 5.793, turns: 11, firstGrandPrix: 1950, laps: 53,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  singapore: { country: 'SINGAPORE', name: 'Marina Bay Street Circuit', length: 4.94, turns: 19, firstGrandPrix: 2008, laps: 62,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  suzuka: { country: 'JAPAN', name: 'Suzuka', length: 5.807, turns: 18, firstGrandPrix: 1987, laps: 53,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  losail: { country: 'QATAR', name: 'Lusail International Circuit', length: 5.419, turns: 16, firstGrandPrix: 2021, laps: 57,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  austin: { country: 'AUSTIN', name: 'Circuit of the Americas', length: 5.513, turns: 20, firstGrandPrix: 2012, laps: 56,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  mexico: { country: 'MEXICO', name: 'Autódromo Hermanos Rodríguez', length: 4.304, turns: 17, firstGrandPrix: 1963, laps: 71,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  interlagos: { country: 'BRAZIL', name: 'Interlagos', length: 4.309, turns: 15, firstGrandPrix: 1973, laps: 71,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  'las-vegas': { country: 'LAS VEGAS', name: 'Las Vegas Street Circuit', length: 6.201, turns: 17, firstGrandPrix: 2023, laps: 50,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  'yas-marina': { country: 'ABU DHABI', name: 'Yas Marina Circuit', length: 5.281, turns: 16, firstGrandPrix: 2009, laps: 58,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  portimao: { country: 'PORTUGAL', name: 'Algarve International Circuit', length: 4.653, turns: 15, firstGrandPrix: 2020, laps: 66,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  'paul-ricard': { country: 'FRANCE', name: 'Paul Ricard', length: 5.842, turns: 15, firstGrandPrix: 1971, laps: 53,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  shanghai: { country: 'CHINA', name: 'Shanghai International Circuit', length: 5.451, turns: 16, firstGrandPrix: 2004, laps: 56,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
+  russia: { country: 'RUSSIA', name: 'Sochi Autodrom', length: 5.848, turns: 18, firstGrandPrix: 2014, laps: 53,  openYear: '', elevation: '', topSpeed: '', fact1: '', fact2: '', fact3: '',   },
 };
 
 const normalizeRaceName = (name) => name.toLowerCase().replace(/\s+/g, '-');
 
-export const seasons = {
+const seasons = {
   1: {
     game: '',
     dates: '',
@@ -943,5 +967,9 @@ export const seasons = {
         { position: 'P10', constructor: 'Haas', points: 11 } 
       ] 
     }
-  }
+  },
+  11: {}
 }
+
+module.exports = {drivers, seasons, trackData, teamColors, lightTeams, teams, headerResults};
+

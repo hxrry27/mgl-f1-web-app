@@ -5,20 +5,8 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Box, Divider, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
 import Header from '@/components/Header';
+import { teams } from '@/lib/data.js'
 
-// Sample team list (replace with real data)
-const teams = [
-  'Red Bull',
-  'Ferrari',
-  'Mercedes',
-  'McLaren',
-  'Aston Martin',
-  'Alpine',
-  'Alpha Tauri',
-  'Alfa Romeo',
-  'Haas',
-  'Williams',
-];
 
 // Function to normalize team names for URLs
 const normalizeTeamName = (name) => {

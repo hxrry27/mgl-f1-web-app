@@ -1,17 +1,7 @@
-import { Geist, Geist_Mono } from "next/font/google";
+// src/app/layout.js
 import "./globals.css";
-import localFont from 'next/font/local';
-import { ThemeProvider } from "@emotion/react";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { Box } from '@mui/material';
+import Header from '@/components/Header';
 
 export const metadata = {
   title: "MGL F1",
@@ -21,10 +11,49 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-         
-        {children}
-       
+      <body>
+        <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  minHeight: '100vh', 
+                  backgroundColor: '#0a0e27', 
+                  color: 'white',
+                }}>
+        {/* Header Overlay */}
+         <Box sx={{ 
+                      position: 'fixed', 
+                      top: 0, 
+                      left: 0, 
+                      right: 0, 
+                      zIndex: 1100, // Above content but below potential modals
+                    }}>
+                      <Header />
+                    </Box>
+
+        {/* Main Content - Full Screen */}
+        <Box
+          sx={{
+            minHeight: '100vh', // Full viewport height
+            backgroundColor: '#0a0e27',
+            color: 'white',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              maxWidth: '100vw',
+              backgroundColor: '#0a0e27',
+              overflowY: 'auto', // Scrollable
+            }}
+          >
+            {children}
+          </Box>
+        </Box>
+        </Box>
       </body>
     </html>
   );

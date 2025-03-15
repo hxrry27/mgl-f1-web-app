@@ -28,6 +28,34 @@ body {
   font-style: normal;
 }
 
+@font-face {
+  font-family: 'Formula1Bold';
+  src: url('/fonts/Formula1-Bold_web.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Formula1Black';
+  src: url('/fonts/Formula1-Black.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Formula1Italic';
+  src: url('/fonts/Formula1-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Formula1Regular1';
+  src: url('/fonts/Formula1-Regular-1.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 text-fixing {
   font-family: 'MainFont', sans-serif;
 }

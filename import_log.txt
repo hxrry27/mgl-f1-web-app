@@ -1,0 +1,983 @@
+2025-03-13 14:41:34,091 - INFO - Processing lap_data_s8 with race mapping: {'Bahrain': 761, 'Jeddah': 781, 'Melbourne': 801, 'Baku': 901, 'Miami': 841, 'Imola': 821, 'Monaco': 881, 'Barcelona': 861, 'Montreal': 921, 'Spielberg': 961, 'Silverstone': 941, 'Hungaroring': 1001, 'Spa Francorchamps': 1041, 'Zandvoort': 1081, 'Monza': 1021, 'Singapore': 1061, 'Suzuka': 1101, 'Austin': 1121, 'Mexico': 1141, 'Interlagos': 1161, 'Yas Marina': 1181, 'Portimao': 1201, 'Paul Ricard': 981, 'Shanghai': 1221}
+2025-03-13 14:41:49,632 - INFO - Processing lap_data_s8 with race mapping: {'Bahrain': 761, 'Jeddah': 781, 'Melbourne': 801, 'Baku': 901, 'Miami': 841, 'Imola': 821, 'Monaco': 881, 'Barcelona': 861, 'Montreal': 921, 'Spielberg': 961, 'Silverstone': 941, 'Hungaroring': 1001, 'Spa Francorchamps': 1041, 'Zandvoort': 1081, 'Monza': 1021, 'Singapore': 1061, 'Suzuka': 1101, 'Austin': 1121, 'Mexico': 1141, 'Interlagos': 1161, 'Yas Marina': 1181, 'Portimao': 1201, 'Paul Ricard': 981, 'Shanghai': 1221}
+2025-03-13 14:41:49,632 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Austin_race.csv with race_id 1121
+2025-03-13 14:41:49,691 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,701 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,707 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,712 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,717 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,727 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,734 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,737 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,739 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,740 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Bahrain_race.csv with race_id 761
+2025-03-13 14:41:49,788 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,839 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,843 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,847 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Baku_race.csv with race_id 901
+2025-03-13 14:41:49,904 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,909 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,914 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,919 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,923 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,928 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,929 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,930 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,930 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,931 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Barcelona_race.csv with race_id 861
+2025-03-13 14:41:49,981 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,987 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,992 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:49,998 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,005 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,011 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,017 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,023 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,029 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,035 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,040 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,044 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,045 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,045 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Imola_race.csv with race_id 821
+2025-03-13 14:41:50,138 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,145 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,161 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Interlagos_race.csv with race_id 1161
+2025-03-13 14:41:50,234 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,241 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,247 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,254 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,285 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,289 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Jeddah_race.csv with race_id 781
+2025-03-13 14:41:50,358 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,363 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,367 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,372 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,377 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,390 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,390 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Melbourne_race.csv with race_id 801
+2025-03-13 14:41:50,488 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,490 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,491 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,491 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Mexico_race.csv with race_id 1141
+2025-03-13 14:41:50,550 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,557 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,563 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,570 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,576 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,585 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,591 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,597 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,618 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,619 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,619 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Miami_race.csv with race_id 841
+2025-03-13 14:41:50,685 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,691 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,696 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,701 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,707 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,712 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,719 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,721 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Monaco_race.csv with race_id 881
+2025-03-13 14:41:50,770 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,778 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,784 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,792 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,799 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,813 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,819 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,824 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,830 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,833 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,835 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,836 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,836 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,836 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Montreal_race.csv with race_id 921
+2025-03-13 14:41:50,913 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,962 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:50,962 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Monza_race.csv with race_id 1021
+2025-03-13 14:41:51,052 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,060 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,063 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,064 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Paul Ricard_race.csv with race_id 981
+2025-03-13 14:41:51,106 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,111 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,116 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,121 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,127 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,131 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,136 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,141 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,146 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,151 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,156 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,160 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,163 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,164 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Portimï¿½o_race.csv with race_id 1201
+2025-03-13 14:41:51,215 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,222 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,229 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,237 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,244 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,300 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,308 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,309 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Shanghai_race.csv with race_id 1221
+2025-03-13 14:41:51,404 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,409 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,410 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,411 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,412 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Silverstone_race.csv with race_id 941
+2025-03-13 14:41:51,495 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,504 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,511 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,512 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Singapore_race.csv with race_id 1061
+2025-03-13 14:41:51,577 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,582 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,593 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,599 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,604 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,610 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,618 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,619 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,619 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,619 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Spa-Francorchamps_race.csv with race_id 1041
+2025-03-13 14:41:51,671 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,675 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,679 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,683 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,687 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,691 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,695 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,698 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,699 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,699 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,700 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Spielberg_race.csv with race_id 961
+2025-03-13 14:41:51,811 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,814 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,818 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,819 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Suzuka_race.csv with race_id 1101
+2025-03-13 14:41:51,885 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,890 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,895 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,900 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,904 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,909 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,915 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,919 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,924 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,925 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Yas Marina_race.csv with race_id 1181
+2025-03-13 14:41:51,985 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,990 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:51,995 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,000 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,006 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,011 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,016 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,021 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,026 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,026 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,031 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,032 - INFO - Processing lap_data_s9 with race mapping: {'Bahrain': 735, 'Jeddah': 736, 'Melbourne': 737, 'Baku': 738, 'Miami': 739, 'Imola': 740, 'Monaco': 741, 'Barcelona': 742, 'Montreal': 743, 'Spielberg': 744, 'Silverstone': 745, 'Hungaroring': 746, 'Spa Francorchamps': 747, 'Zandvoort': 748, 'Monza': 749, 'Singapore': 750, 'Suzuka': 751, 'Losail': 752, 'Austin': 753, 'Mexico': 754, 'Interlagos': 755, 'Las Vegas': 756, 'Yas Marina': 757, 'Portimao': 758, 'Paul Ricard': 759, 'Shanghai': 760}
+2025-03-13 14:41:52,032 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Austin_race.csv with race_id 753
+2025-03-13 14:41:52,135 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,136 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Bahrain_race.csv with race_id 735
+2025-03-13 14:41:52,246 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Baku_race.csv with race_id 738
+2025-03-13 14:41:52,314 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,319 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,324 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,328 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,332 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,336 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,338 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,339 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Barcelona_race.csv with race_id 742
+2025-03-13 14:41:52,455 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Hungaroring_race.csv with race_id 746
+2025-03-13 14:41:52,586 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,587 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Imola_race.csv with race_id 740
+2025-03-13 14:41:52,706 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Interlagos_race.csv with race_id 755
+2025-03-13 14:41:52,844 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Jeddah_race.csv with race_id 736
+2025-03-13 14:41:52,932 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,934 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:52,940 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Losail_race.csv with race_id 752
+2025-03-13 14:41:53,045 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,048 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Melbourne_race.csv with race_id 737
+2025-03-13 14:41:53,139 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,144 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,149 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,152 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,153 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Mexico_race.csv with race_id 754
+2025-03-13 14:41:53,271 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,275 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,278 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,280 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,281 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Miami_race.csv with race_id 739
+2025-03-13 14:41:53,389 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,390 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Monaco_race.csv with race_id 741
+2025-03-13 14:41:53,526 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,532 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,535 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,535 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Montreal_race.csv with race_id 743
+2025-03-13 14:41:53,668 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,668 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Paul Ricard_race.csv with race_id 759
+2025-03-13 14:41:53,767 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,770 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,770 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Portimï¿½o_race.csv with race_id 758
+2025-03-13 14:41:53,914 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,919 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,919 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:53,920 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Shanghai_race.csv with race_id 760
+2025-03-13 14:41:54,034 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,035 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,035 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Silverstone_race.csv with race_id 745
+2025-03-13 14:41:54,134 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,140 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Singapore_race.csv with race_id 750
+2025-03-13 14:41:54,258 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,263 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,265 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,266 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,266 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Spa-Francorchamps_race.csv with race_id 747
+2025-03-13 14:41:54,358 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,358 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Spielberg_race.csv with race_id 744
+2025-03-13 14:41:54,504 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,505 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Suzuka_race.csv with race_id 751
+2025-03-13 14:41:54,594 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,609 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,610 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Zandvoort_race.csv with race_id 748
+2025-03-13 14:41:54,758 - INFO - Processing lap_data_s10 with race mapping: {'Bahrain': 1683, 'Jeddah': 1684, 'Melbourne': 1685, 'Baku': 1686, 'Miami': 1687, 'Imola': 1688, 'Monaco': 1689, 'Barcelona': 1690, 'Montreal': 1691, 'Spielberg': 1692, 'Silverstone': 1693, 'Hungaroring': 1694, 'Spa Francorchamps': 1695, 'Zandvoort': 1696, 'Monza': 1697, 'Singapore': 1698, 'Suzuka': 1699, 'Losail': 1700, 'Austin': 1701, 'Mexico': 1702, 'Interlagos': 1703, 'Las Vegas': 1704, 'Yas Marina': 1705, 'Portimao': 1707, 'Paul Ricard': 1708, 'Shanghai': 1706}
+2025-03-13 14:41:54,758 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_austin_race.csv with race_id 1701
+2025-03-13 14:41:54,867 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:54,867 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Bahrain_race.csv with race_id 1683
+2025-03-13 14:41:55,002 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,006 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Baku_race.csv with race_id 1686
+2025-03-13 14:41:55,105 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,107 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Barcelona_race.csv with race_id 1690
+2025-03-13 14:41:55,235 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,235 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Hungaroring_race.csv with race_id 1694
+2025-03-13 14:41:55,376 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Imola_race.csv with race_id 1688
+2025-03-13 14:41:55,504 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,505 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,505 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_interlagos_race.csv with race_id 1703
+2025-03-13 14:41:55,655 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,656 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_las-vegas_race.csv with race_id 1704
+2025-03-13 14:41:55,763 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,764 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Losail_race.csv with race_id 1700
+2025-03-13 14:41:55,873 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,878 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,878 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:55,879 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Mexico_race.csv with race_id 1702
+2025-03-13 14:41:56,010 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,010 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,011 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Miami_race.csv with race_id 1687
+2025-03-13 14:41:56,114 - WARNING - Invalid lap time format '33.750', skipping row
+2025-03-13 14:41:56,114 - INFO - Skipping row 523 in C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Miami_race.csv: Invalid lap time '33.750'
+2025-03-13 14:41:56,118 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,121 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,122 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Monaco_race.csv with race_id 1689
+2025-03-13 14:41:56,243 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,250 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,257 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,265 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,269 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,277 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,278 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Monza_race.csv with race_id 1697
+2025-03-13 14:41:56,382 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,383 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,383 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_paul-ricard_race.csv with race_id 1708
+2025-03-13 14:41:56,493 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,498 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,498 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_portimao_race.csv with race_id 1707
+2025-03-13 14:41:56,625 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,626 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_shanghai_race.csv with race_id 1706
+2025-03-13 14:41:56,739 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,740 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Silverstone_race.csv with race_id 1693
+2025-03-13 14:41:56,845 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,845 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Singapore_race.csv with race_id 1698
+2025-03-13 14:41:56,956 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:56,958 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Spa-Francorchamps_race.csv with race_id 1695
+2025-03-13 14:41:57,038 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,038 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,039 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Spielberg_race.csv with race_id 1692
+2025-03-13 14:41:57,167 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,167 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,167 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Suzuka_race.csv with race_id 1699
+2025-03-13 14:41:57,271 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,272 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_yas-marina_race.csv with race_id 1705
+2025-03-13 14:41:57,386 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,387 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Zandvoort_race.csv with race_id 1696
+2025-03-13 14:41:57,521 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,523 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:41:57,524 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv with race_id 1684
+2025-03-13 14:41:57,530 - ERROR - Error processing row 2 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['Date / Time:;01.09.2024 / 08:44;;;;;;;;;;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,530 - ERROR - Error processing row 3 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['Session:;Race;Laps:;25;;;;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,530 - ERROR - Error processing row 4 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['Fastest lap:;Dave;1:32.065;;;;;;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,530 - ERROR - Error processing row 5 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['Pos;Name;RaceNumber;Team;Gap;BestLapTime;Pitstops;Pen. in-game;Pen. stewards;PenaltyItems;GridPos;Status;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,530 - ERROR - Error processing row 6 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['1;Robert;35;Aston Martin;39:42.459;1:32.609;1;0;0;25;2;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,530 - ERROR - Error processing row 7 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['2;Harry;7;Williams;+4.935;1:32.145;2;0;0;18;1;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,530 - ERROR - Error processing row 8 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['3;Dave;26;McLaren;+7.468;1:32.065;1;0;0;16;4;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 9 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['4;Connor;86;Aston Martin;+10.421;1:32.933;1;0;0;12;6;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 10 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['5;Peter;13;McLaren;+12.092;1:32.833;1;0;0;10;5;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 11 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['6;Mike;96;Williams;+17.944;1:32.896;1;0;0;8;3;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 12 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['7;James;89;Mercedes;+18.292;1:33.665;1;0;0;6;7;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 13 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['8;Sergio Perez;11;Red Bull;+48.391;1:34.857;1;0;0;4;10;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 14 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['9;Lewis Hamilton;44;Mercedes;+56.768;1:34.923;1;0;0;2;12;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 15 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['10;Carlos Sainz Jr.;55;Ferrari;+1:05.173;1:35.618;1;0;0;1;9;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 16 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['11;Charles Leclerc;16;Ferrari;+1:09.122;1:35.605;1;0;0;0;11;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 17 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['12;Pierre Gasly;10;Alpine;+1:13.516;1:35.308;1;0;0;0;19;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 18 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['13;Yuki Tsunoda;22;AlphaTauri;+1:17.805;1:36.041;1;0;0;0;16;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 19 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['14;Esteban Ocon;31;Alpine;+1:19.902;1:35.445;1;0;0;0;15;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 20 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['15;Zhou Guanyu;24;Alfa Romeo;+1:24.655;1:36.127;1;0;0;0;13;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 21 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['16;Nico Hï¿½lkenberg;27;Haas;+1:25.251;1:36.090;1;0;0;0;17;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 22 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['17;Kevin Magnussen;20;Haas;+1:28.198;1:36.488;1;0;0;0;18;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 23 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['18;Valtteri Bottas;77;Alfa Romeo;+1:30.880;1:35.731;2;0;0;0;14;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 24 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['19;Daniel Ricciardo;3;AlphaTauri;+3 Laps;1:36.384;1;0;0;0;20;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - ERROR - Error processing row 25 in C:/Users/harry/Downloads\lap_data_s10\export_results_Jeddah_race.csv: ['20;Max Verstappen;33;Red Bull;+15 Laps;1:35.791;0;0;0;0;8;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,531 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv with race_id 1685
+2025-03-13 14:41:57,537 - ERROR - Error processing row 2 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['Date / Time:;08.09.2024 / 08:44;;;;;;;;;;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,537 - ERROR - Error processing row 3 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['Session:;Race;Laps:;29;;;;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 4 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['Fastest lap:;Harry;1:20.825;;;;;;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 5 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['Pos;Name;RaceNumber;Team;Gap;BestLapTime;Pitstops;Pen. in-game;Pen. stewards;PenaltyItems;GridPos;Status;'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 6 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['1;Mike;96;Williams;56:08.547;1:21.372;2;0;0;25;4;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 7 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['2;Harry;7;Williams;+3.407;1:20.825;3;0;0;19;1;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 8 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['3;Dave;26;McLaren;+6.404;1:22.170;2;0;0;15;3;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 9 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['4;Robert;35;Aston Martin;+8.467;1:20.972;3;0;0;12;2;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 10 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['5;Connor;86;Aston Martin;+17.117;1:21.802;2;0;0;10;6;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 11 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['6;Peter;13;McLaren;+19.175;1:22.625;2;0;0;8;5;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 12 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['7;Max Verstappen;33;Red Bull;+36.528;1:23.674;2;0;0;6;8;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 13 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['8;Charles Leclerc;16;Ferrari;+52.231;1:24.073;2;0;0;4;10;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 14 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['9;Daniel Ricciardo;3;AlphaTauri;+1:15.572;1:24.861;2;0;0;2;20;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 15 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['10;Esteban Ocon;31;Alpine;+1:15.787;1:24.799;2;0;0;1;15;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 16 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['11;Carlos Sainz Jr.;55;Ferrari;+1:19.157;1:24.770;2;0;0;0;12;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 17 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['12;Valtteri Bottas;77;Alfa Romeo;+1:19.455;1:25.118;2;0;0;0;14;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 18 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['13;Nico Hï¿½lkenberg;27;Haas;+1 Lap;1:25.491;2;0;0;0;18;finished'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 19 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['14;Yuki Tsunoda;22;AlphaTauri;+4 Laps;1:24.848;2;0;0;0;17;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 20 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['15;Lewis Hamilton;44;Mercedes;+53.688;1:23.850;2;0;0;0;11;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 21 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['16;Zhou Guanyu;24;Alfa Romeo;+1:22.989;1:25.040;1;0;0;0;16;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 22 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['17;Kevin Magnussen;20;Haas;+1 Lap;1:25.342;1;0;0;0;19;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 23 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['18;Pierre Gasly;10;Alpine;+9 Laps;1:24.903;2;0;0;0;13;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 24 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['19;Sergio Perez;11;Red Bull;+29 Laps;;1;0;0;0;9;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - ERROR - Error processing row 25 in C:/Users/harry/Downloads\lap_data_s10\export_results_Melbourne_race.csv: ['20;James;89;Mercedes;+29 Laps;;0;0;0;0;7;disqualified'] - not enough values to unpack (expected 7, got 1)
+2025-03-13 14:41:57,538 - INFO - All CSVs imported successfully!
+2025-03-13 14:44:43,760 - INFO - Processing lap_data_s8 with race mapping: {'Bahrain': 761, 'Jeddah': 781, 'Melbourne': 801, 'Baku': 901, 'Miami': 841, 'Imola': 821, 'Monaco': 881, 'Barcelona': 861, 'Montreal': 921, 'Spielberg': 961, 'Silverstone': 941, 'Hungaroring': 1001, 'Spa Francorchamps': 1041, 'Zandvoort': 1081, 'Monza': 1021, 'Singapore': 1061, 'Suzuka': 1101, 'Austin': 1121, 'Mexico': 1141, 'Interlagos': 1161, 'Yas Marina': 1181, 'Portimao': 1201, 'Paul Ricard': 981, 'Shanghai': 1221}
+2025-03-13 14:44:43,760 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Austin_race.csv with race_id 1121
+2025-03-13 14:44:43,811 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,821 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,826 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,831 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,837 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,846 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,851 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,853 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,855 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,856 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Bahrain_race.csv with race_id 761
+2025-03-13 14:44:43,898 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,948 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,951 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:43,955 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Baku_race.csv with race_id 901
+2025-03-13 14:44:44,007 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,011 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,016 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,021 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,025 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,030 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,031 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,031 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,032 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,032 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Barcelona_race.csv with race_id 861
+2025-03-13 14:44:44,074 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,080 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,086 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,092 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,098 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,104 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,110 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,116 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,122 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,128 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,132 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,137 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,137 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,138 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Imola_race.csv with race_id 821
+2025-03-13 14:44:44,225 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,230 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,245 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Interlagos_race.csv with race_id 1161
+2025-03-13 14:44:44,310 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,316 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,323 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,329 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,359 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,363 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Jeddah_race.csv with race_id 781
+2025-03-13 14:44:44,422 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,427 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,432 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,436 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,441 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,454 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,454 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Melbourne_race.csv with race_id 801
+2025-03-13 14:44:44,544 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,545 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,546 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,546 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Mexico_race.csv with race_id 1141
+2025-03-13 14:44:44,599 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,606 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,612 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,619 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,625 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,632 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,638 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,645 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,665 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,666 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,666 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Miami_race.csv with race_id 841
+2025-03-13 14:44:44,723 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,728 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,733 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,739 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,744 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,749 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,757 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,758 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Monaco_race.csv with race_id 881
+2025-03-13 14:44:44,801 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,808 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,815 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,822 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,829 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,843 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,849 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,854 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,859 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,863 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,864 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,865 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,865 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,865 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Montreal_race.csv with race_id 921
+2025-03-13 14:44:44,934 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,984 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:44,984 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Monza_race.csv with race_id 1021
+2025-03-13 14:44:45,067 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,075 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,079 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,079 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Paul Ricard_race.csv with race_id 981
+2025-03-13 14:44:45,113 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,118 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,123 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,128 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,133 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,138 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,143 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,148 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,152 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,157 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,162 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,167 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,170 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,171 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Portimão_race.csv with race_id 1201
+2025-03-13 14:44:45,206 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,212 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,218 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,224 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,230 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,276 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,282 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,283 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Shanghai_race.csv with race_id 1221
+2025-03-13 14:44:45,369 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,374 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,376 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,376 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,377 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Silverstone_race.csv with race_id 941
+2025-03-13 14:44:45,454 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,463 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,470 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,470 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Singapore_race.csv with race_id 1061
+2025-03-13 14:44:45,526 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,532 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,544 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,549 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,555 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,560 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,569 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,569 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,570 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,570 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Spa-Francorchamps_race.csv with race_id 1041
+2025-03-13 14:44:45,614 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,618 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,622 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,626 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,630 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,634 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,638 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,641 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,641 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,642 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,642 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Spielberg_race.csv with race_id 961
+2025-03-13 14:44:45,744 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,748 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,751 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,752 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Suzuka_race.csv with race_id 1101
+2025-03-13 14:44:45,809 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,814 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,819 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,824 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,829 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,833 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,838 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,843 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,848 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,848 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Yas Marina_race.csv with race_id 1181
+2025-03-13 14:44:45,900 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,906 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,911 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,916 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,921 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,926 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,932 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,936 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,941 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,941 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,946 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:45,947 - INFO - Processing lap_data_s9 with race mapping: {'Bahrain': 735, 'Jeddah': 736, 'Melbourne': 737, 'Baku': 738, 'Miami': 739, 'Imola': 740, 'Monaco': 741, 'Barcelona': 742, 'Montreal': 743, 'Spielberg': 744, 'Silverstone': 745, 'Hungaroring': 746, 'Spa Francorchamps': 747, 'Zandvoort': 748, 'Monza': 749, 'Singapore': 750, 'Suzuka': 751, 'Losail': 752, 'Austin': 753, 'Mexico': 754, 'Interlagos': 755, 'Las Vegas': 756, 'Yas Marina': 757, 'Portimao': 758, 'Paul Ricard': 759, 'Shanghai': 760}
+2025-03-13 14:44:45,947 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Austin_race.csv with race_id 753
+2025-03-13 14:44:46,041 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,042 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Bahrain_race.csv with race_id 735
+2025-03-13 14:44:46,142 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Baku_race.csv with race_id 738
+2025-03-13 14:44:46,203 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,208 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,212 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,217 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,221 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,225 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,226 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,227 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Barcelona_race.csv with race_id 742
+2025-03-13 14:44:46,333 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Hungaroring_race.csv with race_id 746
+2025-03-13 14:44:46,454 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,454 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Imola_race.csv with race_id 740
+2025-03-13 14:44:46,566 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Interlagos_race.csv with race_id 755
+2025-03-13 14:44:46,694 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Jeddah_race.csv with race_id 736
+2025-03-13 14:44:46,769 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,772 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,778 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Losail_race.csv with race_id 752
+2025-03-13 14:44:46,875 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,878 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Melbourne_race.csv with race_id 737
+2025-03-13 14:44:46,959 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,964 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,969 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,972 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:46,972 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Mexico_race.csv with race_id 754
+2025-03-13 14:44:47,080 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,084 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,087 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,089 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,090 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Miami_race.csv with race_id 739
+2025-03-13 14:44:47,188 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,188 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Monaco_race.csv with race_id 741
+2025-03-13 14:44:47,314 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,320 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,323 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,323 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Montreal_race.csv with race_id 743
+2025-03-13 14:44:47,451 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,452 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Paul Ricard_race.csv with race_id 759
+2025-03-13 14:44:47,544 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,547 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,547 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Portimão_race.csv with race_id 758
+2025-03-13 14:44:47,651 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,655 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,655 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,655 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Shanghai_race.csv with race_id 760
+2025-03-13 14:44:47,747 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,749 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,749 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Silverstone_race.csv with race_id 745
+2025-03-13 14:44:47,827 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,833 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Singapore_race.csv with race_id 750
+2025-03-13 14:44:47,937 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,941 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,944 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,944 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:47,945 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Spa-Francorchamps_race.csv with race_id 747
+2025-03-13 14:44:48,027 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,028 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Spielberg_race.csv with race_id 744
+2025-03-13 14:44:48,161 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,161 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Suzuka_race.csv with race_id 751
+2025-03-13 14:44:48,243 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,259 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,259 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Zandvoort_race.csv with race_id 748
+2025-03-13 14:44:48,395 - INFO - Processing lap_data_s10 with race mapping: {'Bahrain': 1683, 'Jeddah': 1684, 'Melbourne': 1685, 'Baku': 1686, 'Miami': 1687, 'Imola': 1688, 'Monaco': 1689, 'Barcelona': 1690, 'Montreal': 1691, 'Spielberg': 1692, 'Silverstone': 1693, 'Hungaroring': 1694, 'Spa Francorchamps': 1695, 'Zandvoort': 1696, 'Monza': 1697, 'Singapore': 1698, 'Suzuka': 1699, 'Losail': 1700, 'Austin': 1701, 'Mexico': 1702, 'Interlagos': 1703, 'Las Vegas': 1704, 'Yas Marina': 1705, 'Portimao': 1707, 'Paul Ricard': 1708, 'Shanghai': 1706}
+2025-03-13 14:44:48,396 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_austin_race.csv with race_id 1701
+2025-03-13 14:44:48,500 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,500 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Bahrain_race.csv with race_id 1683
+2025-03-13 14:44:48,597 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,601 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Baku_race.csv with race_id 1686
+2025-03-13 14:44:48,687 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,690 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Barcelona_race.csv with race_id 1690
+2025-03-13 14:44:48,813 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:48,814 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Hungaroring_race.csv with race_id 1694
+2025-03-13 14:44:48,951 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Imola_race.csv with race_id 1688
+2025-03-13 14:44:49,066 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,068 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,068 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_interlagos_race.csv with race_id 1703
+2025-03-13 14:44:49,203 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,203 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Jeddah_race.csv with race_id 1684
+2025-03-13 14:44:49,322 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,325 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,326 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_las-vegas_race.csv with race_id 1704
+2025-03-13 14:44:49,424 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,424 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Losail_race.csv with race_id 1700
+2025-03-13 14:44:49,529 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,534 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,535 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,535 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Melbourne_race.csv with race_id 1685
+2025-03-13 14:44:49,627 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,637 - WARNING - Invalid lap time format '0.216', skipping row
+2025-03-13 14:44:49,637 - INFO - Skipping row 446 in C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Melbourne_race.csv: Invalid lap time '0.216'
+2025-03-13 14:44:49,647 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Mexico_race.csv with race_id 1702
+2025-03-13 14:44:49,766 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,767 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,767 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Miami_race.csv with race_id 1687
+2025-03-13 14:44:49,860 - WARNING - Invalid lap time format '33.750', skipping row
+2025-03-13 14:44:49,860 - INFO - Skipping row 523 in C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Miami_race.csv: Invalid lap time '33.750'
+2025-03-13 14:44:49,864 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,867 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,867 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Monaco_race.csv with race_id 1689
+2025-03-13 14:44:49,979 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,986 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,993 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:49,999 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,005 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,013 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,013 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Monza_race.csv with race_id 1697
+2025-03-13 14:44:50,118 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,118 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,119 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_paul-ricard_race.csv with race_id 1708
+2025-03-13 14:44:50,218 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,222 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,222 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_portimao_race.csv with race_id 1707
+2025-03-13 14:44:50,336 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,337 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_shanghai_race.csv with race_id 1706
+2025-03-13 14:44:50,438 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,438 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Silverstone_race.csv with race_id 1693
+2025-03-13 14:44:50,533 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,533 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Singapore_race.csv with race_id 1698
+2025-03-13 14:44:50,636 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,637 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Spa-Francorchamps_race.csv with race_id 1695
+2025-03-13 14:44:50,711 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,711 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,712 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Spielberg_race.csv with race_id 1692
+2025-03-13 14:44:50,830 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,830 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,831 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Suzuka_race.csv with race_id 1699
+2025-03-13 14:44:50,925 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:50,925 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_yas-marina_race.csv with race_id 1705
+2025-03-13 14:44:51,040 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:51,041 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Zandvoort_race.csv with race_id 1696
+2025-03-13 14:44:51,169 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:51,171 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:44:51,171 - INFO - All CSVs imported successfully!
+2025-03-13 14:55:35,142 - INFO - Processing lap_data_s8 with race mapping: {'Bahrain': 761, 'Jeddah': 781, 'Melbourne': 801, 'Baku': 901, 'Miami': 841, 'Imola': 821, 'Monaco': 881, 'Barcelona': 861, 'Montreal': 921, 'Spielberg': 961, 'Silverstone': 941, 'Hungaroring': 1001, 'Spa Francorchamps': 1041, 'Zandvoort': 1081, 'Monza': 1021, 'Singapore': 1061, 'Suzuka': 1101, 'Austin': 1121, 'Mexico': 1141, 'Interlagos': 1161, 'Yas Marina': 1181, 'Portimao': 1201, 'Paul Ricard': 981, 'Shanghai': 1221}
+2025-03-13 14:55:35,143 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Austin_race.csv with race_id 1121
+2025-03-13 14:55:35,210 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,223 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,230 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,237 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,243 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,256 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,262 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,266 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,268 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,270 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Bahrain_race.csv with race_id 761
+2025-03-13 14:55:35,324 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,389 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,394 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,399 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Baku_race.csv with race_id 901
+2025-03-13 14:55:35,466 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,472 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,478 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,484 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,490 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,496 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,497 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,498 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,499 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,499 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Barcelona_race.csv with race_id 861
+2025-03-13 14:55:35,554 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,562 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,569 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,577 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,585 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,592 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,600 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,608 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,616 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,623 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,629 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,635 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,635 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,636 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Imola_race.csv with race_id 821
+2025-03-13 14:55:35,746 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,753 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,772 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Interlagos_race.csv with race_id 1161
+2025-03-13 14:55:35,858 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,868 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,877 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,887 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,933 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:35,937 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Jeddah_race.csv with race_id 781
+2025-03-13 14:55:36,023 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,030 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,035 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,042 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,048 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,065 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,066 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Melbourne_race.csv with race_id 801
+2025-03-13 14:55:36,180 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,182 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,184 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,185 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Mexico_race.csv with race_id 1141
+2025-03-13 14:55:36,253 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,261 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,270 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,277 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,286 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,295 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,303 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,312 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,339 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,340 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,341 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Miami_race.csv with race_id 841
+2025-03-13 14:55:36,414 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,421 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,427 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,434 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,440 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,446 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,456 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,458 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Monaco_race.csv with race_id 881
+2025-03-13 14:55:36,510 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,519 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,528 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,536 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,545 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,563 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,570 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,577 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,583 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,588 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,589 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,590 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,591 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,591 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Montreal_race.csv with race_id 921
+2025-03-13 14:55:36,678 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,738 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,739 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Monza_race.csv with race_id 1021
+2025-03-13 14:55:36,843 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,853 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,857 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,858 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Paul Ricard_race.csv with race_id 981
+2025-03-13 14:55:36,901 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,907 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,913 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,919 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,925 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,931 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,937 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,943 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,949 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,955 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,961 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,967 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,970 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:36,972 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Portimão_race.csv with race_id 1201
+2025-03-13 14:55:37,015 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,023 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,031 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,038 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,046 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,102 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,109 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,110 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Shanghai_race.csv with race_id 1221
+2025-03-13 14:55:37,217 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,224 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,225 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,226 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,227 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Silverstone_race.csv with race_id 941
+2025-03-13 14:55:37,320 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,332 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,340 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,341 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Singapore_race.csv with race_id 1061
+2025-03-13 14:55:37,410 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,417 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,431 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,438 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,445 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,452 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,463 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,463 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,463 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,464 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Spa-Francorchamps_race.csv with race_id 1041
+2025-03-13 14:55:37,518 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,523 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,528 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,533 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,538 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,543 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,548 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,552 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,553 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,553 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,554 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Spielberg_race.csv with race_id 961
+2025-03-13 14:55:37,683 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,687 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,692 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,692 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Suzuka_race.csv with race_id 1101
+2025-03-13 14:55:37,770 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,776 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,782 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,788 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,794 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,800 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,807 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,813 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,819 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,820 - INFO - Importing C:/Users/harry/Downloads\lap_data_s8\export_lapdata_Yas Marina_race.csv with race_id 1181
+2025-03-13 14:55:37,883 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,890 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,896 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,902 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,909 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,915 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,922 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,928 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,933 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,934 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,940 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:37,941 - INFO - Processing lap_data_s9 with race mapping: {'Bahrain': 735, 'Jeddah': 736, 'Melbourne': 737, 'Baku': 738, 'Miami': 739, 'Imola': 740, 'Monaco': 741, 'Barcelona': 742, 'Montreal': 743, 'Spielberg': 744, 'Silverstone': 745, 'Hungaroring': 746, 'Spa Francorchamps': 747, 'Zandvoort': 748, 'Monza': 749, 'Singapore': 750, 'Suzuka': 751, 'Losail': 752, 'Austin': 753, 'Mexico': 754, 'Interlagos': 755, 'Las Vegas': 756, 'Yas Marina': 757, 'Portimao': 758, 'Paul Ricard': 759, 'Shanghai': 760}
+2025-03-13 14:55:37,941 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Austin_race.csv with race_id 753
+2025-03-13 14:55:38,059 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,060 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Bahrain_race.csv with race_id 735
+2025-03-13 14:55:38,184 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Baku_race.csv with race_id 738
+2025-03-13 14:55:38,260 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,266 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,271 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,277 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,282 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,287 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,290 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,290 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Barcelona_race.csv with race_id 742
+2025-03-13 14:55:38,424 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Hungaroring_race.csv with race_id 746
+2025-03-13 14:55:38,576 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,577 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Imola_race.csv with race_id 740
+2025-03-13 14:55:38,714 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Interlagos_race.csv with race_id 755
+2025-03-13 14:55:38,875 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Jeddah_race.csv with race_id 736
+2025-03-13 14:55:38,969 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,972 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:38,980 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Losail_race.csv with race_id 752
+2025-03-13 14:55:39,100 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,105 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Melbourne_race.csv with race_id 737
+2025-03-13 14:55:39,207 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,212 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,218 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,222 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,223 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Mexico_race.csv with race_id 754
+2025-03-13 14:55:39,359 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,364 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,368 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,371 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,372 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Miami_race.csv with race_id 739
+2025-03-13 14:55:39,496 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,497 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Monaco_race.csv with race_id 741
+2025-03-13 14:55:39,656 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,662 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,666 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,667 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Montreal_race.csv with race_id 743
+2025-03-13 14:55:39,817 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,818 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Paul Ricard_race.csv with race_id 759
+2025-03-13 14:55:39,932 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,935 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:39,936 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Portimão_race.csv with race_id 758
+2025-03-13 14:55:40,067 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,072 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,072 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,073 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Shanghai_race.csv with race_id 760
+2025-03-13 14:55:40,189 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,191 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,192 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Silverstone_race.csv with race_id 745
+2025-03-13 14:55:40,290 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,298 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Singapore_race.csv with race_id 750
+2025-03-13 14:55:40,423 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,428 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,431 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,431 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,432 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Spa-Francorchamps_race.csv with race_id 747
+2025-03-13 14:55:40,529 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,529 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Spielberg_race.csv with race_id 744
+2025-03-13 14:55:40,685 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,686 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Suzuka_race.csv with race_id 751
+2025-03-13 14:55:40,783 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,803 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:40,805 - INFO - Importing C:/Users/harry/Downloads\lap_data_s9\export_lapdata_Zandvoort_race.csv with race_id 748
+2025-03-13 14:55:40,969 - INFO - Processing lap_data_s10 with race mapping: {'Bahrain': 1683, 'Jeddah': 1684, 'Melbourne': 1685, 'Baku': 1686, 'Miami': 1687, 'Imola': 1688, 'Monaco': 1689, 'Barcelona': 1690, 'Montreal': 1691, 'Spielberg': 1692, 'Silverstone': 1693, 'Hungaroring': 1694, 'Spa Francorchamps': 1695, 'Zandvoort': 1696, 'Monza': 1697, 'Singapore': 1698, 'Suzuka': 1699, 'Losail': 1700, 'Austin': 1701, 'Mexico': 1702, 'Interlagos': 1703, 'Las Vegas': 1704, 'Yas Marina': 1705, 'Portimao': 1707, 'Paul Ricard': 1708, 'Shanghai': 1706}
+2025-03-13 14:55:40,970 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_austin_race.csv with race_id 1701
+2025-03-13 14:55:41,090 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:41,091 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Bahrain_race.csv with race_id 1683
+2025-03-13 14:55:41,211 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:41,217 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Baku_race.csv with race_id 1686
+2025-03-13 14:55:41,330 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:41,333 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Barcelona_race.csv with race_id 1690
+2025-03-13 14:55:41,481 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:41,482 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Hungaroring_race.csv with race_id 1694
+2025-03-13 14:55:41,634 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Imola_race.csv with race_id 1688
+2025-03-13 14:55:41,763 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:41,764 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:41,765 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_interlagos_race.csv with race_id 1703
+2025-03-13 14:55:41,916 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:41,917 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Jeddah_race.csv with race_id 1684
+2025-03-13 14:55:42,020 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,023 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,024 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_las-vegas_race.csv with race_id 1704
+2025-03-13 14:55:42,131 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,131 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Losail_race.csv with race_id 1700
+2025-03-13 14:55:42,245 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,251 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,252 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,253 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Melbourne_race.csv with race_id 1685
+2025-03-13 14:55:42,345 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,354 - WARNING - Invalid lap time format '0.216', skipping row
+2025-03-13 14:55:42,355 - INFO - Skipping row 446 in C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Melbourne_race.csv: Invalid lap time '0.216'
+2025-03-13 14:55:42,365 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Mexico_race.csv with race_id 1702
+2025-03-13 14:55:42,515 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,516 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,516 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Miami_race.csv with race_id 1687
+2025-03-13 14:55:42,633 - WARNING - Invalid lap time format '33.750', skipping row
+2025-03-13 14:55:42,633 - INFO - Skipping row 523 in C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Miami_race.csv: Invalid lap time '33.750'
+2025-03-13 14:55:42,638 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,641 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,642 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Monaco_race.csv with race_id 1689
+2025-03-13 14:55:42,771 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,778 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,785 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,792 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,798 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,807 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,807 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Monza_race.csv with race_id 1697
+2025-03-13 14:55:42,922 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,922 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:42,923 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_paul-ricard_race.csv with race_id 1708
+2025-03-13 14:55:43,033 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,038 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,039 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_portimao_race.csv with race_id 1707
+2025-03-13 14:55:43,175 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,176 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_shanghai_race.csv with race_id 1706
+2025-03-13 14:55:43,296 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,297 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Silverstone_race.csv with race_id 1693
+2025-03-13 14:55:43,410 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,411 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Singapore_race.csv with race_id 1698
+2025-03-13 14:55:43,534 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,536 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Spa-Francorchamps_race.csv with race_id 1695
+2025-03-13 14:55:43,630 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,631 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,631 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Spielberg_race.csv with race_id 1692
+2025-03-13 14:55:43,780 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,781 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,782 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Suzuka_race.csv with race_id 1699
+2025-03-13 14:55:43,904 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:43,905 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_yas-marina_race.csv with race_id 1705
+2025-03-13 14:55:44,031 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:44,031 - INFO - Importing C:/Users/harry/Downloads\lap_data_s10\export_lapdata_Zandvoort_race.csv with race_id 1696
+2025-03-13 14:55:44,184 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:44,187 - INFO - Lap time '0.000' interpreted as 0 ms (incomplete lap)
+2025-03-13 14:55:44,188 - INFO - All CSVs imported successfully!

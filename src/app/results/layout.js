@@ -1,26 +1,59 @@
 // src/app/results/layout.jsx
-'use client';
-
-import * as React from 'react';
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Box, Divider, List, ListItem, ListItemButton, ListItemText, Typography, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Box } from '@mui/material';
+import pool from '@/lib/db';
 import Header from '@/components/Header';
-import { seasons } from '@/lib/data';
+import ClientResultsSidebar from './ClientResultsSidebar';
 
-export default function ResultsLayout({ children }) {
-  const params = useParams();
-  const router = useRouter();
-  const season = params.season || Math.max(...Object.keys(seasons).map(Number)).toString(); // Default to latest if no season
-  const [selectedSeason, setSelectedSeason] = useState(season);
+// Map slugs to full track names (same as in page.jsx)
+const trackNames = {
+  'bahrain': 'Bahrain',
+  'jeddah': 'Saudi Arabia',
+  'yas-marina': 'Abu Dhabi',
+  'melbourne': 'Australia',
+  'suzuka': 'Japan',
+  'shanghai': 'China',
+  'baku': 'Azerbaijan',
+  'miami': 'Miami',
+  'monaco': 'Monaco',
+  'montreal': 'Canada',
+  'barcelona': 'Spain',
+  'spielberg': 'Austria',
+  'silverstone': 'Great Britain',
+  'hungaroring': 'Hungary',
+  'spa-francorchamps': 'Belgium',
+  'zandvoort': 'Netherlands',
+  'monza': 'Italy',
+  'singapore': 'Singapore',
+  'austin': 'Texas',
+  'mexico': 'Mexico',
+  'interlagos': 'Brazil',
+  'las-vegas': 'Las Vegas',
+  'losail': 'Qatar',
+  'imola': 'Emilia-Romagna',
+  'portimao' : 'Portugal',
+  'paul-ricard' : 'France'
+  // Add more as needed
+};
 
-  const races = seasons[season]?.races ? Object.keys(seasons[season].races) : [];
+async function getRacesForSeason(season) {
+  try {
+    const res = await pool.query(
+      'SELECT track ' +
+      'FROM schedule ' +
+      'WHERE season = $1 ' +
+      'ORDER BY date ASC',
+      [season]
+    );
+    return res.rows.map(row => row.track);
+  } catch (error) {
+    console.error('Error fetching races for season:', error);
+    return [];
+  }
+}
 
-  const handleSeasonChange = (event) => {
-    const newSeason = event.target.value;
-    setSelectedSeason(newSeason);
-    router.push(`/results/season/${newSeason}`);
-  };
+export default async function ResultsLayout({ children, params }) {
+  const season = params.season || '11'; // Default to Season 11
+  const races = await getRacesForSeason(season);
 
   return (
     <Box
@@ -32,7 +65,7 @@ export default function ResultsLayout({ children }) {
         color: 'white',
       }}
     >
-      {/* Fixed Header and Banner */}
+      {/* Fixed Header */}
       <Box
         sx={{
           position: 'fixed',
@@ -53,69 +86,18 @@ export default function ResultsLayout({ children }) {
           pt: '128px', // Header height (32px banner + 64px header)
           overflow: 'hidden',
         }}
-      >
-        {/* Fixed Sidebar */}
-        <Box
-          sx={{
-            position: 'fixed',
-            top: '128px',
-            left: 0,
-            width: 240,
-            height: 'calc(100vh - 128px)', // Full height minus header
-            backgroundColor: '#0a0e27',
-            borderRight: '1px solid #444',
-            p: 2,
-            overflowY: 'auto', // Scrollable sidebar
-          }}
-        >
-          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-            Results
-          </Typography>
-          <Divider sx={{ mb: 2, backgroundColor: '#444' }} />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel sx={{ color: 'white' }}>Season</InputLabel>
-            <Select
-              value={selectedSeason}
-              label="Season"
-              onChange={handleSeasonChange}
-              sx={{
-                color: 'white',
-                backgroundColor: '#0a0e27',
-                border: '1px solid #444',
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#444' },
-                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#666' },
-              }}
-            >
-              {Object.keys(seasons).sort((a, b) => a - b).map((s) => (
-                <MenuItem key={s} value={s}>Season {s}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <List sx={{ p: 0 }}>
-            {races.map((race) => (
-              <ListItem disablePadding key={race}>
-                <ListItemButton onClick={() => router.push(`/results/season/${season}/${race}`)}>
-                  <ListItemText
-                    primary={race.charAt(0).toUpperCase() + race.slice(1).replace(/-/g, ' ')}
-                    primaryTypographyProps={{ color: 'white' }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-
-        {/* Scrollable Main Content */}
+    >
+        <ClientResultsSidebar season={season} races={races} trackNames={trackNames} />
         <Box
           component="main"
           sx={{
             flexGrow: 1,
-            ml: '240px', // Offset for sidebar width
+            ml: '240px',
             p: 2,
             backgroundColor: '#0a0e27',
             overflowY: 'auto',
             overflowX: 'hidden',
-            height: 'calc(100vh - 128px)', // Exact height minus header
+            height: 'calc(100vh - 128px)',
           }}
         >
           {children}
@@ -124,3 +106,5 @@ export default function ResultsLayout({ children }) {
     </Box>
   );
 }
+
+export const dynamic = 'force-dynamic';

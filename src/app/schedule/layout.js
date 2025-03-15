@@ -1,11 +1,12 @@
-// src/app/schedule/layout.jsx
+// src/app/standings/layout.jsx
 'use client';
 
 import * as React from 'react';
 import { Box } from '@mui/material';
-import Header from '@/components/Header';
 
-export default function ScheduleLayout({ children }) {
+const seasons = [...Array(11)].map((_, i) => i + 1); // Seasons 1-9
+
+export default function StandingsLayout({ children }) {
   return (
     <Box sx={{ 
       display: 'flex', 
@@ -14,30 +15,28 @@ export default function ScheduleLayout({ children }) {
       backgroundColor: '#0a0e27', 
       color: 'white',
     }}>
-      {/* Fixed Header and Banner */}
+      
+      {/* Main Layout Container */}
       <Box sx={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 1100, // Above content but below potential modals
+        display: 'flex', 
+        flexGrow: 1, 
+        pt: '128px', // Account for header (32px banner + 64px header) height
+        overflow: 'hidden', // Prevent main content from causing scroll
       }}>
-        <Header />
-      </Box>
 
-      {/* Main Content (Scrollable) */}
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          pt: '128px', // Account for header (32px banner + 64px header) height
-          p: 2,
-          backgroundColor: '#0a0e27',
-          overflowY: 'auto', // Scrollable content
-          height: 'calc(100vh - 128px)', // Full height minus header
-        }}
-      >
-        {children}
+        {/* Main Content (Scrollable) */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 2,
+            backgroundColor: '#0a0e27',
+            overflowY: 'auto', // Scrollable content
+            height: 'calc(100vh - 128px)', // Full height minus header
+          }}
+        >
+          {children}
+        </Box>
       </Box>
     </Box>
   );
