@@ -2,6 +2,7 @@
 import { Pool } from 'pg';
 import { Box, Typography, Divider, Grid, List, ListItem } from '@mui/material';
 import Image from 'next/image';
+import { teamColors } from '@/lib/data';
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -10,22 +11,6 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT || 5432,
 });
-
-const teamColors = {
-  'Williams': '#00A0F0',
-  'Renault': '#FFF500',
-  'McLaren': '#FF8700',
-  'Haas': '#FFFFFF',
-  'Alfa Romeo': '#900000',
-  'Alpha Tauri': '#2B4562',
-  'Aston Martin': '#006F62',
-  'Alpine': '#2293D1',
-  'Mercedes': '#00D2BE',
-  'Ferrari': '#DC0000',
-  'Red Bull': '#1E41FF',
-  'Racing Point': '#F596C8',
-  'Toro Rosso': '#0000FF',
-};
 
 const lightTeams = ['Haas', 'Mercedes', 'Renault'];
 const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];

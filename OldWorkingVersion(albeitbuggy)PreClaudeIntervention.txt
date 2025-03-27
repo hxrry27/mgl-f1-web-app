@@ -1,0 +1,2023 @@
+"use client";
+
+import React, { useRef, useState, useEffect, useMemo } from "react";
+import * as THREE from "three";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useGLTF, OrbitControls } from "@react-three/drei";
+import Papa from "papaparse";
+import { Pause, PlayArrow, RestartAlt } from "@mui/icons-material";
+
+function generateIdealTelemetry(originalData) {
+  if (!originalData || !originalData.length) {
+    console.error("No data provided to generateIdealTelemetry");
+    return [];
+  }
+  
+  console.log("Generating ideal telemetry from", originalData.length, "data points");
+  
+  // Step 1: Sort by lap time and filter out any invalid entries
+  const sortedData = [...originalData]
+    .filter(row => 
+      typeof row["LapTime [s]"] === 'number' && 
+      typeof row["X [m]"] === 'number' && 
+      typeof row["Y [m]"] === 'number' && 
+      typeof row["Z [m]"] === 'number'
+    )
+    .sort((a, b) => a["LapTime [s]"] - b["LapTime [s]"]);
+  
+  if (sortedData.length < 2) {
+    console.error("Not enough valid data points after filtering");
+    return originalData;
+  }
+  
+  // Step 2: Determine the lap time range and target frame count (60 Hz)
+  const startTime = sortedData[0]["LapTime [s]"];
+  const endTime = sortedData[sortedData.length - 1]["LapTime [s]"];
+  const lapDuration = endTime - startTime;
+  const targetSampleRate = 60; // 60 Hz for smooth animation
+  const frameCount = Math.ceil(lapDuration * targetSampleRate);
+  const timeStep = lapDuration / frameCount;
+  
+  console.log(`Creating smooth telemetry at ${targetSampleRate}Hz with ${frameCount} frames`);
+  console.log(`Original lap time: ${startTime.toFixed(3)}s to ${endTime.toFixed(3)}s (${lapDuration.toFixed(3)}s)`);
+  
+  // Step 3: Generate the new dataset with consistent sampling
+  const idealTelemetry = [];
+  
+  // Find all numeric fields we need to interpolate
+  const numericFields = Object.keys(sortedData[0]).filter(key => 
+    typeof sortedData[0][key] === 'number'
+  );
+  
+  // Generate frames at precise intervals
+  for (let i = 0; i <= frameCount; i++) {
+    const currentTime = startTime + (i * timeStep);
+    
+    // Find the surrounding frames in original data
+    let lowerIndex = 0;
+    let upperIndex = 1;
+    
+    // Binary search would be more efficient here for large datasets
+    for (let j = 0; j < sortedData.length - 1; j++) {
+      if (sortedData[j]["LapTime [s]"] <= currentTime && sortedData[j+1]["LapTime [s]"] >= currentTime) {
+        lowerIndex = j;
+        upperIndex = j + 1;
+        break;
+      }
+    }
+    
+    // Handle edge case at the end of the data
+    if (upperIndex >= sortedData.length) {
+      upperIndex = sortedData.length - 1;
+    }
+    
+    const lowerFrame = sortedData[lowerIndex];
+    const upperFrame = sortedData[upperIndex];
+    const lowerTime = lowerFrame["LapTime [s]"];
+    const upperTime = upperFrame["LapTime [s]"];
+    
+    // Calculate interpolation factor
+    let t = 0;
+    if (upperTime > lowerTime) {
+      t = (currentTime - lowerTime) / (upperTime - lowerTime);
+    }
+    
+    // Clamp t to valid range [0,1]
+    t = Math.max(0, Math.min(1, t));
+    
+    // Create a new frame with interpolated values
+    const newFrame = {
+      "LapTime [s]": currentTime
+    };
+    
+    // Copy non-numeric fields directly
+    Object.keys(lowerFrame).forEach(key => {
+      if (numericFields.includes(key)) {
+        // Linear interpolation for numeric fields
+        if (key === "LapTime [s]") {
+          newFrame[key] = currentTime;
+        } else {
+          newFrame[key] = lowerFrame[key] + t * (upperFrame[key] - lowerFrame[key]);
+        }
+      } else {
+        // Copy non-numeric fields
+        newFrame[key] = lowerFrame[key];
+      }
+    });
+    
+    idealTelemetry.push(newFrame);
+  }
+  
+  // Step 4: Apply a subtle spline-based smoothing to position data
+  // This removes micro-jitters while preserving the overall path
+  smoothPositions(idealTelemetry, 3);
+  
+  // Step 5: Ensure consistent velocity vectors for stable rotation
+  fixRotationVectors(idealTelemetry);
+  
+  console.log(`Generated ${idealTelemetry.length} ideal telemetry frames`);
+  return idealTelemetry;
+}
+
+// Apply a moving average smoothing to position data
+function smoothPositions(data, windowSize = 3) {
+  if (windowSize < 2 || data.length <= windowSize) return data;
+  
+  // Create temporary arrays for smoothing X, Y, Z positions
+  const tempX = data.map(d => d["X [m]"]);
+  const tempY = data.map(d => d["Y [m]"]);
+  const tempZ = data.map(d => d["Z [m]"]);
+  
+  // Apply the smoothing
+  for (let i = 0; i < data.length; i++) {
+    let xSum = 0, ySum = 0, zSum = 0;
+    let count = 0;
+    
+    for (let j = Math.max(0, i - windowSize); j <= Math.min(data.length - 1, i + windowSize); j++) {
+      xSum += data[j]["X [m]"];
+      ySum += data[j]["Y [m]"];
+      zSum += data[j]["Z [m]"];
+      count++;
+    }
+    
+    // Store smoothed values in temp arrays
+    if (count > 0) {
+      tempX[i] = xSum / count;
+      tempY[i] = ySum / count;
+      tempZ[i] = zSum / count;
+    }
+  }
+  
+  // Update the data with smoothed values
+  for (let i = 0; i < data.length; i++) {
+    data[i]["X [m]"] = tempX[i];
+    data[i]["Y [m]"] = tempY[i];
+    data[i]["Z [m]"] = tempZ[i];
+  }
+  
+  return data;
+}
+
+// Fix velocity vectors to ensure smooth rotation
+function fixRotationVectors(data) {
+  // Calculate velocity vectors first
+  for (let i = 1; i < data.length; i++) {
+    const prevFrame = data[i-1];
+    const currFrame = data[i];
+    const dt = currFrame["LapTime [s]"] - prevFrame["LapTime [s]"];
+    
+    if (dt > 0) {
+      // Calculate velocity from position change
+      const vx = (currFrame["X [m]"] - prevFrame["X [m]"]) / dt;
+      const vz = (currFrame["Z [m]"] - prevFrame["Z [m]"]) / dt;
+      
+      // Store velocity in the world speed fields
+      currFrame["WoldSpeedX [km/h]"] = vx * 3.6; // m/s to km/h
+      currFrame["WoldSpeedZ [km/h]"] = vz * 3.6;
+    }
+  }
+  
+  // Handle first frame
+  if (data.length > 1) {
+    data[0]["WoldSpeedX [km/h]"] = data[1]["WoldSpeedX [km/h]"];
+    data[0]["WoldSpeedZ [km/h]"] = data[1]["WoldSpeedZ [km/h]"];
+  }
+  
+  // Apply mild smoothing to velocity vectors
+  const tempVX = data.map(d => d["WoldSpeedX [km/h]"]);
+  const tempVZ = data.map(d => d["WoldSpeedZ [km/h]"]);
+  
+  for (let i = 1; i < data.length - 1; i++) {
+    tempVX[i] = (data[i-1]["WoldSpeedX [km/h]"] + data[i]["WoldSpeedX [km/h]"] + data[i+1]["WoldSpeedX [km/h]"]) / 3;
+    tempVZ[i] = (data[i-1]["WoldSpeedZ [km/h]"] + data[i]["WoldSpeedZ [km/h]"] + data[i+1]["WoldSpeedZ [km/h]"]) / 3;
+  }
+  
+  // Update velocity values
+  for (let i = 1; i < data.length - 1; i++) {
+    data[i]["WoldSpeedX [km/h]"] = tempVX[i];
+    data[i]["WoldSpeedZ [km/h]"] = tempVZ[i];
+  }
+  
+  return data;
+}
+
+const trackConfigs = {
+  "silverstone": {
+    name: "Great Britain",
+    trackId: "silverstone",
+    position: { x: 0, y: 10.1, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -50, y: 85, z: 0 },
+    miniMapPositionMobile: { x: -136.66, y: 85, z: 4.71 },
+    miniMapRotation: { x: -1.233, y: 0, z: 1.5 },
+    leftFactor: -0.24,
+    bottomFactor: 0.54,
+  },
+  "shanghai": {
+    name: "Shanghai",
+    trackId: "02",
+    position: { x: 0, y: 2.9, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -30, y: 0, z: 150 },
+    miniMapPositionMobile: { x: -108, y: 0, z: 27.3 },
+    miniMapRotation: { x: -1.233, y: 0, z: 2.18 },
+    leftFactor: -0.24,
+    bottomFactor: 0.54,
+},
+"bahrain": {
+    name: "Bahrain",
+    trackId: "bahrain",
+    position: { x: 0, y: -91.5, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 50, y: 0, z: -80 },
+    miniMapPositionMobile: { x: 73.3, y: 0, z: 29.8 },
+    miniMapRotation: { x: -1.233, y: 0, z: -1.6 },
+    leftFactor: -0.24,
+    bottomFactor: 0.48,
+},
+"yasmarina": {
+    name: "Abu Dhabi",
+    trackId: "14",
+    position: { x: 0, y: -3.3, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -40, y: 0, z: -95 },
+    miniMapPositionMobile: { x: -20, y: 0, z: -75 },
+    miniMapRotation: { x: -1.233, y: 0, z: 0.39 },
+    leftFactor: -0.21,
+    bottomFactor: 0,
+},
+"melbourne": {
+    name: "Melbourne",
+    trackId: "00",
+    position: { x: 0, y: -2.3, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 60, y: 0, z: -80 },
+    miniMapPositionMobile: { x: 67.1, y: 0.3, z: -44.66 }, //{ x: 29.8, y: 0.2, z: -101.3 }
+    miniMapRotation: { x: -1.233, y: 0, z: -0.73 },
+    leftFactor: -0.22,
+    bottomFactor: 0.49,
+},
+"austria": {
+    name: "Austria",
+    trackId: "17",
+    position: { x: 0, y: 41.9, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -10, y: 0, z: -110 },
+    miniMapPositionMobile: { x: 36, y: 0, z: -107.1 },
+    miniMapRotation: { x: -1.233, y: 0, z: -0.27 },
+    leftFactor: -0.23,
+    bottomFactor: 0.53,
+},
+"baku": {
+    name: "Baku",
+    trackId: "20",
+    position: { x: 0, y: -0.25, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -75, y: 0, z: -30 },
+    miniMapPositionMobile: { x: -90, y: 0, z: -112 },
+    miniMapRotation: { x: -1.233, y: 0, z: 1 },
+    leftFactor: -0.2,
+    bottomFactor: 0.52,
+},
+"portimao": {
+    name: "Portimao",
+    trackId: "28",
+    position: { x: 0, y: 2, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 120, y: 0, z: -40 },
+    miniMapPositionMobile: { x: 23.2, y: -0.2, z: -177.3 },
+    miniMapRotation: { x: -1.233, y: 0, z: -1.26 },
+    leftFactor: -0.34,
+    bottomFactor: 0.42,
+},
+"jeddah": {
+    name: "Jeddah",
+    trackId: "29",
+    position: { x: 0, y: 1, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 85, y: 0, z: 50 },
+    miniMapPositionMobile: { x: 98.4, y: 0, z: 29.8 },
+    miniMapRotation: { x: -1.233, y: 0, z: -1.7 },
+    leftFactor: -0.2,
+    bottomFactor: 0.58,
+},
+"austin": {
+    name: "USA",
+    trackId: "15",
+    position: { x: 0, y: 142.3, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 25, y: 0, z: 100 },
+    miniMapPositionMobile: { x: 11, y: 0, z: 50.3 },
+    miniMapRotation: { x: -1.233, y: 0, z: 0 },
+    leftFactor: -0.21,
+    bottomFactor: 0.38,
+},
+"montreal": {
+    name: "Montreal",
+    trackId: "06",
+    position: { x: 0, y: -87.8, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 90, y: 0, z: 70 },
+    miniMapPositionMobile: { x: 93, y: 0, z: 68 },
+    miniMapRotation: { x: -1.233, y: 0, z: -1.1 },
+    leftFactor: -0.2,
+    bottomFactor: 0.52,
+},
+"monza": {
+    name: "Monza",
+    trackId: "11",
+    position: { x: 0, y: 5.6, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 25, y: 0, z: 25 },
+    miniMapPositionMobile: { x: 156, y: 0.16, z: 42.25 },
+    miniMapRotation: { x: -1.233, y: 0, z: -1.67 },
+    leftFactor: -0.2,
+    bottomFactor: 0.63,
+},
+"barcelona": {
+    name: "Catalunya",
+    trackId: "04",
+    position: { x: 0, y: 84.5, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -115, y: 0, z: -50 },
+    miniMapPositionMobile: { x: 5, y: 0, z: -36.73 },
+    miniMapRotation: { x: -1.233, y: 0, z: 1 },
+    leftFactor: -0.2,
+    bottomFactor: 0.41,
+},
+"suzuka": {
+    name: "Suzuka",
+    trackId: "13",
+    position: { x: 0, y: 20.2, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 0, y: 0, z: -50 },
+    miniMapPositionMobile: { x: 30, y: 0, z: -69.3 },
+    miniMapRotation: { x: -1.233, y: 0.25, z: 0 },
+    leftFactor: -0.2,
+    bottomFactor: 0.51,
+},
+"spa": {
+    name: "Spa Francorchamps",
+    trackId: "10",
+    position: { x: 0, y: 53, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 25, y: 0, z: -80 },
+    miniMapPositionMobile: { x: 93, y: 0, z: -14 },
+    miniMapRotation: { x: -1.233, y: 0, z: -1.5 },
+    leftFactor: -0.24,
+    bottomFactor: 0.55,
+},
+"interlagos": {
+    name: "Brazil",
+    trackId: "16",
+    position: { x: 0, y: -20, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -150, y: 0, z: 150 },
+    miniMapPositionMobile: { x: -127.82, y: 0, z: -48.7 },
+    miniMapRotation: { x: -1.233, y: 0, z: 1.5 },
+    leftFactor: -0.21,
+    bottomFactor: 0.51,
+},
+"paul-ricard": {
+    name: "Paul Ricard",
+    trackId: "01",
+    position: { x: 0, y: 11, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 0, y: 0, z: -50 },
+    miniMapPositionMobile: { x: 11, y: 0, z: -88 },
+    miniMapRotation: { x: -1.233, y: 0, z: 0 },
+    leftFactor: -0.24,
+    bottomFactor: 0.54,
+},
+"hungaroring": {
+    name: "Hungaroring",
+    trackId: "hungaroring",
+    position: { x: 0, y: -3.9, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -100, y: 0, z: 60 },
+    miniMapPositionMobile: { x: -102, y: 0, z: 0.9 }, // { x: -127, y: -38, z: 32.2 }  { x: 127, y: -9.7, z: 35.4 } { x: -102, y: -24.8, z: 0.8 }
+    miniMapRotation: { x: -1.233, y: 0, z: 0.85 },
+    leftFactor: -0.31,
+    bottomFactor: 0.45,
+    
+},
+"zandvoort": {
+    name: "Zandvoort",
+    trackId: "26",
+    position: { x: 0, y: -2.65, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 70, y: 0, z: 30 },
+    miniMapPositionMobile: { x: -33, y: -0.19, z: 91.2 },
+    miniMapRotation: { x: -1.233, y: 0, z: 3.1 },
+    leftFactor: -0.24,
+    bottomFactor: 0.54,
+},
+"imola": {
+    name: "Imola",
+    trackId: "27",
+    position: { x: 0, y: -38.5, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -25, y: 0, z: -80 },
+    miniMapPositionMobile: { x: -20, y: 0, z: -75.4 },
+    miniMapRotation: { x: -1.233, y: 0, z: 0 },
+    leftFactor: -0.23,
+    bottomFactor: 0.5,
+},
+"mexico": {
+    name: "Mexico",
+    trackId: "19",
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -110, y: 0, z: -200 },
+    miniMapPositionMobile: { x: 30, y: 0, z: -119.5 },
+    miniMapRotation: { x: -1.233, y: 0, z: -0.13 },
+    leftFactor: -0.2,
+    bottomFactor: 0.44,
+},
+"miami": {
+    name: "Miami",
+    trackId: "30",
+    position: { x: 0, y: -1.4, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -10, y: 0, z: -150 },
+    miniMapPositionMobile: { x: 55, y: 0, z: -50.3 },
+    miniMapRotation: { x: -1.233, y: 0, z: 0 },
+    leftFactor: -0.2,
+    bottomFactor: 0.5,
+},
+"monaco": {
+    name: "Monaco",
+    trackId: "05",
+    position: { x: 0, y: 16.5, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -95, y: 0, z: -75 },
+    miniMapPositionMobile: { x: -95.9, y: 0, z: -74.5 }, //{ x: -14, y: 0, z: -55.8 }
+    miniMapRotation: { x: -1.233, y: 0, z: 0.75 },
+    leftFactor: -0.24,
+    bottomFactor: 0.58,
+},
+"singapore": {
+    name: "Singapore",
+    trackId: "12",
+    position: { x: 0, y: 14.45, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: -30, y: 0, z: -55 },
+    miniMapPositionMobile: { x: -1, y: 0, z: -87.97 },
+    miniMapRotation: { x: -1.233, y: 0, z: 0 },
+    leftFactor: -0.25,
+    bottomFactor: 0.51,
+},
+"vegas": {
+    name: "Las Vegas",
+    trackId: "31",
+    position: { x: 0, y: -29, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 0, y: -50, z: 0 },
+    miniMapPositionMobile: { x: -1, y: 0, z: -87.97 },
+    miniMapRotation: { x: -1.233, y: 0, z: -1.55 },
+    leftFactor: -0.25,
+    bottomFactor: 0.43,
+},
+"qatar": {
+    name: "Qatar",
+    trackId: "32",
+    position: { x: 0, y: -25, z: 0 },
+    rotation: { x: 1.5708, y: 0, z: 0 },
+    miniMapScale: 0.0002,
+    miniMapPosition: { x: 0, y: 0, z: -55 },
+    miniMapPositionMobile: { x: -1, y: 0, z: -87.97 },
+    miniMapRotation: { x: -1.57, y: 0, z: -1.03 },
+    leftFactor: -0.25,
+    bottomFactor: 0.45,
+}
+};
+
+// Define camera angle options as a regular JavaScript object
+export const CameraAngleOptions = {
+  Sky: 0,
+  SkyLock: 1,
+  Angle: 2,
+  Chase: 3,
+  TvPod: 4,
+  FirstPerson: 5,
+  FreeLook: 6,
+  Bonnet: 7,
+  VR: 8
+};
+
+// ICamConfig type definition removed, using JSDoc instead
+/**
+ * @typedef {Object} ICamConfig
+ * @property {number} cameraId - The camera ID from CameraAngleOptions
+ * @property {boolean} isLocked - Whether the camera is locked
+ * @property {Object} position - Camera position (THREE.Vector3)
+ * @property {string} name - Camera name
+ * @property {Object} cameraUp - Camera up vector (THREE.Vector3)
+ * @property {boolean} allowFreeLook - Whether free look is allowed
+ * @property {boolean} enableFog - Whether fog is enabled
+ * @property {Object} fog - Fog object (THREE.Fog)
+ * @property {boolean} isCockpitVisible - Whether cockpit is visible
+ * @property {Object} zoom - Zoom configuration
+ * @property {number} zoom.min - Minimum zoom
+ * @property {number} zoom.max - Maximum zoom
+ * @property {number} zoom.default - Default zoom
+ * @property {Object} focusPointOffset - Focus point offset (THREE.Vector3)
+ * @property {Object} carModelOffset - Car model offset (THREE.Vector3)
+ */
+
+// Update the camera configurations with better zoom and distance settings
+export const cameraConfig = [
+  {
+    cameraId: CameraAngleOptions.Angle,
+    name: "Angle",
+    isLocked: false,
+    position: new THREE.Vector3(5, 3, -15), // Closer to the car
+    cameraUp: new THREE.Vector3(0, 1, 0),
+    allowFreeLook: false,
+    zoom: { min: 0.8, max: 2.0, default: 1.0 },
+    enableFog: true,
+    focusPointOffset: new THREE.Vector3(),
+    isCockpitVisible: false,
+    carModelOffset: new THREE.Vector3(),
+    fog: new THREE.Fog("#141724", 0.001, 500),
+    followCar: true,
+  },
+  {
+    cameraId: CameraAngleOptions.Sky,
+    name: "Sky",
+    isLocked: false,
+    position: new THREE.Vector3(0, 50, 0), // Not as high up
+    cameraUp: new THREE.Vector3(0, 1, 0),
+    allowFreeLook: false,
+    zoom: { min: 0.8, max: 2.0, default: 1.0 },
+    enableFog: true,
+    focusPointOffset: new THREE.Vector3(),
+    isCockpitVisible: false,
+    carModelOffset: new THREE.Vector3(),
+    fog: new THREE.Fog("#141724", 0.001, -1),
+    followCar: true,
+  },
+  {
+    cameraId: CameraAngleOptions.Chase,
+    name: "Chase",
+    isLocked: true,
+    position: new THREE.Vector3(0, 1, -6), // Closer to the car
+    cameraUp: new THREE.Vector3(0, 1, 0),
+    allowFreeLook: false,
+    zoom: { min: 0.8, max: 2.0, default: 2.0 },
+    enableFog: true,
+    focusPointOffset: new THREE.Vector3(0, 0, 10), // Look ahead
+    isCockpitVisible: false,
+    carModelOffset: new THREE.Vector3(),
+    fog: new THREE.Fog("#141724", 0.001, 250),
+    followCar: true,
+  },
+  {
+    cameraId: CameraAngleOptions.TvPod,
+    name: "TV Pod",
+    isLocked: true,
+    position: new THREE.Vector3(0, 0.22, -0.2), // Lowered height
+    cameraUp: new THREE.Vector3(0, 1, 0),
+    allowFreeLook: false,
+    zoom: { min: 0.8, max: 1.5, default: 1.0 },
+    enableFog: true,
+    focusPointOffset: new THREE.Vector3(0, 0.1, 8), // Look ahead of the car
+    isCockpitVisible: false,
+    carModelOffset: new THREE.Vector3(),
+    fog: new THREE.Fog("#141724", 0.001, 250),
+    followCar: true,
+  },
+  // {
+  //   cameraId: CameraAngleOptions.FirstPerson,
+  //   name: "Cockpit",
+  //   isLocked: true,
+  //   position: new THREE.Vector3(0, 0.16, -0.10), // Lowered height
+  //   cameraUp: new THREE.Vector3(0, 1, 0),
+  //   allowFreeLook: false,
+  //   zoom: { min: 0.8, max: 1.2, default: 1.5 },
+  //   enableFog: true,
+  //   focusPointOffset: new THREE.Vector3(0, -0, 8), // Look forward
+  //   isCockpitVisible: true,
+  //   carModelOffset: new THREE.Vector3(),
+  //   fog: new THREE.Fog("#141724", 0.001, 250),
+  //   followCar: true,
+  // },
+  {
+    cameraId: CameraAngleOptions.FreeLook,
+    name: "Free Look",
+    isLocked: false,
+    position: new THREE.Vector3(0, 3, -10), // Closer to the car
+    cameraUp: new THREE.Vector3(0, 1, 0),
+    allowFreeLook: true,
+    zoom: { min: 0.8, max: 2.0, default: 1.0 },
+    enableFog: true,
+    focusPointOffset: new THREE.Vector3(),
+    isCockpitVisible: false,
+    carModelOffset: new THREE.Vector3(),
+    fog: new THREE.Fog("#141724", 0.001, 500),
+    followCar: true,
+  },
+];
+
+// Camera controller component
+const CameraController = ({ cameraAngle, car1Ref, car2Ref, focusedCar }) => {
+  const { camera } = useThree();
+  const carRef = focusedCar === "car1" ? car1Ref : car2Ref;
+
+  const controlsRef = useRef();
+  const [config, setConfig] = useState(cameraConfig[0]);
+  const lastCarPosition = useRef(new THREE.Vector3());
+  const cameraOffset = useRef(new THREE.Vector3());
+  
+  // Set the camera FOV to a more reasonable value
+  useEffect(() => {
+    camera.fov = 45; // Narrower FOV for better zoom
+    camera.updateProjectionMatrix();
+  
+  // Set camera layers based on view type
+  if (config.isCockpitVisible) {
+    // In cockpit view, don't render layer 1 objects
+    camera.layers.disable(1);
+  } else {
+    // In external views, render all layers
+    camera.layers.enable(1);
+  }
+  
+  }, [camera, config.isCockpitVisible]);
+  
+  // Update config when camera angle changes
+  useEffect(() => {
+    const newConfig = cameraConfig.find(c => c.cameraId === cameraAngle) || cameraConfig[0];
+    setConfig(newConfig);
+    
+    // Store initial camera offset for non-locked cameras
+    if (!newConfig.isLocked && carRef && carRef.current) {
+      cameraOffset.current.copy(newConfig.position);
+      lastCarPosition.current.copy(carRef.current.position);
+    }
+    
+    // Reset camera position to the config position
+    if (carRef && carRef.current) {
+      // For locked cameras, calculate the world position
+      if (newConfig.isLocked) {
+        const carQuaternion = new THREE.Quaternion().setFromEuler(carRef.current.rotation);
+        const posOffset = newConfig.position.clone();
+        posOffset.applyQuaternion(carQuaternion);
+        const worldPos = carRef.current.position.clone().add(posOffset);
+        camera.position.copy(worldPos);
+      } else {
+        // For non-locked cameras, position relative to the car
+        camera.position.copy(carRef.current.position.clone().add(newConfig.position));
+      }
+    } else {
+      camera.position.copy(newConfig.position);
+    }
+    
+    camera.up.copy(newConfig.cameraUp);
+    camera.zoom = newConfig.zoom.default;
+    camera.updateProjectionMatrix();
+    
+    if (controlsRef.current) {
+      // Update orbit controls with new zoom settings
+      controlsRef.current.minDistance = newConfig.zoom.min * 5;
+      controlsRef.current.maxDistance = newConfig.zoom.max * 10;
+      controlsRef.current.update();
+    }
+  }, [cameraAngle, camera, carRef]);
+  
+  // This is where the car following happens, on every frame
+  useFrame(() => {
+    // Early return if car reference isn't available yet
+    if (!carRef || !carRef.current) return;
+    
+    // Get current car position
+    const carPosition = carRef.current.position.clone();
+    const carRotation = carRef.current.rotation.clone();
+    
+    if (config.isLocked) {
+      // For locked cameras (like cockpit, chase, TV pod)
+      // Create quaternion from car's rotation
+      const carQuaternion = new THREE.Quaternion().setFromEuler(carRotation);
+      
+      // Get camera offset from config
+      const posOffset = config.position.clone();
+      
+      // Transform offset by car's orientation
+      posOffset.applyQuaternion(carQuaternion);
+      
+      // Position camera relative to car
+      const worldCameraPos = carPosition.clone().add(posOffset);
+      camera.position.copy(worldCameraPos);
+      
+      // Calculate focus point
+      const focusOffset = config.focusPointOffset.clone();
+      focusOffset.applyQuaternion(carQuaternion);
+      const focusPoint = carPosition.clone().add(focusOffset);
+      
+      // Look at focus point
+      camera.lookAt(focusPoint);
+      
+      // Update orbit controls target (important for free look when it transitions)
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(focusPoint);
+        controlsRef.current.update();
+      }
+    } else if (config.followCar) {
+      // For non-locked cameras that should still follow the car (Sky, Angle, Free Look)
+      
+      // Calculate car movement since last frame
+      const carMovement = carPosition.clone().sub(lastCarPosition.current);
+      
+      // Move camera by the same amount the car moved
+      camera.position.add(carMovement);
+      
+      // Update orbit controls target to look at the car
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(carPosition);
+        controlsRef.current.update();
+      }
+      
+      // Store current car position for next frame
+      lastCarPosition.current.copy(carPosition);
+    } else if (controlsRef.current) {
+      // For cameras that don't follow or lock to the car, just look at it
+      controlsRef.current.target.copy(carPosition);
+      controlsRef.current.update();
+    }
+  });
+  
+  // Only render OrbitControls when needed
+  return (
+    (config.allowFreeLook || !config.isLocked) ? 
+      <OrbitControls 
+        ref={controlsRef}
+        enablePan={true}
+        enableZoom={true}
+        enableRotate={true}
+        minDistance={config.zoom.min * 5}
+        maxDistance={config.zoom.max * 10}
+      /> : null
+  );
+};
+
+// Updated camera selector UI component
+const CameraSelector = ({ currentCamera, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleCameraChange = (cameraId) => {
+    onChange(cameraId); // Update the selected camera
+    setIsOpen(false); // Minimize the menu after selection
+  };
+
+  return (
+    <div className="absolute bottom-4 right-4 z-10">
+      <div className="relative">
+        {/* Camera Button */}
+        <button 
+          onClick={() => setIsOpen(!isOpen)} 
+          className="w-12 h-12 flex items-center justify-center text-xl hover:bg-gray-800 rounded-full"
+        >
+          🎥
+        </button>
+
+        {/* Pop-up Menu */}
+        {isOpen && (
+          <div className="absolute bottom-0 right-full mr-2 bg-black/70 p-3 rounded-lg shadow-lg flex space-x-2 overflow-x-auto">
+            {cameraConfig.map((cam) => (
+              <button
+                key={cam.cameraId}
+                onClick={() => handleCameraChange(cam.cameraId)}
+                className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
+                  currentCamera === cam.cameraId
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                {cam.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Updated control panel component for UI controls
+const ControlPanel = ({ speed, setSpeed, isPaused, setPaused, resetLap }) => {
+  return (
+    <div className="absolute bottom-4 left-4 z-10">
+      <div className="flex items-center space-x-4">
+        {/* Play/Pause Button */}
+        <button
+          onClick={() => setPaused(!isPaused)}
+          className="w-10 h-10 flex items-center justify-center bg-blue-600 hover:bg-blue-700 rounded"
+        >
+          {isPaused ? (
+            <span className="text-l"><PlayArrow /></span> // Play symbol
+          ) : (
+            <span className="text-l"><Pause /></span> // Pause symbol
+          )}
+        </button>
+
+        {/* Reset Button */}
+        <button
+          onClick={resetLap}
+          className="w-10 h-10 flex items-center justify-center bg-green-600 hover:bg-green-700 rounded"
+        >
+          <span className="text-l"><RestartAlt /></span>
+        </button>
+
+        {/* Speed Controls */}
+        <div className="flex space-x-2">
+          {[0.25, 0.5, 1, 2].map((speedOption) => (
+            <button
+              key={speedOption}
+              onClick={() => setSpeed(speedOption)}
+              className={`w-10 h-10 flex items-center justify-center rounded text-xs ${
+                speed === speedOption
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
+            >
+              {speedOption}x
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Car model component
+const Car = React.forwardRef(({ position, rotation, modelPath }, ref) => {
+  const { scene } = useGLTF(modelPath, true);
+  const carModelRef = useRef();
+  
+  useEffect(() => {
+    if (scene) {
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+    }
+
+    // When the scene loads, connect the external ref to our model
+    if (ref && scene) {
+      ref.current = carModelRef.current;
+    }
+  }, [scene, ref]);
+
+  return (
+    <primitive
+      ref={carModelRef}
+      object={scene}
+      position={position}
+      rotation={rotation}
+      scale={[0.002, 0.002, 0.002]}
+    />
+  );
+});
+
+// pregenerating a trail for the car to show the route it takes that lap
+const generateTrail = (telemetryData, coordTransform, trackScale) => {
+  const trailPoints = [];
+
+  telemetryData.forEach((data) => {
+    const rawX = data["X [m]"];
+    const rawY = data["Y [m]"];
+    const rawZ = data["Z [m]"];
+
+    const x = (rawX - coordTransform.xOffset) * coordTransform.scale;
+    const y = rawY * coordTransform.scale;
+    const z = (rawZ - coordTransform.zOffset) * coordTransform.scale;
+
+    trailPoints.push(new THREE.Vector3(x, y + 0.05, z)); // Add a small offset for visibility
+  });
+
+  return trailPoints;
+};
+
+// smoothing the aforementioned pre-genned trail
+const smoothTrail = (trailPoints, windowSize = 3) => {
+  const smoothedPoints = [];
+
+  for (let i = 0; i < trailPoints.length; i++) {
+    let sumX = 0, sumY = 0, sumZ = 0;
+    let count = 0;
+
+    for (let j = -windowSize; j <= windowSize; j++) {
+      const index = i + j;
+      if (index >= 0 && index < trailPoints.length) {
+        sumX += trailPoints[index].x;
+        sumY += trailPoints[index].y;
+        sumZ += trailPoints[index].z;
+        count++;
+      }
+    }
+
+    smoothedPoints.push(new THREE.Vector3(sumX / count, sumY / count, sumZ / count));
+  }
+
+  return smoothedPoints;
+};
+
+// function for using three js to render the precomputed and smoothed trail as a static line
+const StaticTrail = ({ trailPoints, color = "#3AD8F6" }) => {
+  const trailRef = useRef();
+
+  useEffect(() => {
+    if (trailRef.current) {
+      const geometry = trailRef.current.geometry;
+      const positionArray = new Float32Array(trailPoints.flatMap(p => [p.x, p.y, p.z]));
+      geometry.setAttribute('position', new THREE.BufferAttribute(positionArray, 3));
+      geometry.attributes.position.needsUpdate = true;
+    }
+  }, [trailPoints]);
+
+  return (
+    <line ref={trailRef}>
+      <bufferGeometry />
+      <lineBasicMaterial attach="material" color={color} linewidth={20} opacity={0.8} transparent />
+    </line>
+  );
+};
+
+// Track component using GLB model
+const Track = ({ trackId }) => {
+  const config = trackConfigs[trackId];
+  const { scene } = useGLTF(`/models/tracks/${trackId}.glb`, true);
+  const trackRef = useRef();
+
+  useEffect(() => {
+    if (scene) {
+      scene.traverse((child) => {
+        if (child.isMesh) {
+          child.receiveShadow = true;
+          child.material.roughness = 0.8;
+          child.material.metalness = 0.2;
+        }
+      });
+    }
+  }, [scene]);
+
+  return (
+    <group
+      ref={trackRef}
+      position={[0, 0, 0]} // Keep track at origin
+      rotation={[config.rotation.x, config.rotation.y, config.rotation.z]}
+      scale={config.miniMapScale * 1000}
+    >
+      <primitive object={scene} />
+      <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[5, 1]} />
+        <meshBasicMaterial color="white" />
+      </mesh>
+    </group>
+  );
+};
+
+const LapTimeBar = ({ lapTime, totalLapTime, onSeek }) => {
+  const progress = totalLapTime > 0 ? (lapTime / totalLapTime) * 100 : 0;
+
+  const handleClick = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const newProgress = clickX / rect.width; // 0 to 1
+    const newTime = newProgress * totalLapTime;
+    onSeek(newTime); // This should call setSelectedTime in F1Scene
+  };
+
+  return (
+    <div 
+      className="absolute bottom-20 left-4 right-4 h-2 bg-gray-700 cursor-pointer rounded-full z-20"
+      onClick={handleClick}
+    >
+      <div 
+        className="h-full bg-yellow-500 rounded-full"
+        style={{ width: `${progress}%` }}
+      ></div>
+    </div>
+  );
+};
+
+const SectorTimes = ({ sectorTimes, focusedCar }) => {
+  const times = sectorTimes[focusedCar] || [0, 0, 0];
+
+  return (
+    <div className="absolute top-4 left-4 bg-black/70 text-white p-4 rounded-lg shadow-lg z-10 w-64">
+      <h3 className="text-lg font-bold mb-2">Sector Times ({focusedCar === "car1" ? "Car 1" : "Car 2"})</h3>
+      <div className="grid grid-cols-1 gap-3">
+        {times.map((time, index) => (
+          <div key={index} className="flex justify-between items-center">
+            <div className="text-xs text-gray-400">Sector {index + 1}</div>
+            <div className="font-bold text-right w-16">{time.toFixed(3)}s</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const TrackSelector = ({ currentTrack, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleTrackChange = (trackId) => {
+    onChange(trackId); // Update the selected track
+    setIsOpen(false); // Close the dropdown
+  };
+
+  return (
+    <div className="absolute top-4 right-4 z-20">
+      <div className="relative">
+        {/* Dropdown Button */}
+        <button 
+          onClick={() => setIsOpen(!isOpen)} 
+          className="w-12 h-12 flex items-center justify-center text-xl hover:bg-gray-800 rounded-full"
+        >
+          🏁
+        </button>
+
+        {/* Dropdown Menu */}
+        {isOpen && (
+          <div className="absolute top-full right-0 mt-2 bg-black/70 p-3 rounded-lg shadow-lg flex flex-col space-y-2">
+            {Object.keys(trackConfigs).map((trackId) => (
+              <button
+                key={trackId}
+                onClick={() => handleTrackChange(trackId)}
+                className={`px-4 py-2 rounded text-sm whitespace-nowrap ${
+                  currentTrack === trackId
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                {trackConfigs[trackId].name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const TelemetryHUD = ({ telemetry, focusedCar }) => {
+  // Ensure all values are numbers before calling .toFixed()
+  const throttle = typeof telemetry.throttle === 'number' ? telemetry.throttle.toFixed(1) : '0.0';
+  const brake = typeof telemetry.brake === 'number' ? telemetry.brake.toFixed(1) : '0.0';
+  const speed = typeof telemetry.speed === 'number' ? telemetry.speed.toFixed(1) : '0.0';
+  const steeringPercentage = typeof telemetry.steeringAngle === 'number' ? telemetry.steeringAngle : 0; // Use raw % value
+  const lapProgress = typeof telemetry.lapProgress === 'number' ? telemetry.lapProgress.toFixed(1) : '0.0';
+  const lapTime = telemetry.lapTime || "0.000"; // Fallback for lapTime
+  // Convert throttle and brake to percentages for the bar width
+  const throttleWidth = `${Math.min(100, Math.max(0, parseFloat(throttle)))}%`;
+  const brakeWidth = `${Math.min(100, Math.max(0, parseFloat(brake)))}%`;
+  // Calculate steering bar fill
+  const steeringValue = Math.min(100, Math.max(-100, steeringPercentage)); // Clamp between -100% and 100%
+  
+  return (
+    <div className="absolute top-4 right-4 bg-black/70 text-white p-4 rounded-lg shadow-lg z-10 w-64">
+      <h3 className="text-lg font-bold mb-2">Telemetry ({focusedCar === "car1" ? "Car 1" : "Car 2"})</h3>
+      <div className="grid grid-cols-1 gap-3">
+        {/* Throttle Bar */}
+        <div>
+          <div className="text-xs text-gray-400 mb-1">Throttle</div>
+          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-green-500 rounded-full transition-all duration-200 ease-out" 
+              style={{ width: throttleWidth }} 
+            />
+          </div>
+        </div>
+        {/* Brake Bar */}
+        <div>
+          <div className="text-xs text-gray-400 mb-1">Brake</div>
+          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-red-500 rounded-full transition-all duration-200 ease-out" 
+              style={{ width: brakeWidth }} 
+            />
+          </div>
+        </div>
+        {/* Speed */}
+        <div className="flex justify-between items-center">
+          <div className="text-xs text-gray-400">Speed</div>
+          <div className="font-bold text-right w-16 transition-all duration-200 ease-out">{speed} km/h</div>
+        </div>
+        {/* Steering Bar */}
+        <div>
+          <div className="text-xs text-gray-400 mb-1">Steering</div>
+          <div className="h-2 bg-gray-700 rounded-full relative overflow-hidden">
+            {/* Center line */}
+            <div className="absolute h-full w-px bg-white left-1/2 transform -translate-x-1/2" />
+            {/* Fill */}
+            <div
+              className="h-full bg-pink-500 absolute transition-all duration-200 ease-out"
+              style={{
+                width: `${Math.abs(steeringValue) / 2}%`, // Fill half the space (left or right of center)
+                left: steeringValue < 0 ? `${50 - (Math.abs(steeringValue) / 2)}%` : '50%' // Position correctly
+              }}
+            />
+          </div>
+          <div className="text-xs text-gray-400 mt-1 text-center transition-all duration-200 ease-out">{steeringValue.toFixed(1)}%</div>
+        </div>
+        {/* Lap Time */}
+        <div className="flex justify-between items-center">
+          <div className="text-xs text-gray-400">Lap Time</div>
+          <div className="font-bold text-right w-16 transition-all duration-200 ease-out">{lapTime}s</div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FocusSwitch = ({ focusedCar, onChange }) => {
+  return (
+    <div className="absolute bottom-20 right-4 z-10">
+      <button
+        onClick={() => onChange(focusedCar === "car1" ? "car2" : "car1")}
+        className="w-12 h-12 flex items-center justify-center text-xl hover:bg-gray-800 rounded-full"
+      >
+        {focusedCar === "car1" ? "🏎️" : "🚗"}
+      </button>
+    </div>
+  );
+};
+
+const AnimatedScene = ({ trackId, speedMultiplier, isPaused, setTelemetry, telemetryData, selectedTime, focusedCar, car1Ref, car2Ref, onPositionUpdate }) => {
+  // State
+  const [car1TrailPoints, setCar1TrailPoints] = useState([]);
+  const [car2TrailPoints, setCar2TrailPoints] = useState([]);
+  
+  // RaceNet-style animation variables
+  const prevVec = useRef(new THREE.Vector3());
+  const newVec = useRef(new THREE.Vector3());
+  const car2PrevVec = useRef(new THREE.Vector3());
+  const car2NewVec = useRef(new THREE.Vector3());
+  const prevQuaternion = useRef(new THREE.Quaternion());
+  const newQuaternion = useRef(new THREE.Quaternion());
+  const car2PrevQuaternion = useRef(new THREE.Quaternion());
+  const car2NewQuaternion = useRef(new THREE.Quaternion());
+  
+  // Animation timing variables
+  const lastFrameTime = useRef(0);
+  const previousDt = useRef(0);
+  const carPositionCursor = useRef(0);
+  const timeElapsedSinceLastIndexUpdate = useRef(0);
+  const timeCursor = useRef(0);
+  const wasPaused = useRef(isPaused);
+  
+  // Track setup
+  const config = trackConfigs[trackId];
+  const trackScale = config.miniMapScale * 1000;
+  
+  const [coordTransform] = useState({
+    xOffset: 0,
+    zOffset: 0,
+    scale: trackScale,
+  });
+  
+  // Get total lap time and track distance
+  const totalLapTime = useMemo(() => {
+    if (!telemetryData.car1 || telemetryData.car1.length === 0) return 0;
+    return telemetryData.car1[telemetryData.car1.length - 1]["LapTime [s]"];
+  }, [telemetryData.car1]);
+  
+  const totalTrackDistance = useMemo(() => {
+    if (!telemetryData.car1 || telemetryData.car1.length === 0) return 5000;
+    return telemetryData.car1[telemetryData.car1.length - 1]["LapDistance [m]"];
+  }, [telemetryData.car1]);
+  
+  // Generate trail visualization
+  useEffect(() => {
+    if (telemetryData.car1 && telemetryData.car2) {
+      const car1Trail = generateTrail(telemetryData.car1, coordTransform, trackScale);
+      const car2Trail = generateTrail(telemetryData.car2, coordTransform, trackScale);
+      setCar1TrailPoints(smoothTrail(car1Trail));
+      setCar2TrailPoints(smoothTrail(car2Trail));
+    }
+  }, [telemetryData, coordTransform, trackScale]);
+  
+  // Set up reset function
+  useEffect(() => {
+    window.resetLapFunction = resetAnimation;
+    return () => {
+      window.resetLapFunction = null;
+    };
+  }, []);
+  
+  // Handle seeking to specific time
+  useEffect(() => {
+    if (selectedTime !== null && telemetryData.car1 && telemetryData.car1.length > 0) {
+      handleSeek(selectedTime);
+    }
+  }, [selectedTime, telemetryData]);
+  
+  // Calculate interpolation factor (alpha)
+  const getAlpha = () => {
+    if (!timeElapsedSinceLastIndexUpdate.current || carPositionCursor.current < 1 || 
+        !telemetryData.car1 || carPositionCursor.current >= telemetryData.car1.length) {
+      return 0;
+    }
+    
+    // Calculate how far we are between timestamps
+    const currentTime = telemetryData.car1[carPositionCursor.current]["LapTime [s]"];
+    const prevTime = telemetryData.car1[carPositionCursor.current - 1]["LapTime [s]"];
+    const timeDiff = currentTime - prevTime;
+    
+    if (timeDiff <= 0) {
+      return 0;
+    }
+    
+    const result = timeElapsedSinceLastIndexUpdate.current / timeDiff;
+    
+    // Clamp between 0 and 1
+    return Math.max(0, Math.min(1, result));
+  };
+  
+  // Calculate delta time between frames
+  const updateDeltaTime = (currentTime) => {
+    let dt = 0;
+    
+    // Calculate milliseconds since last frame
+    dt = (currentTime - lastFrameTime.current) * 1000;
+    
+    // Handle unusually long delays between frames
+    if (dt > 500) {
+      dt = previousDt.current;
+      console.warn("Long frame detected, using previous delta time");
+    } else {
+      previousDt.current = dt;
+    }
+    
+    lastFrameTime.current = currentTime;
+    
+    // Apply speed multiplier to delta time
+    return dt * speedMultiplier;
+  };
+  
+  // Update car position vectors when index changes
+  const updateCarPositionVectors = () => {
+    if (!telemetryData.car1 || carPositionCursor.current < 1 || 
+        carPositionCursor.current >= telemetryData.car1.length) {
+      return;
+    }
+    
+    const prevData = telemetryData.car1[carPositionCursor.current - 1];
+    const newData = telemetryData.car1[carPositionCursor.current];
+    
+    // Store previous and current position vectors
+    prevVec.current.set(
+      (prevData["X [m]"] - coordTransform.xOffset) * coordTransform.scale,
+      prevData["Y [m]"] * coordTransform.scale,
+      (prevData["Z [m]"] - coordTransform.zOffset) * coordTransform.scale
+    );
+    
+    newVec.current.set(
+      (newData["X [m]"] - coordTransform.xOffset) * coordTransform.scale,
+      newData["Y [m]"] * coordTransform.scale,
+      (newData["Z [m]"] - coordTransform.zOffset) * coordTransform.scale
+    );
+    
+    // Calculate yaw from velocity
+    const prevYaw = Math.atan2(
+      prevData["WoldSpeedX [km/h]"] || 0, 
+      prevData["WoldSpeedZ [km/h]"] || 0
+    );
+    const newYaw = Math.atan2(
+      newData["WoldSpeedX [km/h]"] || 0, 
+      newData["WoldSpeedZ [km/h]"] || 0
+    );
+    
+    // Set quaternions from Euler angles
+    prevQuaternion.current.setFromEuler(
+      new THREE.Euler(
+        prevData["Pitch [rad]"] || 0, 
+        prevYaw, 
+        prevData["Roll [rad]"] || 0
+      )
+    );
+    
+    newQuaternion.current.setFromEuler(
+      new THREE.Euler(
+        newData["Pitch [rad]"] || 0, 
+        newYaw, 
+        newData["Roll [rad]"] || 0
+      )
+    );
+  };
+  
+  // Update second car position vectors
+  const updateCar2PositionVectors = () => {
+    if (!telemetryData.car2 || carPositionCursor.current < 1 || 
+        carPositionCursor.current >= telemetryData.car2.length) {
+      return;
+    }
+    
+    const prevData = telemetryData.car2[carPositionCursor.current - 1];
+    const newData = telemetryData.car2[carPositionCursor.current];
+    
+    // Store previous and current position vectors
+    car2PrevVec.current.set(
+      (prevData["X [m]"] - coordTransform.xOffset) * coordTransform.scale,
+      prevData["Y [m]"] * coordTransform.scale,
+      (prevData["Z [m]"] - coordTransform.zOffset) * coordTransform.scale
+    );
+    
+    car2NewVec.current.set(
+      (newData["X [m]"] - coordTransform.xOffset) * coordTransform.scale,
+      newData["Y [m]"] * coordTransform.scale,
+      (newData["Z [m]"] - coordTransform.zOffset) * coordTransform.scale
+    );
+    
+    // Calculate yaw from velocity
+    const prevYaw = Math.atan2(
+      prevData["WoldSpeedX [km/h]"] || 0, 
+      prevData["WoldSpeedZ [km/h]"] || 0
+    );
+    const newYaw = Math.atan2(
+      newData["WoldSpeedX [km/h]"] || 0, 
+      newData["WoldSpeedZ [km/h]"] || 0
+    );
+    
+    // Set quaternions from Euler angles
+    car2PrevQuaternion.current.setFromEuler(
+      new THREE.Euler(
+        prevData["Pitch [rad]"] || 0, 
+        prevYaw, 
+        prevData["Roll [rad]"] || 0
+      )
+    );
+    
+    car2NewQuaternion.current.setFromEuler(
+      new THREE.Euler(
+        newData["Pitch [rad]"] || 0, 
+        newYaw, 
+        newData["Roll [rad]"] || 0
+      )
+    );
+  };
+  
+  // Update car transform based on alpha interpolation
+  const updateCarTransform = (alpha) => {
+    if (!car1Ref.current || carPositionCursor.current < 1) {
+      return;
+    }
+    
+    // Interpolate position between previous and next point
+    car1Ref.current.position.lerpVectors(prevVec.current, newVec.current, alpha);
+    
+    // Interpolate rotation between previous and next orientation
+    car1Ref.current.quaternion.slerpQuaternions(
+      prevQuaternion.current, 
+      newQuaternion.current, 
+      alpha
+    );
+  };
+  
+  // Update second car transform
+  const updateCar2Transform = (alpha) => {
+    if (!car2Ref.current || carPositionCursor.current < 1) {
+      return;
+    }
+    
+    // Interpolate position between previous and next point
+    car2Ref.current.position.lerpVectors(car2PrevVec.current, car2NewVec.current, alpha);
+    
+    // Interpolate rotation between previous and next orientation
+    car2Ref.current.quaternion.slerpQuaternions(
+      car2PrevQuaternion.current, 
+      car2NewQuaternion.current, 
+      alpha
+    );
+  };
+  
+  // Reset animation function
+  const resetAnimation = () => {
+    carPositionCursor.current = 0;
+    timeElapsedSinceLastIndexUpdate.current = 0;
+    timeCursor.current = 0;
+    lastFrameTime.current = 0;
+    previousDt.current = 0;
+    
+    if (!telemetryData.car1 || telemetryData.car1.length === 0) return;
+    
+    if (car1Ref.current) {
+      // Reset car position to starting point
+      const startData = telemetryData.car1[0];
+      car1Ref.current.position.set(
+        (startData["X [m]"] - coordTransform.xOffset) * coordTransform.scale,
+        startData["Y [m]"] * coordTransform.scale,
+        (startData["Z [m]"] - coordTransform.zOffset) * coordTransform.scale
+      );
+      
+      // Set initial rotation
+      const yaw = Math.atan2(
+        startData["WoldSpeedX [km/h]"] || 0,
+        startData["WoldSpeedZ [km/h]"] || 0
+      );
+      
+      car1Ref.current.rotation.set(
+        startData["Pitch [rad]"] || 0,
+        yaw,
+        startData["Roll [rad]"] || 0
+      );
+    }
+    
+    if (car2Ref.current && telemetryData.car2 && telemetryData.car2.length > 0) {
+      // Reset car position to starting point
+      const startData = telemetryData.car2[0];
+      car2Ref.current.position.set(
+        (startData["X [m]"] - coordTransform.xOffset) * coordTransform.scale,
+        startData["Y [m]"] * coordTransform.scale,
+        (startData["Z [m]"] - coordTransform.zOffset) * coordTransform.scale
+      );
+      
+      // Set initial rotation
+      const yaw = Math.atan2(
+        startData["WoldSpeedX [km/h]"] || 0,
+        startData["WoldSpeedZ [km/h]"] || 0
+      );
+      
+      car2Ref.current.rotation.set(
+        startData["Pitch [rad]"] || 0,
+        yaw,
+        startData["Roll [rad]"] || 0
+      );
+    }
+    
+    // Update UI
+    if (onPositionUpdate) {
+      onPositionUpdate(0);
+    }
+  };
+  
+  // Seek to a specific time in the telemetry
+  const handleSeek = (time) => {
+    if (!telemetryData.car1 || telemetryData.car1.length === 0) return;
+    
+    // Find the closest data point to the requested time
+    let closestIndex = 0;
+    let minTimeDiff = Number.MAX_VALUE;
+    
+    for (let i = 0; i < telemetryData.car1.length; i++) {
+      const diff = Math.abs(telemetryData.car1[i]["LapTime [s]"] - time);
+      if (diff < minTimeDiff) {
+        minTimeDiff = diff;
+        closestIndex = i;
+      }
+    }
+    
+    // Set the cursor to this position
+    carPositionCursor.current = Math.max(1, closestIndex); // Ensure at least 1 to have a previous point
+    timeElapsedSinceLastIndexUpdate.current = 0;
+    timeCursor.current = telemetryData.car1[carPositionCursor.current]["LapTime [s]"];
+    
+    // Update position vectors
+    updateCarPositionVectors();
+    if (telemetryData.car2) {
+      updateCar2PositionVectors();
+    }
+    
+    // Immediately update car positions
+    updateCarTransform(0);
+    if (telemetryData.car2 && car2Ref.current) {
+      updateCar2Transform(0);
+    }
+    
+    // Update telemetry display
+    const currentData = telemetryData.car1[carPositionCursor.current];
+    setTelemetry({
+      throttle: currentData["ThrottlePercentage [%]"] || 0,
+      brake: currentData["BrakePercentage [%]"] || 0,
+      speed: currentData["Speed [km/h]"] || 0,
+      steeringAngle: currentData["Steer [%]"] || 0,
+      lapProgress: (currentData["LapDistance [m]"] / totalTrackDistance) * 100,
+      lapTime: currentData["LapTime [s]"].toFixed(3)
+    });
+    
+    // Update UI
+    if (onPositionUpdate) {
+      onPositionUpdate(carPositionCursor.current);
+    }
+  };
+  
+  // Main animation loop
+  useFrame(({clock}) => {
+    if (!telemetryData.car1 || !car1Ref.current) return;
+    
+    // Handle pause state changes
+    if (isPaused !== wasPaused.current) {
+      wasPaused.current = isPaused;
+      if (!isPaused) {
+        lastFrameTime.current = clock.getElapsedTime();
+      }
+      return;
+    }
+    
+    // Skip processing if paused
+    if (isPaused) return;
+    
+    // Get current time from clock
+    const currentTime = clock.getElapsedTime();
+    
+    // Calculate time between frames
+    const dt = updateDeltaTime(currentTime);
+    
+    // Update elapsed time since last index change
+    timeElapsedSinceLastIndexUpdate.current += dt;
+    
+    // Update the time cursor (current position in the animation timeline)
+    timeCursor.current += dt;
+    
+    // Check if we need to advance to the next data point
+    if (carPositionCursor.current < telemetryData.car1.length - 1 && 
+        timeCursor.current >= telemetryData.car1[carPositionCursor.current + 1]["LapTime [s]"]) {
+      
+      carPositionCursor.current++;
+      timeElapsedSinceLastIndexUpdate.current = 0;
+      
+      // Update position vectors for the new cursor position
+      updateCarPositionVectors();
+      
+      // Update car2 position vectors if available
+      if (telemetryData.car2) {
+        updateCar2PositionVectors();
+      }
+      
+      // Update UI
+      if (onPositionUpdate) {
+        onPositionUpdate(carPositionCursor.current);
+      }
+    }
+    
+    // Calculate the interpolation factor (alpha)
+    const alpha = getAlpha();
+    
+    // Update car transforms
+    updateCarTransform(alpha);
+    
+    // Update car2 transform if available
+    if (telemetryData.car2 && car2Ref.current) {
+      updateCar2Transform(alpha);
+    }
+    
+    // Update telemetry display
+    if (carPositionCursor.current < telemetryData.car1.length) {
+      const currentData = telemetryData.car1[carPositionCursor.current];
+      const prevData = carPositionCursor.current > 0 ? 
+                      telemetryData.car1[carPositionCursor.current - 1] : 
+                      currentData;
+      
+      // Interpolate telemetry values
+      const throttle = THREE.MathUtils.lerp(
+        prevData["ThrottlePercentage [%]"] || 0,
+        currentData["ThrottlePercentage [%]"] || 0,
+        alpha
+      );
+      
+      const brake = THREE.MathUtils.lerp(
+        prevData["BrakePercentage [%]"] || 0,
+        currentData["BrakePercentage [%]"] || 0,
+        alpha
+      );
+      
+      const speed = THREE.MathUtils.lerp(
+        prevData["Speed [km/h]"] || 0,
+        currentData["Speed [km/h]"] || 0,
+        alpha
+      );
+      
+      const steeringAngle = THREE.MathUtils.lerp(
+        prevData["Steer [%]"] || 0,
+        currentData["Steer [%]"] || 0,
+        alpha
+      );
+      
+      // Update telemetry display
+      setTelemetry({
+        throttle,
+        brake,
+        speed,
+        steeringAngle,
+        lapProgress: (currentData["LapDistance [m]"] / totalTrackDistance) * 100,
+        lapTime: currentData["LapTime [s]"].toFixed(3)
+      });
+    }
+    
+    // Check for lap completion
+    if (carPositionCursor.current >= telemetryData.car1.length - 1) {
+      // Reset to beginning
+      carPositionCursor.current = 0;
+      timeElapsedSinceLastIndexUpdate.current = 0;
+      timeCursor.current = 0;
+      
+      // Update UI
+      if (onPositionUpdate) {
+        onPositionUpdate(carPositionCursor.current);
+      }
+    }
+  });
+
+  return (
+    <>
+      <Track trackId={trackId} />
+      {car1TrailPoints.length > 0 && <StaticTrail trailPoints={car1TrailPoints} color="#3AD8F6"  />}
+      {car2TrailPoints.length > 0 && <StaticTrail trailPoints={car2TrailPoints} color="#FF5733"  />}
+      <axesHelper scale={[5, 5, 5]} />
+      <Car ref={car1Ref} position={[0, 0, 0]} rotation={[0, 0, 0]} modelPath="/models/f1-car.glb" />
+      <Car ref={car2Ref} position={[0, 0, 0]} rotation={[0, 0, 0]} modelPath="/models/f1-car-2.glb" />
+    </>
+  );
+};
+
+// Main component with improved HUD
+const F1Scene = () => {
+  const [trackId, setTrackId] = useState("silverstone"); // Default to Silverstone
+  const [speed, setSpeed] = useState(1.0);
+  const [isPaused, setPaused] = useState(false);
+  const [telemetry, setTelemetry] = useState({
+    throttle: 0,
+    brake: 0,
+    speed: 0,
+    steeringAngle: 0,
+    lapProgress: 0,
+    lapTime: "0.000"
+  });
+  const [telemetryData, setTelemetryData] = useState({
+    car1: [],
+    car2: [],
+  });
+  const [selectedTime, setSelectedTime] = useState(null);
+  const [sectorTimes, setSectorTimes] = useState({
+    car1: [0, 0, 0],
+    car2: [0, 0, 0]
+  });
+  const [focusedCar, setFocusedCar] = useState("car1");
+  const [currentPosition, setCurrentPosition] = useState(0);
+
+  const car1Ref = useRef();
+  const car2Ref = useRef();
+
+  const [currentCamera, setCurrentCamera] = useState(CameraAngleOptions.Chase);
+
+  // Function to generate ideal telemetry
+  const generateIdealTelemetry = (rawData) => {
+    if (!rawData || rawData.length === 0) return [];
+    
+    console.log("Generating ideal telemetry from", rawData.length, "data points");
+    
+    // Step 1: Sort by lap time and filter out any invalid entries
+    const sortedData = [...rawData]
+      .filter(row => 
+        typeof row["LapTime [s]"] === 'number' && 
+        typeof row["X [m]"] === 'number' && 
+        typeof row["Y [m]"] === 'number' && 
+        typeof row["Z [m]"] === 'number'
+      )
+      .sort((a, b) => a["LapTime [s]"] - b["LapTime [s]"]);
+    
+    if (sortedData.length < 2) {
+      console.error("Not enough valid data points after filtering");
+      return rawData;
+    }
+    
+    // Step 2: Determine the lap time range and target frame count (60 Hz)
+    const startTime = sortedData[0]["LapTime [s]"];
+    const endTime = sortedData[sortedData.length - 1]["LapTime [s]"];
+    const lapDuration = endTime - startTime;
+    const targetSampleRate = 60; // 60 Hz for smooth animation
+    const frameCount = Math.ceil(lapDuration * targetSampleRate);
+    const timeStep = lapDuration / frameCount;
+    
+    console.log(`Creating smooth telemetry at ${targetSampleRate}Hz with ${frameCount} frames`);
+    console.log(`Original lap time: ${startTime.toFixed(3)}s to ${endTime.toFixed(3)}s (${lapDuration.toFixed(3)}s)`);
+    
+    // Step 3: Generate the new dataset with consistent sampling
+    const idealTelemetry = [];
+    
+    // Find all numeric fields we need to interpolate
+    const numericFields = Object.keys(sortedData[0]).filter(key => 
+      typeof sortedData[0][key] === 'number'
+    );
+    
+    // Generate frames at precise intervals
+    for (let i = 0; i <= frameCount; i++) {
+      const currentTime = startTime + (i * timeStep);
+      
+      // Find the surrounding frames in original data
+      let lowerIndex = 0;
+      let upperIndex = 1;
+      
+      // Binary search would be more efficient here for large datasets
+      for (let j = 0; j < sortedData.length - 1; j++) {
+        if (sortedData[j]["LapTime [s]"] <= currentTime && sortedData[j+1]["LapTime [s]"] >= currentTime) {
+          lowerIndex = j;
+          upperIndex = j + 1;
+          break;
+        }
+      }
+      
+      // Handle edge case at the end of the data
+      if (upperIndex >= sortedData.length) {
+        upperIndex = sortedData.length - 1;
+      }
+      
+      const lowerFrame = sortedData[lowerIndex];
+      const upperFrame = sortedData[upperIndex];
+      const lowerTime = lowerFrame["LapTime [s]"];
+      const upperTime = upperFrame["LapTime [s]"];
+      
+      // Calculate interpolation factor
+      let t = 0;
+      if (upperTime > lowerTime) {
+        t = (currentTime - lowerTime) / (upperTime - lowerTime);
+      }
+      
+      // Clamp t to valid range [0,1]
+      t = Math.max(0, Math.min(1, t));
+      
+      // Create a new frame with interpolated values
+      const newFrame = {
+        "LapTime [s]": currentTime
+      };
+      
+      // Copy non-numeric fields directly
+      Object.keys(lowerFrame).forEach(key => {
+        if (numericFields.includes(key)) {
+          // Linear interpolation for numeric fields
+          if (key === "LapTime [s]") {
+            newFrame[key] = currentTime;
+          } else {
+            newFrame[key] = lowerFrame[key] + t * (upperFrame[key] - lowerFrame[key]);
+          }
+        } else {
+          // Copy non-numeric fields
+          newFrame[key] = lowerFrame[key];
+        }
+      });
+      
+      idealTelemetry.push(newFrame);
+    }
+    
+    // Apply post-processing to fix any remaining issues
+    // Ensure velocity vectors are smooth and reasonable
+    for (let i = 1; i < idealTelemetry.length - 1; i++) {
+      // Fix velocity vectors for smoother rotation
+      if (idealTelemetry[i]["WoldSpeedX [km/h]"] !== undefined) {
+        idealTelemetry[i]["WoldSpeedX [km/h]"] = (
+          idealTelemetry[i-1]["WoldSpeedX [km/h]"] +
+          idealTelemetry[i]["WoldSpeedX [km/h]"] +
+          idealTelemetry[i+1]["WoldSpeedX [km/h]"]
+        ) / 3;
+        
+        idealTelemetry[i]["WoldSpeedZ [km/h]"] = (
+          idealTelemetry[i-1]["WoldSpeedZ [km/h]"] +
+          idealTelemetry[i]["WoldSpeedZ [km/h]"] +
+          idealTelemetry[i+1]["WoldSpeedZ [km/h]"]
+        ) / 3;
+      }
+    }
+    
+    console.log(`Generated ${idealTelemetry.length} ideal telemetry frames`);
+    return idealTelemetry;
+  };
+
+  const resetLapRef = useRef(() => {
+    if (window.resetLapFunction) window.resetLapFunction();
+  });
+
+  // Handle when the animation updates the car position
+  const handlePositionUpdate = (position) => {
+    setCurrentPosition(position);
+    // Dispatch event for other components
+    document.dispatchEvent(new CustomEvent("carPosIndex", { detail: position }));
+  };
+
+  // Load CSV data based on the selected track
+  useEffect(() => {
+    const loadTelemetryData = async () => {
+      try {
+        // Load Car1 telemetry
+        const car1Response = await fetch(`/telemetrycsv/${trackId}-telemetry-mclaren.csv`);
+        const car1CsvText = await car1Response.text();
+        const car1RawData = Papa.parse(car1CsvText, {
+          header: true,
+          skipEmptyLines: true,
+          dynamicTyping: true, 
+        }).data;
+        
+        // Load Car2 telemetry
+        const car2Response = await fetch(`/telemetrycsv/${trackId}-telemetry-sauber.csv`);
+        const car2CsvText = await car2Response.text();
+        const car2RawData = Papa.parse(car2CsvText, {
+          header: true,
+          skipEmptyLines: true,
+          dynamicTyping: true,
+        }).data;
+        
+        // Generate ideal telemetry instead of preprocessing
+        const car1Data = generateIdealTelemetry(car1RawData);
+        const car2Data = generateIdealTelemetry(car2RawData);
+        
+        // Calculate sector times for Car1
+        const lastLapDataCar1 = car1Data[car1Data.length - 1];
+        const sector1TimeCar1 = lastLapDataCar1["Sector1Time [s]"] || 0;
+        const sector2TimeCar1 = lastLapDataCar1["Sector2Time [s]"] || 0;
+        const sector3TimeCar1 = lastLapDataCar1["LapTime [s]"] - sector1TimeCar1 - sector2TimeCar1;
+
+        // Calculate sector times for Car2
+        const lastLapDataCar2 = car2Data[car2Data.length - 1];
+        const sector1TimeCar2 = lastLapDataCar2["Sector1Time [s]"] || 0;
+        const sector2TimeCar2 = lastLapDataCar2["Sector2Time [s]"] || 0;
+        const sector3TimeCar2 = lastLapDataCar2["LapTime [s]"] - sector1TimeCar2 - sector2TimeCar2;
+
+        // Set sector times
+        setSectorTimes({
+          car1: [sector1TimeCar1, sector2TimeCar1, sector3TimeCar1],
+          car2: [sector1TimeCar2, sector2TimeCar2, sector3TimeCar2],
+        });
+        
+        // Set both datasets
+        setTelemetryData({
+          car1: car1Data,
+          car2: car2Data,
+        });
+  
+        console.log(`Loaded and smoothed telemetry data for track: ${trackId}`);
+      } catch (err) {
+        console.error("CSV Load Error:", err);
+      }
+    };
+  
+    loadTelemetryData();
+  }, [trackId]);
+
+  const totalLapTime = useMemo(() => {
+    if (!telemetryData.car1 || telemetryData.car1.length === 0) return 0;
+    return telemetryData.car1[telemetryData.car1.length - 1]["LapTime [s]"];
+  }, [telemetryData.car1]);
+
+  // Handle seeking to a specific time in the lap
+  const handleSeek = (time) => {
+    setSelectedTime(time);
+    // Reset after applying
+    setTimeout(() => setSelectedTime(null), 100);
+    
+    // Pause when seeking
+    setPaused(true);
+  };
+
+  // Handle when a car focus changes
+  const handleFocusChange = (newFocus) => {
+    setFocusedCar(newFocus);
+  };
+
+  // Handle when play/pause is toggled
+  const handlePlayPauseToggle = () => {
+    setPaused(!isPaused);
+  };
+
+  // Handle when speed is changed
+  const handleSpeedChange = (newSpeed) => {
+    setSpeed(newSpeed);
+  };
+
+  // Handle when reset is clicked
+  const handleReset = () => {
+    if (resetLapRef.current) {
+      resetLapRef.current();
+    }
+  };
+
+  // Handle when camera angle is changed  
+  const handleCameraChange = (newCamera) => {
+    setCurrentCamera(newCamera);
+  };
+
+  // Handle when track is changed
+  const handleTrackChange = (newTrack) => {
+    setTrackId(newTrack);
+  };
+
+  return (
+    <div style={{ width: "100%", height: "86vh", position: "relative" }}>
+      {/* Switch between Cars */}
+      <FocusSwitch 
+        focusedCar={focusedCar} 
+        onChange={handleFocusChange} 
+      />
+      
+      {/* Track Selector Dropdown */}
+      <TrackSelector 
+        currentTrack={trackId} 
+        onChange={handleTrackChange} 
+      />
+
+      {/* Sector Times */}
+      <SectorTimes 
+        sectorTimes={sectorTimes} 
+        focusedCar={focusedCar} 
+      />
+
+      {/* Telemetry HUD */}
+      <TelemetryHUD 
+        telemetry={telemetry} 
+        focusedCar={focusedCar} 
+      />
+
+      {/* Playback Controls */}
+      <ControlPanel 
+        speed={speed} 
+        setSpeed={handleSpeedChange} 
+        isPaused={isPaused} 
+        setPaused={handlePlayPauseToggle}
+        resetLap={handleReset}
+      />
+
+      {/* Camera Controls */}
+      <CameraSelector 
+        currentCamera={currentCamera} 
+        onChange={handleCameraChange} 
+      />
+
+      {/* Lap Time Bar */}
+      <LapTimeBar 
+        lapTime={parseFloat(telemetry.lapTime)} 
+        totalLapTime={totalLapTime} 
+        onSeek={handleSeek}
+      />
+
+      {/* Canvas and Scene */}
+      <Canvas 
+        shadows 
+        camera={{ 
+          position: [0, 5, 10], 
+          fov: 45,
+          near: 0.1,
+          far: 1000
+        }}
+      >
+        <color attach="background" args={["#000000"]} />
+        <ambientLight intensity={0.4} />
+        <directionalLight 
+          position={[10, 20, 10]} 
+          intensity={1} 
+          castShadow 
+          shadow-mapSize-width={2048} 
+          shadow-mapSize-height={2048}
+        />
+
+        {/* Camera controller */}
+        <CameraController 
+          cameraAngle={currentCamera} 
+          car1Ref={car1Ref} 
+          car2Ref={car2Ref} 
+          focusedCar={focusedCar} 
+        />
+        
+        <AnimatedScene 
+          trackId={trackId}
+          speedMultiplier={speed} 
+          isPaused={isPaused} 
+          setTelemetry={setTelemetry}
+          telemetryData={telemetryData}
+          selectedTime={selectedTime}
+          focusedCar={focusedCar}
+          car1Ref={car1Ref}
+          car2Ref={car2Ref}
+          onPositionUpdate={handlePositionUpdate}
+        />
+      </Canvas>
+    </div>
+  );
+};
+
+export default F1Scene;

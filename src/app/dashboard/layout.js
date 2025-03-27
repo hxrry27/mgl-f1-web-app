@@ -9,7 +9,7 @@ export default function StandingsLayout({ children }) {
     <Box sx={{ 
       display: 'flex', 
       flexDirection: 'column', 
-      minHeight: '100vh', 
+      minHeight: '90vh', 
       backgroundColor: '#0a0e27', 
       color: 'white',
     }}>

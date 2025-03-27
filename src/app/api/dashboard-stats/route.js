@@ -57,13 +57,24 @@ export async function GET(request) {
   const username = searchParams.get('username');
   const allDrivers = searchParams.get('allDrivers') === 'true';
   const raceSlug = searchParams.get('raceSlug');
+  const seasonParam = searchParams.get('season'); // Add this line to get season parameter
 
   try {
     const seasonRes = await pool.query(
       'SELECT s.season FROM seasons s JOIN races r ON r.season_id = s.id JOIN race_results rr ON rr.race_id = r.id ' +
       'GROUP BY s.season ORDER BY CAST(s.season AS INTEGER) DESC LIMIT 1'
     );
-    const currentSeason = seasonRes.rows[0]?.season || '10';
+
+    let currentSeason;
+    if (seasonParam) {
+      currentSeason = seasonParam;
+    } else {
+      const seasonRes = await pool.query(
+        'SELECT s.season FROM seasons s JOIN races r ON r.season_id = s.id JOIN race_results rr ON rr.race_id = r.id ' +
+        'GROUP BY s.season ORDER BY CAST(s.season AS INTEGER) DESC LIMIT 1'
+      );
+      currentSeason = seasonRes.rows[0]?.season || '11';
+    }
     console.log('Current season with results:', currentSeason);
 
     if (allDrivers) {

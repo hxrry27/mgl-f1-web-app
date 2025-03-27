@@ -64,35 +64,100 @@ function formatRaceDateTime(isoDate, time) {
   }
 }
 
+// Map slugs to full track names
+const trackNames = {
+  'bahrain': 'Bahrain International Circuit',
+  'jeddah': 'Jeddah Corniche Circuit',
+  'yas-marina': 'Yas Marina Circuit',
+  'melbourne': 'Albert Park Circuit',
+  'suzuka': 'Suzuka International Racing Course',
+  'shanghai': 'Shanghai International Circuit',
+  'baku': 'Baku City Circuit',
+  'miami': 'Miami International Autodrome',
+  'monaco': 'Circuit de Monaco',
+  'montreal': 'Circuit Gilles Villeneuve',
+  'catalunya': 'Circuit de Barcelona-Catalunya',
+  'red-bull-ring': 'Red Bull Ring',
+  'silverstone': 'Silverstone Circuit',
+  'hungaroring': 'Hungaroring',
+  'spa': 'Circuit de Spa-Francorchamps',
+  'zandvoort': 'Circuit Zandvoort',
+  'monza': 'Autodromo Nazionale Monza',
+  'marina-bay': 'Marina Bay Street Circuit',
+  'austin': 'Circuit of The Americas',
+  'mexico': 'Autodromo Hermanos Rodriguez',
+  'interlagos': 'Autodromo Jose Carlos Pace',
+  'las-vegas': 'Las Vegas Strip Circuit',
+  'lusail': 'Lusail International Circuit',
+  'portimao': 'Algarve International Circuit',
+  'paul-ricard': 'Circuit Paul Ricard',
+  'spielberg': 'Red Bull Ring',
+  'barcelona': 'Circuit de Barcelona-Catalunya',
+};
+
 export default function HomePage() {
-  const [bahrainDate, setBahrainDate] = useState('TBD');
+  const [nextRace, setNextRace] = useState({
+    track: 'bahrain',
+    season: '11',
+    date: 'TBD',
+    trackName: 'Bahrain International Circuit',
+    country: 'BAHRAIN'
+  });
   const [lastSeasonPodium, setLastSeasonPodium] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const scheduleRes = await fetch('/api/schedule?season=11&track=bahrain');
+        // Fetch the next race
+        const nextRaceRes = await fetch('/api/schedule/next-race');
+        const nextRaceData = await nextRaceRes.json();
+        const track = nextRaceData.track || 'bahrain';
+        const season = nextRaceData.season || '11';
+        
+        // Get track info
+        const country = trackData[track]?.country || track.toUpperCase();
+        const trackName = trackNames[track] || track.replace(/-/g, ' ');
+        
+        // Fetch schedule details for the race
+        const scheduleRes = await fetch(`/api/schedule?season=${season}&track=${track}`);
         const scheduleData = await scheduleRes.json();
         console.log('Homepage Schedule Data:', scheduleData);
-        setBahrainDate(
-          scheduleData.date && scheduleData.date !== 'TBD'
-            ? formatRaceDateTime(scheduleData.date, scheduleData.time)
-            : 'TBD'
-        );
+        
+        // Format the date
+        const formattedDate = scheduleData.date && scheduleData.date !== 'TBD'
+          ? formatRaceDateTime(scheduleData.date, scheduleData.time)
+          : 'TBD';
+        
+        // Set the next race info
+        setNextRace({
+          track: track,
+          season: season,
+          date: formattedDate,
+          trackName: trackName,
+          country: country
+        });
 
-        const podiumRes = await fetch('/api/results/10/bahrain');
+        // Fetch last season's podium for this track
+        const lastSeason = parseInt(season) - 1;
+        const podiumRes = await fetch(`/api/results/${lastSeason}/${track}`);
         const podiumData = await podiumRes.json();
         setLastSeasonPodium(podiumData.slice(0, 3).map(row => row.driver) || []);
       } catch (err) {
         console.error('Fetch error:', err);
-        setBahrainDate('TBD');
+        // Fallback to default values
+        setNextRace({
+          track: 'bahrain',
+          season: '11',
+          date: 'TBD',
+          trackName: 'Bahrain International Circuit',
+          country: 'BAHRAIN'
+        });
         setLastSeasonPodium([]);
       }
     };
+    
     fetchData();
   }, []);
-
-  const bahrainTrack = trackData['bahrain'] || { country: 'BAHRAIN', name: 'Bahrain International Circuit' };
 
   return (
     <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0e27', color: 'white' }}>
@@ -109,21 +174,30 @@ export default function HomePage() {
             </Box>
           </Link>
         </Box>
-        <Link href="/results/season/11/bahrain" style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Link href={`/tracks/${nextRace.track}`} style={{ textDecoration: 'none', color: 'inherit' }}>
           <Box sx={{ minWidth: 500, alignContent: 'center', border: '1px solid #444', borderRadius: 2, p: 2, backgroundColor: '#0a0e27', transition: 'transform 0.2s ease', '&:hover': { transform: 'scale(1.05)', borderColor: '#00A0F0' } }}>
             <Box sx={{ position: 'relative', height: { xs: 400, md: 350 }, width: '100%' }}>
-              <Image src="/images/tracks/bahrain.png" alt="Bahrain Track Map" layout="fill" objectFit="contain" onError={() => console.log('Bahrain track map not found')} />
+              <Image 
+                src={`/images/tracks/${nextRace.track}.png`} 
+                alt={`${nextRace.trackName} Track Map`} 
+                layout="fill" 
+                objectFit="contain" 
+                onError={(e) => {
+                  console.log(`${nextRace.track} track map not found`);
+                  e.target.src = "/images/tracks/default.png";
+                }} 
+              />
             </Box>
-            <Typography variant="h6" gutterBottom>{bahrainTrack.country} - {bahrainTrack.name}</Typography>
-            <Typography variant="body2" gutterBottom>Date: {bahrainDate}</Typography>
+            <Typography variant="h6" gutterBottom>{nextRace.country} - {nextRace.trackName}</Typography>
+            <Typography variant="body2" gutterBottom>Date: {nextRace.date}</Typography>
             <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Last Season Podium (S10):</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Last Season Podium (S{parseInt(nextRace.season) - 1}):</Typography>
               {lastSeasonPodium.length > 0 ? (
                 lastSeasonPodium.map((driver, index) => (
                   <Typography key={index} variant="body2">{index + 1}. {driver}</Typography>
                 ))
               ) : (
-                <Typography variant="body2">No podium recorded for S10</Typography>
+                <Typography variant="body2">No podium recorded for S{parseInt(nextRace.season) - 1}</Typography>
               )}
             </Box>
           </Box>

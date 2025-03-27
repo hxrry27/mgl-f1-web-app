@@ -6,7 +6,7 @@ const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'f1telemetry',
-  password: 'your_password', // Replace with your actual password
+  password: 'F>qe~oCFOc9XgpPpFk', // Replace with your actual password
   port: 5432,
 });
 

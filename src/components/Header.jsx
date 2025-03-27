@@ -10,9 +10,7 @@ import {
   Box,
   Typography,
   Fade,
-  Avatar,
 } from '@mui/material';
-import AccountCircle from '@mui/icons-material/AccountCircle';
 import { lighten } from '@mui/material/styles';
 import { headerResults, seasons, drivers, teams } from '@/lib/data';
 
@@ -144,28 +142,35 @@ const NAV_ITEMS = [
 export default function Header() {
   const [activeItem, setActiveItem] = useState(null);
   const [nextRace, setNextRace] = useState({ track: 'bahrain', date: null });
-  const [user, setUser] = useState(null);
   const timeoutRef = React.useRef(null);
 
   useEffect(() => {
-    fetch('/api/auth/user', { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => setUser(data.user || null))
-      .catch(err => {
-        console.error('Error fetching user:', err);
-        setUser(null);
-      });
-
     async function fetchNextRace() {
       try {
-        const response = await fetch('/api/next-race');
+        // Fetch next race from the schedule database
+        const response = await fetch('/api/schedule/next-race');
+        if (!response.ok) {
+          throw new Error('Failed to fetch next race data');
+        }
+        
         const data = await response.json();
-        setNextRace(data);
+        if (data && data.track) {
+          // Format the date from the database
+          const raceDate = data.date ? new Date(data.date) : null;
+          setNextRace({ 
+            track: data.track, 
+            date: raceDate ? raceDate.toISOString() : null 
+          });
+        } else {
+          // Fallback if no data is returned
+          setNextRace({ track: 'bahrain', date: null });
+        }
       } catch (error) {
         console.error('Error fetching next race:', error);
         setNextRace({ track: 'bahrain', date: null });
       }
     }
+    
     fetchNextRace();
   }, []);
 
@@ -176,12 +181,6 @@ export default function Header() {
 
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => setActiveItem(null), 200);
-  };
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    setUser(null);
-    window.location.reload();
   };
 
   const nextRaceName = trackNames[nextRace.track] || nextRace.track.replace(/-/g, ' ');
@@ -233,13 +232,13 @@ export default function Header() {
                     <Typography
                       variant="body1"
                       sx={{
-                        cursor: user || item.label !== 'Dashboard' ? 'pointer' : 'not-allowed',
-                        color: user || item.label !== 'Dashboard' ? (activeItem === item.label ? lighten('#fff', 0.3) : '#fff') : 'rgba(255,255,255,0.5)',
+                        cursor: 'pointer',
+                        color: activeItem === item.label ? lighten('#fff', 0.3) : '#fff',
                         borderBottom: '2px solid transparent',
                         pb: 0.5,
                         transition: 'all 0.2s ease',
                         fontSize: '1.1rem',
-                        '&:hover': { color: user || item.label !== 'Dashboard' ? lighten('#fff', 0.3) : 'rgba(255,255,255,0.5)' },
+                        '&:hover': { color: lighten('#fff', 0.3) },
                       }}
                     >
                       {item.label}
@@ -273,72 +272,6 @@ export default function Header() {
                 )}
               </Box>
             ))}
-          </Box>
-          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center' }}>
-            {user ? (
-              <Box
-                sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}
-                onMouseEnter={() => handleMouseEnter('Account')}
-                onMouseLeave={handleMouseLeave}
-              >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    cursor: 'pointer',
-                    color: activeItem === 'Account' ? lighten('#fff', 0.3) : '#fff',
-                    borderBottom: activeItem === 'Account' ? '2px solid #fff' : '2px solid transparent',
-                    pb: 0.5,
-                    transition: 'all 0.2s ease',
-                    fontSize: '1.1rem',
-                    mr: 1,
-                  }}
-                >
-                  {user.username}
-                </Typography>
-                <Avatar
-                  src={user.avatar ? `/images/logos/${user.avatar}.png` : '/images/logos/F1.png'}
-                  sx={{ width: 32, height: 32 }}
-                  imgProps={{ style: { objectFit: 'contain' } }}
-                />
-                <Fade in={activeItem === 'Account'} timeout={200}>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: '100%',
-                      right: 0,
-                      minWidth: 150,
-                      backgroundColor: '#0a0e27',
-                      border: '1px solid #444',
-                      borderRadius: 1,
-                      zIndex: 1300,
-                      py: 1,
-                    }}
-                  >
-                    <Link href="/account/settings" style={{ textDecoration: 'none', color: '#fff' }}>
-                      <Box sx={{ px: 2, py: 1, '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' } }}>
-                        <Typography variant="body2">Settings</Typography>
-                      </Box>
-                    </Link>
-                    <Box
-                      sx={{ px: 2, py: 1, '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' }, cursor: 'pointer' }}
-                      onClick={handleLogout}
-                    >
-                      <Typography variant="body2">Logout</Typography>
-                    </Box>
-                  </Box>
-                </Fade>
-              </Box>
-            ) : (
-              <Link href="/account" style={{ textDecoration: 'none', color: '#fff', display: 'flex', alignItems: 'center' }}>
-                <AccountCircle sx={{ mr: 0.5 }} />
-                <Typography
-                  variant="body1"
-                  sx={{ color: '#fff', '&:hover': { color: lighten('#fff', 0.3) }, transition: 'color 0.2s ease', fontSize: '1.1rem', pb: 0.5 }}
-                >
-                  Account
-                </Typography>
-              </Link>
-            )}
           </Box>
         </Toolbar>
       </AppBar>

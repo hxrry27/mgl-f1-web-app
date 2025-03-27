@@ -140,7 +140,7 @@ def process_csv(file_path, race_id):
 
 # Main function to process all CSVs
 def import_lap_times(base_dir):
-    for season_folder in ['lap_data_s8', 'lap_data_s9', 'lap_data_s10']:
+    for season_folder in ['lap_data_s11']:
         folder_path = os.path.join(base_dir, season_folder)
         if not os.path.exists(folder_path):
             logging.info(f"Folder {folder_path} not found, skipping...")
