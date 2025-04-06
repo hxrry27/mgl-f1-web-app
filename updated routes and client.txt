@@ -1,0 +1,1971 @@
+// src/app/api/lap-data/route.js
+import { NextResponse } from 'next/server';
+
+// Import your existing pool directly
+const pool = require('../../../lib/db');
+
+// Team color mapping
+const teamColors = {
+  'Williams': '#64C4FF',
+  'Renault': '#FFF500',
+  'McLaren': '#FF8000',
+  'Haas': '#B6BABD',
+  'Alfa Romeo': '#900000',
+  'Alpha Tauri': '#2B4562',
+  'Aston Martin': '#229971',
+  'Alpine': '#0093CC',
+  'Mercedes': '#27F4D2',
+  'Ferrari': '#E80020',
+  'Red Bull': '#3671C6',
+  'Racing Point': '#F596C8',
+  'Toro Rosso': '#0000FF',
+  'Racing Bulls': '#6692FF',
+  'Kick Sauber': '#52E252'
+};
+
+// Team ID to color mapping
+const teamIdToColor = {
+  1: teamColors['Williams'],
+  2: teamColors['Renault'],
+  3: teamColors['McLaren'],
+  4: teamColors['Haas'],
+  5: teamColors['Alfa Romeo'],
+  6: teamColors['Alpha Tauri'],
+  7: teamColors['Aston Martin'],
+  8: teamColors['Alpine'],
+  9: teamColors['Mercedes'],
+  10: teamColors['Ferrari'],
+  11: teamColors['Red Bull'],
+  12: teamColors['Racing Point'],
+  13: teamColors['Toro Rosso'],
+  14: teamColors['Racing Bulls'],
+  15: teamColors['Kick Sauber']
+};
+
+// Function to get a color for a team
+function getTeamColor(teamId, teamName) {
+  // Try by ID first
+  if (teamIdToColor[teamId]) {
+    return teamIdToColor[teamId];
+  }
+  
+  // Then try by name
+  if (teamName && teamColors[teamName]) {
+    return teamColors[teamName];
+  }
+  
+  // Generate a color as fallback
+  return `#${Math.floor(Math.random()*16777215).toString(16)}`;
+}
+
+export async function GET(request) {
+  try {
+    // Get search params from the URL
+    const { searchParams } = new URL(request.url);
+    const season = searchParams.get('season');
+    const raceSlug = searchParams.get('raceSlug');
+    const sessionType = searchParams.get('sessionType') || 'race'; // Default to race if not specified
+
+    if (!season || !raceSlug) {
+      return NextResponse.json(
+        { message: 'Season and raceSlug are required' }, 
+        { status: 400 }
+      );
+    }
+
+    console.log(`Fetching data for season ${season}, race ${raceSlug}, session type ${sessionType}`);
+
+    // 1. Get the race_id by joining races with tracks to find by track slug
+    const raceResult = await pool.query(`
+      SELECT r.id 
+      FROM races r
+      JOIN tracks t ON r.track_id = t.id
+      WHERE r.season_id = $1 AND t.slug = $2
+    `, [season, raceSlug]);
+
+    if (raceResult.rows.length === 0) {
+      return NextResponse.json(
+        { message: 'Race not found' }, 
+        { status: 404 }
+      );
+    }
+
+    const raceId = raceResult.rows[0].id;
+    console.log(`Found race ID: ${raceId}`);
+
+    // 2. Get all session_uids for this race from the mapping table
+    const sessionResult = await pool.query(
+      'SELECT session_uid FROM session_race_mapping WHERE race_id = $1',
+      [raceId]
+    );
+
+    if (sessionResult.rows.length === 0) {
+      return NextResponse.json(
+        { message: 'No telemetry session found for this race' }, 
+        { status: 404 }
+      );
+    }
+
+    // Get the list of all available sessions
+    const sessionUids = sessionResult.rows.map(row => row.session_uid);
+    console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
+
+    // If we have multiple sessions, try to determine which one is the race session
+    // For now we'll use the second session if there are two or more, assuming race is after quali
+    // This is a heuristic - a more accurate approach would be to check session_type if available
+    let sessionUid;
+    if (sessionType === 'qualifying' && sessionUids.length > 0) {
+      // Use the first session for qualifying
+      sessionUid = sessionUids[0];
+    } else if (sessionType === 'race' && sessionUids.length > 1) {
+      // Use the second session for race (assuming it's ordered chronologically)
+      sessionUid = sessionUids[1];
+    } else {
+      // Default to the last session if we're unsure or have only one
+      sessionUid = sessionUids[sessionUids.length - 1];
+    }
+
+    console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
+
+    // 3. Get the driver info and team data for this session
+    const driversResult = await pool.query(`
+      SELECT 
+        p.car_index, 
+        p.driver_name, 
+        p.team_id, 
+        t.name as team_name
+      FROM 
+        participants p
+      LEFT JOIN 
+        teams t ON p.team_id = t.id
+      WHERE 
+        p.session_uid = $1
+      ORDER BY 
+        p.car_index
+    `, [sessionUid]);
+
+    console.log(`Found ${driversResult.rows.length} drivers`);
+
+    // 4a. First try to get the lap data from session_history table
+    const sessionHistoryResult = await pool.query(`
+      SELECT 
+        sh.lap_number,
+        sh.car_index, 
+        sh.lap_time_ms,
+        sh.lap_valid,
+        sh.sector1_time_ms,
+        sh.sector2_time_ms,
+        sh.sector3_time_ms,
+        sh.tyre_stint_actual,
+        sh.tyre_stint_visual,
+        sh.tyre_stint_end_lap,
+        'session_history' as source_table
+      FROM 
+        session_history sh
+      WHERE 
+        sh.session_uid = $1
+        AND sh.lap_time_ms > 0  -- Skip laps with no time
+        AND sh.lap_valid = 1    -- Only valid laps
+      ORDER BY 
+        sh.lap_number, sh.car_index
+    `, [sessionUid]);
+
+    console.log(`Found ${sessionHistoryResult.rows.length} lap data entries in session_history`);
+
+    // 4b. If session_history has no data, try lap_data table
+    let lapDataResult = sessionHistoryResult;
+    let sourceTable = 'session_history';
+    
+    if (sessionHistoryResult.rows.length === 0) {
+      const lapDataTableResult = await pool.query(`
+        SELECT 
+          ld.lap_number,
+          ld.car_index, 
+          ld.lap_time_ms,
+          CASE WHEN ld.current_lap_invalid = 0 THEN 1 ELSE 0 END as lap_valid,
+          ld.sector1_time_ms,
+          ld.sector2_time_ms,
+          CASE 
+            WHEN ld.lap_time_ms > 0 AND (ld.sector1_time_ms + ld.sector2_time_ms) <= ld.lap_time_ms 
+            THEN ld.lap_time_ms - (ld.sector1_time_ms + ld.sector2_time_ms) 
+            ELSE NULL 
+          END as sector3_time_ms,
+          NULL as tyre_stint_actual,
+          NULL as tyre_stint_visual,
+          NULL as tyre_stint_end_lap,
+          'lap_data' as source_table
+        FROM 
+          lap_data ld
+        WHERE 
+          ld.session_uid = $1
+          AND ld.lap_time_ms > 0  -- Skip laps with no time
+          AND (ld.current_lap_invalid = 0 OR ld.is_valid = true)  -- Only valid laps
+        ORDER BY 
+          ld.lap_number, ld.car_index
+      `, [sessionUid]);
+      
+      console.log(`Found ${lapDataTableResult.rows.length} lap data entries in lap_data`);
+      
+      if (lapDataTableResult.rows.length > 0) {
+        lapDataResult = lapDataTableResult;
+        sourceTable = 'lap_data';
+      }
+    }
+
+    // 5. Get the stint data if available
+    const stintDataResult = await pool.query(`
+      SELECT 
+        r.driver_id,
+        d.name as driver_name,
+        r.stints_raw
+      FROM 
+        race_results r
+      JOIN 
+        drivers d ON r.driver_id = d.id
+      WHERE 
+        r.race_id = $1
+        AND r.stints_raw IS NOT NULL
+        AND r.stints_raw != ''
+    `, [raceId]);
+
+    console.log(`Found ${stintDataResult.rows.length} stint data entries`);
+
+    // Map car_index to driver info
+    const driverMap = {};
+    driversResult.rows.forEach(driver => {
+      // Assign team color using our function
+      const teamColor = getTeamColor(driver.team_id, driver.team_name);
+      
+      driverMap[driver.car_index] = {
+        name: driver.driver_name,
+        team_id: driver.team_id,
+        team: driver.team_name || 'Unknown Team',
+        team_color: teamColor
+      };
+    });
+
+    // Process lap data
+    const processedLapData = lapDataResult.rows.map(lap => {
+      const driver = driverMap[lap.car_index] || { 
+        name: `Driver ${lap.car_index}`, 
+        team: 'Unknown', 
+        team_id: 0,
+        team_color: '#888888'
+      };
+      
+      // Map tyre compound codes to names - only if we have tyre data
+      let tyreCompound = 'Unknown';
+      if (lap.tyre_stint_visual) {
+        switch (lap.tyre_stint_visual) {
+          case 16: tyreCompound = 'Soft'; break;
+          case 17: tyreCompound = 'Medium'; break;
+          case 18: tyreCompound = 'Hard'; break;
+          case 7: tyreCompound = 'Intermediate'; break;
+          case 8: tyreCompound = 'Wet'; break;
+          default: tyreCompound = 'Unknown';
+        }
+      }
+
+      return {
+        lap_number: lap.lap_number,
+        car_index: lap.car_index,
+        driver: driver.name,
+        team: driver.team,
+        team_id: driver.team_id,
+        team_color: driver.team_color,
+        lap_time_int: lap.lap_time_ms, // Integer value in milliseconds
+        lap_time: lap.lap_time_ms / 1000, // Convert to seconds for chart
+        sector1_time: lap.sector1_time_ms ? lap.sector1_time_ms / 1000 : null,
+        sector2_time: lap.sector2_time_ms ? lap.sector2_time_ms / 1000 : null,
+        sector3_time: lap.sector3_time_ms ? lap.sector3_time_ms / 1000 : null,
+        tyre_compound: tyreCompound,
+        tyre_stint_actual: lap.tyre_stint_actual,
+        tyre_stint_visual: lap.tyre_stint_visual,
+        tyre_stint_end_lap: lap.tyre_stint_end_lap,
+        lap_valid: lap.lap_valid === 1,
+        source_table: lap.source_table
+      };
+    });
+
+    // Process stint data
+    const stintData = {};
+    stintDataResult.rows.forEach(result => {
+      stintData[result.driver_name] = result.stints_raw;
+    });
+
+    // Get team list - with mapped colors
+    const teams = Array.from(new Set(driversResult.rows.map(d => d.team_name)))
+      .filter(Boolean)
+      .map(teamName => {
+        const teamRow = driversResult.rows.find(d => d.team_name === teamName);
+        return {
+          id: teamRow?.team_id,
+          name: teamName,
+          color: getTeamColor(teamRow?.team_id, teamName)
+        };
+      });
+
+    // Get driver list
+    const drivers = driversResult.rows.map(d => {
+      const teamColor = getTeamColor(d.team_id, d.team_name);
+      return {
+        name: d.driver_name,
+        team: d.team_name || 'Unknown Team',
+        team_id: d.team_id,
+        car_index: d.car_index,
+        team_color: teamColor
+      };
+    });
+
+    // Get available sessions for this race
+    const availableSessions = [
+      { type: 'qualifying', label: 'Qualifying', uid: sessionUids[0] },
+      { type: 'race', label: 'Race', uid: sessionUids.length > 1 ? sessionUids[1] : null }
+    ].filter(s => s.uid !== null);
+
+    console.log(`Successfully processed all data from ${sourceTable}`);
+
+    return NextResponse.json({
+      session_uid: sessionUid,
+      race_id: raceId,
+      drivers,
+      teams,
+      stintData,
+      lapData: processedLapData,
+      source_table: sourceTable,
+      session_type: sessionType,
+      available_sessions: availableSessions
+    });
+  } catch (error) {
+    console.error('Error fetching lap data:', error);
+    return NextResponse.json(
+      { message: 'Internal server error', error: error.message }, 
+      { status: 500 }
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// src/app/api/season-races/route.js
+import { NextResponse } from 'next/server';
+
+// Import your existing pool
+const pool = require('../../../lib/db');
+
+export async function GET(request) {
+  try {
+    // Get search params from the URL
+    const { searchParams } = new URL(request.url);
+    const season = searchParams.get('season');
+
+    if (!season) {
+      return NextResponse.json(
+        { message: 'Season parameter is required' }, 
+        { status: 400 }
+      );
+    }
+
+    console.log(`Fetching races for season ${season}`);
+
+    // This query will find races that have either:
+    // 1. Lap times in the lap_times table
+    // 2. Telemetry data in session_history or lap_data
+    // 3. A session mapping in session_race_mapping
+    const racesResult = await pool.query(`
+      SELECT DISTINCT
+        r.id,
+        t.name,
+        t.slug,
+        r.date,
+        r.race_number
+      FROM
+        races r
+      JOIN
+        tracks t ON r.track_id = t.id
+      LEFT JOIN
+        lap_times lt ON lt.race_id = r.id
+      LEFT JOIN
+        session_race_mapping srm ON srm.race_id = r.id
+      WHERE
+        r.season_id = $1
+        AND (
+          lt.id IS NOT NULL  -- Has lap times
+          OR srm.session_uid IS NOT NULL  -- Has session mapping
+        )
+      ORDER BY
+        r.race_number ASC
+    `, [season]);
+
+    // If no races found with either lap times or telemetry, try getting all races for the season
+    if (racesResult.rows.length === 0) {
+      const allRacesResult = await pool.query(`
+        SELECT
+          r.id,
+          t.name,
+          t.slug,
+          r.date,
+          r.race_number
+        FROM
+          races r
+        JOIN
+          tracks t ON r.track_id = t.id
+        WHERE
+          r.season_id = $1
+        ORDER BY
+          r.race_number ASC
+      `, [season]);
+      
+      console.log(`Found ${allRacesResult.rows.length} races for season ${season} (no lap data)`);
+      
+      return NextResponse.json({
+        races: allRacesResult.rows
+      });
+    }
+
+    console.log(`Found ${racesResult.rows.length} races with data for season ${season}`);
+
+    return NextResponse.json({
+      races: racesResult.rows
+    });
+  } catch (error) {
+    console.error('Error fetching season races:', error);
+    return NextResponse.json(
+      { message: 'Internal server error', error: error.message }, 
+      { status: 500 }
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'use client';
+
+import { useState, useEffect, useMemo } from 'react';
+import { Box, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, Checkbox, Switch, FormControlLabel, Tooltip } from '@mui/material';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+// Import icons for the toggle buttons
+import TimerIcon from '@mui/icons-material/Timer';
+import BuildIcon from '@mui/icons-material/Build';
+import SpeedIcon from '@mui/icons-material/Speed';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer
+} from 'recharts';
+
+// Helper function to format lap time from milliseconds to MM:SS.mmm
+const formatLapTime = (timeInMs) => {
+  if (!timeInMs) return '--:--.---;';
+  
+  const totalSeconds = timeInMs / 1000;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  const milliseconds = Math.floor((totalSeconds - Math.floor(totalSeconds)) * 1000);
+  
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+};
+
+// Format time for axis labels (simpler format)
+const formatAxisTime = (timeInSec) => {
+  if (timeInSec === undefined || timeInSec === null) return '';
+  const minutes = Math.floor(timeInSec / 60);
+  const seconds = (timeInSec % 60).toFixed(1);
+  return `${minutes}:${seconds.padStart(4, '0')}`;
+};
+
+// Tyre compound colors
+const compoundColors = {
+  'Soft': '#ff4444',
+  'Medium': '#ffff00',
+  'Hard': '#ffffff',
+  'Intermediate': '#00cc00',
+  'Wet': '#00b7eb',
+};
+
+// Team colors - from the provided list
+const teamColors = {
+  'Williams': '#64C4FF',
+  'Renault': '#FFF500',
+  'McLaren': '#FF8000',
+  'Haas': '#B6BABD',
+  'Alfa Romeo': '#900000',
+  'Alpha Tauri': '#2B4562',
+  'Aston Martin': '#229971',
+  'Alpine': '#0093CC',
+  'Mercedes': '#27F4D2',
+  'Ferrari': '#E80020',
+  'Red Bull': '#3671C6',
+  'Racing Point': '#F596C8',
+  'Toro Rosso': '#0000FF',
+  'Racing Bulls': '#6692FF',
+  'Kick Sauber': '#52E252'
+};
+
+// Map team IDs to colors
+const teamIdToColor = {
+  1: teamColors['Williams'],
+  2: teamColors['Renault'],
+  3: teamColors['McLaren'],
+  4: teamColors['Haas'],
+  5: teamColors['Alfa Romeo'],
+  6: teamColors['Alpha Tauri'],
+  7: teamColors['Aston Martin'],
+  8: teamColors['Alpine'],
+  9: teamColors['Mercedes'],
+  10: teamColors['Ferrari'],
+  11: teamColors['Red Bull'],
+  12: teamColors['Racing Point'],
+  13: teamColors['Toro Rosso'],
+  14: teamColors['Racing Bulls'],
+  15: teamColors['Kick Sauber']
+};
+
+// Function to generate a random color as fallback
+const getRandomColor = () => {
+  const letters = '0123456789ABCDEF';
+  let color = '#';
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
+
+// Custom tooltip component
+const LapTimeTooltip = ({ active, payload, label, displayMode, driverTeams }) => {
+  if (!active || !payload || !payload.length) return null;
+  
+  return (
+    <Box sx={{ 
+      bgcolor: '#222', 
+      color: '#fff', 
+      p: 1.5, 
+      borderRadius: 1,
+      boxShadow: '0 4px 8px rgba(0,0,0,0.5)',
+      border: '1px solid #444'
+    }}>
+      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+        Lap {label}
+      </Typography>
+      {payload.map((entry, index) => {
+        // Extract metadata from the entry
+        const key = entry.dataKey.split('|');
+        const driver = key[0];
+        const compound = key[1];
+        const stint = key[2];
+        const team = driverTeams[driver] || 'Unknown Team';
+        
+        return (
+          <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+            <Box 
+              sx={{ 
+                width: 12, 
+                height: 12, 
+                borderRadius: '50%', 
+                bgcolor: entry.color, 
+                mr: 1 
+              }} 
+            />
+            <Typography variant="body2">
+              <strong>{driver}</strong> ({team}, {compound}{displayMode === 'team' ? `, stint ${stint}` : ''}): {formatAxisTime(entry.value)}
+            </Typography>
+          </Box>
+        );
+      })}
+    </Box>
+  );
+};
+
+export default function DashboardClient({ user }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [seasons, setSeasons] = useState([]);
+  const [selectedSeason, setSelectedSeason] = useState('');
+  const [races, setRaces] = useState([]);
+  const [selectedRace, setSelectedRace] = useState('');
+  const [drivers, setDrivers] = useState([]);
+  const [teams, setTeams] = useState([]);
+  const [driverTeams, setDriverTeams] = useState({});
+  const [lapData, setLapData] = useState([]);
+  const [hoveredDriver, setHoveredDriver] = useState(null);
+  const [hoveredLine, setHoveredLine] = useState(null);
+  const [availableSessions, setAvailableSessions] = useState([]);
+  const [selectedSessionType, setSelectedSessionType] = useState('race');
+  
+  // New state for analysis type toggle
+  const [analysisType, setAnalysisType] = useState('race-time');
+  
+  // Data correction options
+  const [correctPitTransitions, setCorrectPitTransitions] = useState(true);
+  const [filterOutlaps, setFilterOutlaps] = useState(false);
+  const [filterInlaps, setFilterInlaps] = useState(false);
+  const [outlierThreshold, setOutlierThreshold] = useState(15);
+  const [stintData, setStintData] = useState({});
+  const useStintData = true;
+  const [showRawLapData, setShowRawLapData] = useState(false);
+  
+  // Display mode toggle
+  const [displayMode, setDisplayMode] = useState('team'); // 'team' or 'compound'
+  
+  // Selected drivers state
+  const [selectedDrivers, setSelectedDrivers] = useState({});
+
+  // Handle analysis type change
+  const handleAnalysisTypeChange = (event, newType) => {
+    if (newType !== null) {
+      setAnalysisType(newType);
+    }
+  };
+
+  // Fetch available seasons
+  useEffect(() => {
+    const fetchSeasons = async () => {
+      try {
+        const response = await fetch('/api/available-seasons', { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.seasons && data.seasons.length) {
+            setSeasons(data.seasons);
+            setSelectedSeason(data.seasons[0]); // Select most recent season
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching seasons:', error);
+      }
+    };
+    
+    fetchSeasons();
+  }, []);
+
+  // Fetch races when season changes
+  useEffect(() => {
+    if (!selectedSeason) return;
+    
+    const fetchRaces = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`/api/season-races?season=${selectedSeason}`, { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.races && data.races.length) {
+            setRaces(data.races);
+            setSelectedRace(data.races[data.races.length - 1].slug); // Select most recent race
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching races:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchRaces();
+  }, [selectedSeason]);
+
+  // Fetch lap data when race changes
+  useEffect(() => {
+    if (!selectedSeason || !selectedRace) return;
+    
+    const fetchLapData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `/api/lap-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}`, 
+          { credentials: 'include' }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("API Response:", data);
+
+          // Store available sessions if any
+          if (data.available_sessions && data.available_sessions.length > 0) {
+            setAvailableSessions(data.available_sessions);
+          }
+          
+          // Process drivers with team information
+          const driverList = data.drivers.map(d => d.name);
+          setDrivers(driverList);
+          
+          // Create driver to team mapping
+          const teamMap = {};
+          data.drivers.forEach(driver => {
+            teamMap[driver.name] = driver.team;
+          });
+          setDriverTeams(teamMap);
+          
+          // Store teams data
+          setTeams(data.teams || []);
+          
+          // Store lap data
+          setLapData(data.lapData || []);
+          
+          // Store stint data if available
+          if (data.stintData) {
+            setStintData(data.stintData);
+            console.log("Stint data loaded:", data.stintData);
+          } else {
+            setStintData({});
+          }
+          
+          // Initialize all drivers as selected by default
+          const initialSelectedState = {};
+          driverList.forEach(driver => {
+            initialSelectedState[driver] = true;
+          });
+          setSelectedDrivers(initialSelectedState);
+        }
+      } catch (error) {
+        console.error('Error fetching lap data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchLapData();
+  }, [selectedSeason, selectedRace]);
+
+  // Process lap data into a format Recharts can use
+  const { chartData, lineConfigs, yDomain, driverColorMap } = useMemo(() => {
+    if (!lapData || lapData.length === 0) {
+      return { chartData: [], lineConfigs: [], yDomain: [0, 0], driverColorMap: {} };
+    }
+    
+    console.log("Processing lap data with session history information");
+    
+    // Create driver color mapping based on team_id or team_color
+    const driverColorMap = {};
+    lapData.forEach(lap => {
+      const driver = lap.driver;
+      if (!driverColorMap[driver]) {
+        // First try to use team_color if available directly from API
+        if (lap.team_color) {
+          driverColorMap[driver] = lap.team_color;
+        }
+        // Then try team ID mapping
+        else if (lap.team_id && teamIdToColor[lap.team_id]) {
+          driverColorMap[driver] = teamIdToColor[lap.team_id];
+        }
+        // Finally fall back to random color
+        else {
+          driverColorMap[driver] = getRandomColor();
+        }
+      }
+    });
+    
+    let processedLapData = [...lapData];
+    
+    // If we have stint data and want to use it
+    if (Object.keys(stintData).length > 0 && useStintData) {
+      // Group laps by driver
+      const driverLaps = {};
+      lapData.forEach(lap => {
+        if (!driverLaps[lap.driver]) {
+          driverLaps[lap.driver] = [];
+        }
+        driverLaps[lap.driver].push(lap);
+      });
+      
+      // Sort laps for each driver by lap number
+      Object.keys(driverLaps).forEach(driver => {
+        driverLaps[driver].sort((a, b) => a.lap_number - b.lap_number);
+      });
+      
+      // Process stint data for each driver
+      processedLapData = [];
+      
+      Object.entries(driverLaps).forEach(([driver, laps]) => {
+        if (!stintData[driver]) {
+          // If no stint data for this driver, keep original laps
+          processedLapData.push(...laps);
+          return;
+        }
+        
+        // Parse the stint string (e.g., "S7,H13,S9")
+        const driverStintRaw = stintData[driver];
+        console.log(`Processing stint raw for ${driver}: ${driverStintRaw}`);
+        const stintParts = driverStintRaw.split(',');
+        const parsedStints = [];
+        
+        // Very clear, explicit stint boundary calculation
+        let nextStintStartLap = 1; // First stint always starts at lap 1
+        
+        for (let stintIndex = 0; stintIndex < stintParts.length; stintIndex++) {
+          const stintPart = stintParts[stintIndex];
+          
+          // Extract compound and lap count
+          const compound = stintPart.charAt(0);
+          const reportedLapCount = parseInt(stintPart.substring(1));
+          
+          // Map single-letter compounds to full names
+          let fullCompoundName;
+          switch(compound.toUpperCase()) {
+            case 'S': fullCompoundName = 'Soft'; break;
+            case 'M': fullCompoundName = 'Medium'; break;
+            case 'H': fullCompoundName = 'Hard'; break;
+            case 'I': fullCompoundName = 'Intermediate'; break;
+            case 'W': fullCompoundName = 'Wet'; break;
+            default: fullCompoundName = 'Unknown';
+          }
+          
+          const stintStartLap = nextStintStartLap;
+          let actualLapCount;
+          
+          if (stintIndex === 0) {
+            // FIRST STINT: Add 1 to reported count
+            actualLapCount = reportedLapCount + 1;
+          } else {
+            // ALL OTHER STINTS: Use reported count exactly as is
+            actualLapCount = reportedLapCount;
+          }
+          
+          const stintEndLap = stintStartLap + actualLapCount - 1;
+          
+          parsedStints.push({
+            compound: fullCompoundName,
+            startLap: stintStartLap,
+            endLap: stintEndLap,
+            lapCount: actualLapCount,
+            stintIndex,
+            isFirstStint: stintIndex === 0,
+            isLastStint: stintIndex === stintParts.length - 1
+          });
+          
+          // Update next stint's start lap
+          nextStintStartLap = stintEndLap + 1;
+          
+          console.log(`Stint ${stintIndex+1} (${fullCompoundName}): laps ${stintStartLap}-${stintEndLap} (${actualLapCount} laps)`);
+        }
+        
+        // Now correct each lap based on the parsed stint information
+        const correctedLaps = [];
+        
+        // Find the maximum lap number for this driver
+        const maxLap = Math.max(...laps.map(lap => lap.lap_number));
+        
+        for (let lapNumber = 1; lapNumber <= maxLap; lapNumber++) {
+          // Find the lap data for this lap number
+          const lapData = laps.find(lap => lap.lap_number === lapNumber);
+          
+          if (!lapData) continue; // Skip if no data for this lap
+          
+          const lapCopy = {...lapData};
+          
+          // Find which stint this lap belongs to
+          const correctStint = parsedStints.find(stint => 
+            lapNumber >= stint.startLap && lapNumber <= stint.endLap
+          );
+          
+          if (correctStint) {
+            // Update the compound to the correct one from stint data
+            lapCopy.tyre_compound = correctStint.compound;
+            lapCopy.stintIndex = correctStint.stintIndex;
+            
+            // Mark outlaps - the first lap of a stint except for the first stint
+            if (lapNumber === correctStint.startLap && !correctStint.isFirstStint) {
+              lapCopy.isOutlap = true;
+            }
+            
+            // Mark inlaps - the last lap of a stint except for the last stint
+            if (lapNumber === correctStint.endLap && !correctStint.isLastStint) {
+              lapCopy.isInlap = true;
+            }
+          }
+          
+          correctedLaps.push(lapCopy);
+        }
+        
+        processedLapData.push(...correctedLaps);
+      });
+    }
+    
+    return processLapData(processedLapData, driverColorMap);
+    
+  }, [lapData, stintData, useStintData, correctPitTransitions, filterOutlaps, filterInlaps, outlierThreshold, showRawLapData]);
+
+  // Helper function to process lap data into chart format
+  function processLapData(processedLapData, driverColorMap) {
+    // Group by lap number first (x-axis)
+    const lapMap = {};
+    const driverStints = {};
+    let minTime = Infinity;
+    let maxTime = 0;
+    
+    // Initial pass to identify stints with special handling for consecutive same-compound stints
+    processedLapData.forEach(lap => {
+      const driver = lap.driver;
+      
+      // Track driver stint changes
+      if (!driverStints[driver]) {
+        driverStints[driver] = [{ 
+          compound: lap.tyre_compound, 
+          startLap: lap.lap_number,
+          endLap: lap.lap_number,
+          stintNumber: 1,
+          stintIndex: lap.stintIndex || 0, // Use stintIndex if available
+          team: lap.team
+        }];
+      } else {
+        const lastStint = driverStints[driver][driverStints[driver].length - 1];
+        
+        const isNewStint = 
+          lastStint.compound !== lap.tyre_compound || // Different compound
+          lap.lap_number > lastStint.endLap + 1 ||    // Gap in laps
+          (lap.stintIndex !== undefined && lastStint.stintIndex !== lap.stintIndex); // Same compound but different stint
+        
+        if (isNewStint) {
+          // New stint
+          driverStints[driver].push({ 
+            compound: lap.tyre_compound, 
+            startLap: lap.lap_number,
+            endLap: lap.lap_number,
+            stintNumber: driverStints[driver].length + 1,
+            stintIndex: lap.stintIndex || lastStint.stintIndex + 1,
+            team: lap.team
+          });
+        } else {
+          // Update end lap of current stint
+          lastStint.endLap = lap.lap_number;
+        }
+      }
+      
+      // Organize data by lap number
+      if (!lapMap[lap.lap_number]) {
+        lapMap[lap.lap_number] = { lap: lap.lap_number };
+      }
+    });
+    
+    // Second pass to add data with correct stint numbering
+    processedLapData.forEach(lap => {
+      const driver = lap.driver;
+      const lapNumber = lap.lap_number;
+      
+      // Find which stint this lap belongs to - with special handling for consecutive same-compound stints
+      let stint = null;
+      
+      if (lap.stintIndex !== undefined) {
+        // If lap has explicit stint index, use that for matching
+        stint = driverStints[driver]?.find(s => 
+          s.compound === lap.tyre_compound && 
+          s.stintIndex === lap.stintIndex &&
+          lapNumber >= s.startLap && 
+          lapNumber <= s.endLap
+        );
+      } else {
+        // Otherwise use regular lap number range matching
+        stint = driverStints[driver]?.find(s => 
+          s.compound === lap.tyre_compound && 
+          lapNumber >= s.startLap && 
+          lapNumber <= s.endLap
+        );
+      }
+      
+      if (stint) {
+        // Skip outlaps if filtering is enabled
+        if (filterOutlaps && lap.isOutlap) {
+          return;
+        }
+        
+        // Skip inlaps if filtering is enabled
+        if (filterInlaps && lap.isInlap) {
+          return;
+        }
+        
+        // Create a unique key that includes driver, compound, and stint number
+        const key = `${driver}|${lap.tyre_compound}|${stint.stintNumber}`;
+        
+        // Add data point
+        const timeValue = lap.lap_time_int / 1000; // Convert to seconds
+        
+        // Skip extreme outliers to keep the chart readable
+        if (timeValue > 0 && timeValue < 150) {
+          lapMap[lapNumber][key] = timeValue;
+          
+          // Track min/max for axis scaling
+          if (timeValue < minTime && timeValue > 50) minTime = timeValue;
+          if (timeValue > maxTime) maxTime = timeValue;
+        }
+      }
+    });
+    
+    // Create array from lap map and sort by lap number
+    const chartData = Object.values(lapMap).sort((a, b) => a.lap - b.lap);
+    console.log("Chart data prepared:", chartData.length, "data points");
+    
+    // Generate line configurations
+    const lineConfigs = [];
+    Object.entries(driverStints).forEach(([driver, stints]) => {
+      stints.forEach((stint) => {
+        const key = `${driver}|${stint.compound}|${stint.stintNumber}`;
+        const teamColor = driverColorMap[driver];
+        const compoundColor = compoundColors[stint.compound] || '#888888';
+        
+        // Check if there's data for this stint after filtering
+        const hasData = chartData.some(lap => lap[key] !== undefined);
+        
+        if (hasData) {
+          lineConfigs.push({
+            key,
+            driver,
+            compound: stint.compound,
+            stintNumber: stint.stintNumber,
+            startLap: stint.startLap,
+            endLap: stint.endLap,
+            teamColor,
+            compoundColor,
+            team: stint.team || driverTeams[driver] || 'Unknown Team'
+          });
+        }
+      });
+    });
+    
+    // Add padding to y-axis
+    const padding = Math.max(...[minTime, maxTime]) === Infinity 
+      ? 0 
+      : (maxTime - minTime) * 0.1;
+      
+    const yDomain = Math.max(...[minTime, maxTime]) === Infinity 
+      ? [0, 0] 
+      : [Math.max(0, minTime - padding), maxTime + padding];
+    
+    return { chartData, lineConfigs, yDomain, driverColorMap };
+  }
+
+  // Helper function to correct compounds based on lap time patterns
+  // (only used as fallback if stint data is not available)
+  function correctCompoundsWithLapTimes(lapData, outlierThreshold) {
+    // Group laps by driver
+    const driverLaps = {};
+    lapData.forEach(lap => {
+      if (!driverLaps[lap.driver]) {
+        driverLaps[lap.driver] = [];
+      }
+      driverLaps[lap.driver].push(lap);
+    });
+    
+    // Sort laps for each driver by lap number
+    Object.keys(driverLaps).forEach(driver => {
+      driverLaps[driver].sort((a, b) => a.lap_number - b.lap_number);
+    });
+    
+    // Process each driver's laps
+    const processedLapData = [];
+    
+    Object.entries(driverLaps).forEach(([driver, laps]) => {
+      // Skip if driver has too few laps
+      if (laps.length <= 2) {
+        processedLapData.push(...laps);
+        return;
+      }
+      
+      // Calculate average lap time for the driver
+      const validLapTimes = laps
+        .map(lap => lap.lap_time_int)
+        .filter(time => time > 0 && time < 300000);
+      
+      const avgLapTime = validLapTimes.reduce((sum, time) => sum + time, 0) / validLapTimes.length;
+      const outlapThreshold = 1 + (outlierThreshold / 100);
+      
+      // Identify compound transitions and fix incorrect compounds
+      const fixedLaps = [];
+      
+      // First pass: Identify outlaps and inlaps based on lap times
+      for (let i = 0; i < laps.length; i++) {
+        const currentLap = {...laps[i]};
+        const prevLap = i > 0 ? laps[i-1] : null;
+        const nextLap = i < laps.length - 1 ? laps[i+1] : null;
+        
+        // Check if this is likely an outlap (significantly slower)
+        currentLap.isOutlap = currentLap.lap_time_int > avgLapTime * outlapThreshold;
+        
+        // Check if this is likely an inlap (followed by a compound change)
+        currentLap.isInlap = nextLap && nextLap.tyre_compound !== currentLap.tyre_compound;
+        
+        // Check for compound change without appropriate lap time change
+        if (prevLap && prevLap.tyre_compound !== currentLap.tyre_compound) {
+          // If this is a compound change but lap isn't slow enough to be an outlap
+          if (!currentLap.isOutlap) {
+            // This is likely a case where the wrong compound was assigned
+            currentLap.fixCandidate = true;
+            currentLap.suggestedCompound = prevLap.tyre_compound;
+          }
+        }
+        
+        fixedLaps.push(currentLap);
+      }
+      
+      // Second pass: Fix compounds based on patterns
+      for (let i = 0; i < fixedLaps.length; i++) {
+        const currentLap = fixedLaps[i];
+        
+        // Fix laps with incorrect compounds
+        if (currentLap.fixCandidate) {
+          currentLap.tyre_compound = currentLap.suggestedCompound;
+        }
+        
+        processedLapData.push(currentLap);
+      }
+    });
+    
+    return processedLapData;
+  }
+
+  const handleSeasonChange = (event) => {
+    setSelectedSeason(event.target.value);
+    setSelectedRace('');
+  };
+
+  const handleRaceChange = (event) => {
+    setSelectedRace(event.target.value);
+  };
+
+  // Toggle display mode
+  const handleDisplayModeToggle = () => {
+    setDisplayMode(prev => prev === 'team' ? 'compound' : 'team');
+  };
+
+  // Toggle driver selection
+  const handleDriverToggle = (driver) => {
+    setSelectedDrivers(prev => ({
+      ...prev,
+      [driver]: !prev[driver]
+    }));
+  };
+
+  // Select all drivers
+  const handleSelectAll = () => {
+    const newState = {};
+    drivers.forEach(driver => {
+      newState[driver] = true;
+    });
+    setSelectedDrivers(newState);
+  };
+
+  // Deselect all drivers
+  const handleDeselectAll = () => {
+    const newState = {};
+    drivers.forEach(driver => {
+      newState[driver] = false;
+    });
+    setSelectedDrivers(newState);
+  };
+
+  // Custom dot component to show which line is active
+  const CustomDot = (props) => {
+    const { cx, cy, dataKey, payload, stroke } = props;
+    
+    // Only show for the active line
+    if (hoveredLine !== dataKey) {
+      return null;
+    }
+    
+    // Get the value for this key
+    const value = payload[dataKey];
+    if (value === undefined) {
+      return null;
+    }
+    
+    return (
+      <g>
+        <circle cx={cx} cy={cy} r={5} fill={stroke} />
+        <circle cx={cx} cy={cy} r={8} fill="none" stroke={stroke} />
+      </g>
+    );
+  };
+
+  // Generate placeholder data for different chart types
+  const generatePlaceholderData = (type) => {
+    const placeholderData = [];
+    
+    switch(type) {
+      case 'damage':
+        // Generate damage data that increases over laps
+        for (let lap = 1; lap <= 50; lap++) {
+          placeholderData.push({
+            lap,
+            frontWing: Math.min(100, 5 + lap * 1.2),
+            rearWing: Math.min(100, 3 + lap * 0.8),
+            diffuser: Math.min(100, 2 + lap * 1),
+            floor: Math.min(100, lap * 0.7),
+            sidepod: Math.min(100, 1 + lap * 0.5)
+          });
+        }
+        break;
+        
+      case 'tyre-wear':
+        // Generate tyre wear data that increases over laps
+        for (let lap = 1; lap <= 40; lap++) {
+          placeholderData.push({
+            lap,
+            frontLeft: Math.min(100, lap * 2.5),
+            frontRight: Math.min(100, lap * 2.7),
+            rearLeft: Math.min(100, lap * 2.2),
+            rearRight: Math.min(100, lap * 2.4)
+          });
+        }
+        break;
+        
+      case 'individual-lap':
+        // Generate sector time data for a lap
+        const sectors = 20; // 20 mini-sectors
+        for (let sector = 1; sector <= sectors; sector++) {
+          // Generate some variance to make the chart interesting
+          const variance = Math.sin(sector / 3) * 0.5;
+          
+          placeholderData.push({
+            sector,
+            optimalTime: 4 + variance,
+            currentLap: 4 + variance + (Math.random() * 0.8 - 0.3),
+            previousLap: 4.2 + variance + (Math.random() * 0.7 - 0.2)
+          });
+        }
+        break;
+        
+      case 'general-stats':
+        // Generate race stats data
+        const races = ['Australia', 'Bahrain', 'China', 'Azerbaijan', 'Miami', 'Monaco', 'Canada', 'Spain'];
+        races.forEach((race, index) => {
+          placeholderData.push({
+            race,
+            points: Math.round(15 + Math.random() * 10),
+            position: Math.ceil(Math.random() * 10),
+            lapTime: 90 + Math.random() * 5
+          });
+        });
+        break;
+        
+      default:
+        for (let i = 0; i < 10; i++) {
+          placeholderData.push({
+            x: i,
+            y: Math.random() * 10
+          });
+        }
+    }
+    
+    return placeholderData;
+  };
+
+  // Render different analysis content based on selected type
+  const renderAnalysisContent = () => {
+    switch(analysisType) {
+      case 'race-time':
+        return renderRaceTimeAnalysis();
+      case 'damage':
+        return renderDamageAnalysis();
+      case 'tyre-wear':
+        return renderTyreWearAnalysis();
+      case 'individual-lap':
+        return renderIndividualLapAnalysis();
+      case 'general-stats':
+        return renderGeneralStatsAnalysis();
+      default:
+        return renderRaceTimeAnalysis();
+    }
+  };
+  
+  // Render damage analysis chart
+  const renderDamageAnalysis = () => {
+    const damageData = generatePlaceholderData('damage');
+    
+    return (
+      <Box sx={{ width: '100%', height: '60vh', pt: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 2, ml: 2 }}>Car Damage % Over Race - Placeholder Data</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', height: '100%' }}>
+          <ResponsiveContainer width="95%" height="90%">
+            <LineChart
+              data={damageData}
+              margin={{ top: 10, right: 30, bottom: 40, left: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis 
+                dataKey="lap" 
+                label={{ value: 'Lap Number', position: 'insideBottom', offset: -10, fill: '#fff' }}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <YAxis 
+                label={{ value: 'Damage %', angle: -90, position: 'insideLeft', offset: -5, fill: '#fff' }}
+                domain={[0, 100]}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <RechartsTooltip 
+                formatter={(value) => [`${value}%`, '']}
+                labelFormatter={(label) => `Lap ${label}`}
+                contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
+              />
+              <Legend wrapperStyle={{ color: '#fff' }} />
+              
+              <Line type="monotone" dataKey="frontWing" name="Front Wing" stroke="#ff0000" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="rearWing" name="Rear Wing" stroke="#00ff00" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="diffuser" name="Diffuser" stroke="#0088ff" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="floor" name="Floor" stroke="#ff00ff" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="sidepod" name="Sidepod" stroke="#ffff00" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 2, color: '#aaa' }}>
+          This is placeholder data. Actual damage analysis coming soon.
+        </Typography>
+      </Box>
+    );
+  };
+  
+  // Render tyre wear analysis chart
+  const renderTyreWearAnalysis = () => {
+    const tyreWearData = generatePlaceholderData('tyre-wear');
+    
+    return (
+      <Box sx={{ width: '100%', height: '60vh', pt: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 2, ml: 2 }}>Tyre Wear % Over Stint - Placeholder Data</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', height: '100%' }}>
+          <ResponsiveContainer width="95%" height="90%">
+            <LineChart
+              data={tyreWearData}
+              margin={{ top: 10, right: 30, bottom: 40, left: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis 
+                dataKey="lap" 
+                label={{ value: 'Lap Number', position: 'insideBottom', offset: -10, fill: '#fff' }}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <YAxis 
+                label={{ value: 'Wear %', angle: -90, position: 'insideLeft', offset: -5, fill: '#fff' }}
+                domain={[0, 100]}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <RechartsTooltip 
+                formatter={(value) => [`${value}%`, '']}
+                labelFormatter={(label) => `Lap ${label}`}
+                contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
+              />
+              <Legend wrapperStyle={{ color: '#fff' }} />
+              
+              <Line type="monotone" dataKey="frontLeft" name="Front Left" stroke="#ff4444" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="frontRight" name="Front Right" stroke="#44ff44" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="rearLeft" name="Rear Left" stroke="#4444ff" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="rearRight" name="Rear Right" stroke="#ffff44" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 2, color: '#aaa' }}>
+          This is placeholder data. Actual tyre wear analysis coming soon.
+        </Typography>
+      </Box>
+    );
+  };
+  
+  // Render individual lap analysis chart
+  const renderIndividualLapAnalysis = () => {
+    const sectorData = generatePlaceholderData('individual-lap');
+    
+    return (
+      <Box sx={{ width: '100%', height: '60vh', pt: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 2, ml: 2 }}>Lap Sector Analysis - Placeholder Data</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', height: '100%' }}>
+          <ResponsiveContainer width="95%" height="90%">
+            <LineChart
+              data={sectorData}
+              margin={{ top: 10, right: 30, bottom: 40, left: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis 
+                dataKey="sector" 
+                label={{ value: 'Track Sector', position: 'insideBottom', offset: -10, fill: '#fff' }}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <YAxis 
+                label={{ value: 'Sector Time (s)', angle: -90, position: 'insideLeft', offset: -5, fill: '#fff' }}
+                domain={[3, 6]}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <RechartsTooltip 
+                formatter={(value) => [`${value.toFixed(2)}s`, '']}
+                labelFormatter={(label) => `Sector ${label}`}
+                contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
+              />
+              <Legend wrapperStyle={{ color: '#fff' }} />
+              
+              <Line type="monotone" dataKey="optimalTime" name="Optimal" stroke="#44ff44" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="currentLap" name="Current Lap" stroke="#ff4444" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="previousLap" name="Previous Lap" stroke="#4444ff" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 2, color: '#aaa' }}>
+          This is placeholder data. Actual lap sector analysis coming soon.
+        </Typography>
+      </Box>
+    );
+  };
+  
+  // Render general stats analysis chart
+  const renderGeneralStatsAnalysis = () => {
+    const statsData = generatePlaceholderData('general-stats');
+    
+    return (
+      <Box sx={{ width: '100%', height: '60vh', pt: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 2, ml: 2 }}>Season Performance - Placeholder Data</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', height: '100%' }}>
+          <ResponsiveContainer width="95%" height="90%">
+            <LineChart
+              data={statsData}
+              margin={{ top: 10, right: 30, bottom: 40, left: 10 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis 
+                dataKey="race" 
+                label={{ value: 'Race', position: 'insideBottom', offset: -10, fill: '#fff' }}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <YAxis 
+                yAxisId="left"
+                label={{ value: 'Points', angle: -90, position: 'insideLeft', offset: -5, fill: '#fff' }}
+                domain={[0, 30]}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+              />
+              <YAxis 
+                yAxisId="right"
+                orientation="right"
+                label={{ value: 'Position', angle: 90, position: 'insideRight', offset: 5, fill: '#fff' }}
+                domain={[1, 20]}
+                tick={{ fill: '#fff' }}
+                stroke="#777"
+                reversed
+              />
+              <RechartsTooltip 
+                formatter={(value, name) => {
+                  if (name === 'points') return [`${value} pts`, 'Points'];
+                  if (name === 'position') return [`P${value}`, 'Position'];
+                  if (name === 'lapTime') return [`${value.toFixed(2)}s`, 'Best Lap'];
+                  return [value, name];
+                }}
+                labelFormatter={(label) => `${label} GP`}
+                contentStyle={{ backgroundColor: '#222', borderColor: '#444' }}
+              />
+              <Legend wrapperStyle={{ color: '#fff' }} />
+              
+              <Line yAxisId="left" type="monotone" dataKey="points" name="Points" stroke="#44ff44" strokeWidth={2} />
+              <Line yAxisId="right" type="monotone" dataKey="position" name="Position" stroke="#ff4444" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Box>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 2, color: '#aaa' }}>
+          This is placeholder data. Actual season performance statistics coming soon.
+        </Typography>
+      </Box>
+    );
+  };
+
+  // Render the race time analysis content
+  const renderRaceTimeAnalysis = () => {
+    return (
+      <>
+        {/* Data Correction Options Panel - SIMPLIFIED */}
+        <Box sx={{ 
+          bgcolor: '#1a1f3b', 
+          p: 2, 
+          borderRadius: 3, 
+          mb: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1
+        }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
+            Lap Display Options
+          </Typography>
+          
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={filterOutlaps}
+                  onChange={(e) => setFilterOutlaps(e.target.checked)}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  Remove outlaps
+                </Typography>
+              }
+            />
+            
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={filterInlaps}
+                  onChange={(e) => setFilterInlaps(e.target.checked)}
+                  color="primary"
+                  size="small"
+                />
+              }
+              label={
+                <Typography variant="body2">
+                  Remove inlaps
+                </Typography>
+              }
+            />
+          </Box>
+        </Box>
+        
+        {isLoading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100% - 100px)' }}>
+            <CircularProgress color="primary" />
+          </Box>
+        ) : chartData.length > 0 ? (
+          <Box sx={{ border: '0px solid #444', display: 'flex', width: '100%', height: '55vh', overflow: 'hidden', positioning: 'relative' }}>
+            {/* Legend */}
+            <Box sx={{ 
+              width: '180px', 
+              overflowY: 'auto',
+              overflowX: 'hidden', // Prevent horizontal overflow
+              pr: 2,
+              borderRight: '1px solid #444',
+              height: '100%', // Full height,
+              flexShrink: 0, // Prevent shrinking,
+              pb: 2 // Add padding at the bottom for scrolling
+            }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>Drivers</Typography>
+                <Box>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      cursor: 'pointer', 
+                      textDecoration: 'underline',
+                      mr: 1,
+                      '&:hover': { color: '#aaf' } 
+                    }}
+                    onClick={handleSelectAll}
+                  >
+                    All
+                  </Typography>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      cursor: 'pointer', 
+                      textDecoration: 'underline',
+                      '&:hover': { color: '#aaf' } 
+                    }}
+                    onClick={handleDeselectAll}
+                  >
+                    None
+                  </Typography>
+                </Box>
+              </Box>
+              
+              {/* Group drivers from lineConfigs */}
+              {Array.from(new Set(lineConfigs.map(config => config.driver))).map(driver => {
+                // Get all configs for this driver
+                const driverConfigs = lineConfigs.filter(config => config.driver === driver);
+                // Get first config for basic info
+                const firstConfig = driverConfigs[0] || {};
+                // Get unique compounds
+                const compounds = [...new Set(driverConfigs.map(config => config.compound))];
+                
+                return (
+                  <Box 
+                    key={driver}
+                    sx={{
+                      mb: 2,
+                      opacity: hoveredDriver && hoveredDriver !== driver ? 0.5 : 1,
+                      transition: 'opacity 0.2s'
+                    }}
+                    onMouseEnter={() => setHoveredDriver(driver)}
+                    onMouseLeave={() => setHoveredDriver(null)}
+                  >
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        cursor: 'pointer',
+                        '&:hover': { color: '#aaf' }
+                      }}
+                      onClick={() => handleDriverToggle(driver)}
+                    >
+                      <Checkbox 
+                        checked={!!selectedDrivers[driver]} 
+                        sx={{ 
+                          p: 0.5, 
+                          color: '#fff',
+                          '&.Mui-checked': { color: '#aaf' }
+                        }} 
+                      />
+                      <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+                        <Box 
+                          sx={{ 
+                            width: 12, 
+                            height: 12, 
+                            borderRadius: '50%', 
+                            bgcolor: firstConfig.teamColor || '#888', 
+                            mr: 1 
+                          }} 
+                        />
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            fontWeight: 'bold', 
+                            textDecoration: selectedDrivers[driver] ? 'none' : 'line-through'
+                          }}
+                        >
+                          {driver}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        display: 'block', 
+                        color: '#aaa',
+                        ml: 4,
+                        mb: 0.5,
+                        fontSize: '0.7rem' 
+                      }}
+                    >
+                      {driverTeams[driver] || firstConfig.team || 'Unknown Team'}
+                    </Typography>
+                    
+                    {compounds.map(compound => {
+                      // Get all stints for this compound
+                      const compoundStints = driverConfigs.filter(config => config.compound === compound);
+                      
+                      return (
+                        <Box key={`${driver}-${compound}`} sx={{ ml: 3, mb: 0.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Box 
+                              sx={{ 
+                                width: 8, 
+                                height: 8, 
+                                borderRadius: '50%', 
+                                bgcolor: compoundColors[compound] || '#888', 
+                                mr: 1 
+                              }} 
+                            />
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontSize: '0.75rem',
+                                opacity: selectedDrivers[driver] ? 1 : 0.5
+                              }}
+                            >
+                              {compound} ({compoundStints.length} {compoundStints.length === 1 ? 'stint' : 'stints'})
+                            </Typography>
+                          </Box>
+                          
+                          {/* Show stint ranges */}
+                          {compoundStints.length > 1 && (
+                            <Box sx={{ ml: 2 }}>
+                              {compoundStints.map((stint, idx) => (
+                                <Typography 
+                                  key={idx} 
+                                  variant="caption" 
+                                  sx={{ 
+                                    display: 'block', 
+                                    color: '#aaa',
+                                    fontSize: '0.7rem' 
+                                  }}
+                                >
+                                  Stint {stint.stintNumber}: Laps {stint.startLap}-{stint.endLap}
+                                </Typography>
+                              ))}
+                            </Box>
+                          )}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                );
+              })}
+              
+              {displayMode === 'compound' && (
+                <>
+                  <Typography variant="subtitle2" sx={{ mt: 2, mb: 1, fontWeight: 'bold' }}>Compounds</Typography>
+                  {Object.entries(compoundColors).map(([compound, color]) => (
+                    <Box key={compound} sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                      <Box 
+                        sx={{ 
+                          width: 12, 
+                          height: 12, 
+                          borderRadius: '50%', 
+                          bgcolor: color, 
+                          mr: 1 
+                        }} 
+                      />
+                      <Typography variant="body2">{compound}</Typography>
+                    </Box>
+                  ))}
+                </>
+              )}
+            </Box>
+            
+            {/* Chart */}
+            <Box sx={{ flex: 1 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartData}
+                  margin={{ top: 10, right: 30, bottom: 40, left: 50 }}
+                  onMouseLeave={() => setHoveredLine(null)}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis 
+                    dataKey="lap" 
+                    label={{ value: 'Lap Number', position: 'insideBottom', offset: -10, fill: '#fff' }}
+                    tick={{ fill: '#fff' }}
+                    stroke="#777"
+                  />
+                  <YAxis 
+                    label={{ value: 'Lap Time', angle: -90, position: 'insideLeft', offset: -30, fill: '#fff' }}
+                    tickFormatter={formatAxisTime}
+                    domain={yDomain}
+                    tick={{ fill: '#fff' }}
+                    stroke="#777"
+                  />
+                  <RechartsTooltip content={<LapTimeTooltip displayMode={displayMode} driverTeams={driverTeams} />} />
+                  
+                  {lineConfigs.map(config => {
+                    // Only render lines for selected drivers
+                    if (!selectedDrivers[config.driver]) {
+                      return null;
+                    }
+                    
+                    // Choose color based on display mode
+                    const lineColor = displayMode === 'team' ? config.teamColor : config.compoundColor;
+                    
+                    const isHighlighted = hoveredLine === config.key || 
+                                         (!hoveredLine && (!hoveredDriver || hoveredDriver === config.driver));
+                    
+                    return (
+                      <Line
+                        key={config.key}
+                        type="monotone"
+                        dataKey={config.key}
+                        name={`${config.driver} (${config.compound})`}
+                        stroke={lineColor}
+                        strokeWidth={isHighlighted ? 3 : 2}
+                        strokeOpacity={isHighlighted ? 1 : 0.7}
+                        dot={<CustomDot />}
+                        activeDot={{ r: 6, fill: lineColor, stroke: '#fff' }}
+                        connectNulls={false} // Important! Prevents connecting across gaps
+                        isAnimationActive={false}
+                        onMouseEnter={() => setHoveredLine(config.key)}
+                      />
+                    );
+                  })}
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100% - 100px)' }}>
+            <Typography variant="body1" color="text.secondary">
+              No lap data available for this race
+            </Typography>
+          </Box>
+        )}
+      </>
+    );
+  };
+
+  const handleSessionTypeChange = (event) => {
+    setSelectedSessionType(event.target.value);
+  };
+
+  const SessionTypeSelector = ({ 
+    availableSessions, 
+    selectedSessionType, 
+    onSessionTypeChange,
+    disabled 
+  }) => {
+    // If no sessions are available or only one, no need for control
+    if (!availableSessions || availableSessions.length <= 1) {
+      return null;
+    }
+  
+    return (
+      <FormControl sx={{ minWidth: 150 }}>
+        <InputLabel sx={{ color: '#fff' }}>Session</InputLabel>
+        <Select 
+          value={selectedSessionType} 
+          onChange={onSessionTypeChange}
+          label="Session Type" 
+          disabled={disabled}
+          sx={{ color: '#fff', backgroundColor: '#1a1f3b', '& .MuiSvgIcon-root': { color: '#fff' } }}
+        >
+          {availableSessions.map(session => (
+            <MenuItem key={session.type} value={session.type}>
+              {session.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    );
+  };
+
+  return (
+    <Box sx={{ minHeight: 'calc(89vh)', display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', backgroundColor: '#0a0e27', p: 4 }}>
+      <Typography variant="h4" sx={{ mb: 2, fontWeight: 'bold' }}>F1 Telemetry Analysis</Typography>
+      
+      {/* Top Controls Section */}
+      <Box sx={{ display: 'flex', width: '100%', mb: 4, justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Analysis Type Toggle - Left Aligned */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <ToggleButtonGroup
+            value={analysisType}
+            exclusive
+            onChange={handleAnalysisTypeChange}
+            aria-label="analysis type"
+            sx={{ 
+              backgroundColor: '#1a1f3b',
+              '& .MuiToggleButton-root': {
+                color: '#aaa',
+                '&.Mui-selected': {
+                  color: '#fff',
+                  backgroundColor: '#2d355b'
+                }
+              }
+            }}
+          >
+            <ToggleButton value="race-time" aria-label="race time analysis">
+              <Tooltip title="Race Time Analysis">
+                <TimerIcon />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="damage" aria-label="damage analysis">
+              <Tooltip title="Damage Analysis">
+                <BuildIcon />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="tyre-wear" aria-label="tyre wear analysis">
+              <Tooltip title="Tyre Wear Analysis">
+                <SpeedIcon />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="individual-lap" aria-label="individual lap analysis">
+              <Tooltip title="Individual Lap Analysis">
+                <AssessmentIcon />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton value="general-stats" aria-label="general stats">
+              <Tooltip title="General Stats">
+                <BarChartIcon />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+        
+        {/* Season/Race Filters - Right Aligned */}
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <FormControl sx={{ minWidth: 150 }}>
+            <InputLabel sx={{ color: '#fff' }}>Season</InputLabel>
+            <Select 
+              value={selectedSeason} 
+              onChange={handleSeasonChange} 
+              label="Season" 
+              sx={{ color: '#fff', backgroundColor: '#1a1f3b', '& .MuiSvgIcon-root': { color: '#fff' } }}
+            >
+              {seasons.map(season => (
+                <MenuItem key={season} value={season}>Season {season}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <FormControl sx={{ minWidth: 200 }}>
+            <InputLabel sx={{ color: '#fff' }}>Race</InputLabel>
+            <Select 
+              value={selectedRace} 
+              onChange={handleRaceChange} 
+              label="Race" 
+              sx={{ color: '#fff', backgroundColor: '#1a1f3b', '& .MuiSvgIcon-root': { color: '#fff' } }}
+              disabled={!selectedSeason || races.length === 0}
+            >
+              {races.map(race => (
+                <MenuItem key={race.slug} value={race.slug}>
+                  {race.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      </Box>
+
+      {/* Lap Time Comparison Chart */}
+      <Box sx={{ width: '100%', height: '70vh', border: '1px solid #444', borderRadius: 3, p: 2, backgroundColor: '#0a0e27', overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h6" sx={{ color: '#fff' }}>
+            {analysisType === 'race-time' ? 'Lap Time Comparison' : 
+             analysisType === 'damage' ? 'Damage Analysis' :
+             analysisType === 'tyre-wear' ? 'Tyre Wear Analysis' :
+             analysisType === 'individual-lap' ? 'Individual Lap Analysis' :
+             'General Statistics'}
+          </Typography>
+          
+          {analysisType === 'race-time' && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Switch
+                checked={displayMode === 'compound'}
+                onChange={handleDisplayModeToggle}
+                color="primary"
+              />
+              <Box sx={{ width: '180px', ml: 1 }}>
+                <Typography variant="body2" sx={{ color: '#fff' }}>
+                  {displayMode === 'compound' ? "Showing Tyre Compounds" : "Showing Team Colors"}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+        </Box>
+
+        {/* Render different content based on selected analysis type */}
+        {renderAnalysisContent()}
+      </Box>
+    </Box>
+  );
+}

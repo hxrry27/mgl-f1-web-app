@@ -27,15 +27,19 @@ function formatTime(ms) {
 
 export default async function TrackPage({ params }) {
   const track = params.track;
+  console.log(`Looking up track with slug: ${track}`);
 
   // Fetch track info
   const trackQuery = `
-    SELECT country, name, length, turns, first_grand_prix AS first_grand_prix, laps
+    SELECT id, country, name, length, turns, first_grand_prix AS first_grand_prix, laps
     FROM tracks
     WHERE slug = $1
   `;
   const trackResult = await pool.query(trackQuery, [track]);
+  console.log(`Track info results: ${trackResult.rows.length} rows found`);
+  
   const trackInfo = trackResult.rows[0] || {
+    id: null,
     country: 'UNKNOWN',
     name: 'Unknown Circuit',
     length: 'N/A',
@@ -43,6 +47,7 @@ export default async function TrackPage({ params }) {
     first_grand_prix: 'N/A',
     laps: 'N/A',
   };
+  console.log(`Track ID: ${trackInfo.id}`);
   const halfLaps = trackInfo.laps !== 'N/A' ? Math.round(trackInfo.laps / 2) : 'N/A';
 
   const countryFlagMap = {
@@ -58,7 +63,20 @@ export default async function TrackPage({ params }) {
   // Normalize country name for flag filename
   const flagCountry = countryFlagMap[trackInfo.country] || trackInfo.country.toLowerCase().replace(/\s+/g, '');
 
-  // Fetch all race results for this track across seasons
+  // Step 1: Find race sessions for this track
+  const raceSessionsQuery = `
+    SELECT session_uid, season
+    FROM sessions
+    WHERE track_id = $1 AND session_type = 10
+  `;
+  const raceSessionsResult = await pool.query(raceSessionsQuery, [trackInfo.id]);
+  console.log(`Found ${raceSessionsResult.rows.length} race sessions for track_id=${trackInfo.id}`);
+  
+  // Extract session UIDs
+  const sessionUIDs = raceSessionsResult.rows.map(row => row.session_uid);
+  console.log('Session UIDs:', sessionUIDs);
+
+  // Step 2: Fetch results from race_results (original method)
   const resultsQuery = `
     SELECT 
       s.season,
@@ -82,10 +100,72 @@ export default async function TrackPage({ params }) {
   const resultsResult = await pool.query(resultsQuery, [track]);
   const rawResults = resultsResult.rows;
 
+  // Step 3: Fetch lap data for each session individually
+  let lapHistoryData = [];
+  
+  // SIMPLIFIED APPROACH: Process each session individually
+  for (const sessionUID of sessionUIDs) {
+    const singleSessionQuery = `
+      SELECT 
+        s.season,
+        p.driver_name AS driver,
+        t.name AS team,
+        MIN(lhbd.lap_time_ms) AS fastest_lap_time,
+        lhbd.session_uid
+      FROM lap_history_bulk_data lhbd
+      JOIN sessions s ON lhbd.session_uid = s.session_uid
+      JOIN participants p ON lhbd.session_uid = p.session_uid AND lhbd.car_index = p.car_index
+      JOIN teams t ON CAST(p.team_id AS INTEGER) = t.id
+      WHERE lhbd.session_uid = $1 AND lhbd.lap_time_ms > 0
+      GROUP BY s.season, p.driver_name, t.name, lhbd.session_uid
+      ORDER BY MIN(lhbd.lap_time_ms) ASC
+    `;
+    try {
+      const singleResult = await pool.query(singleSessionQuery, [sessionUID]);
+      console.log(`Found ${singleResult.rows.length} results for session ${sessionUID}`);
+      lapHistoryData = [...lapHistoryData, ...singleResult.rows];
+    } catch (err) {
+      console.error(`Error querying session ${sessionUID}:`, err);
+    }
+  }
+
+  // FALLBACK: Try also checking the specific session you mentioned directly
+  const specificSessionUID = -5092816217294772112;
+  if (!sessionUIDs.includes(specificSessionUID)) {
+    const specificSessionQuery = `
+      SELECT 
+        s.season,
+        p.driver_name AS driver,
+        t.name AS team,
+        MIN(lhbd.lap_time_ms) AS fastest_lap_time,
+        lhbd.session_uid
+      FROM lap_history_bulk_data lhbd
+      JOIN sessions s ON lhbd.session_uid = s.session_uid
+      JOIN participants p ON lhbd.session_uid = p.session_uid AND lhbd.car_index = p.car_index
+      JOIN teams t ON CAST(p.team_id AS INTEGER) = t.id
+      WHERE lhbd.session_uid = $1 AND lhbd.lap_time_ms > 0
+      GROUP BY s.season, p.driver_name, t.name, lhbd.session_uid
+      ORDER BY MIN(lhbd.lap_time_ms) ASC
+    `;
+    try {
+      const specificResult = await pool.query(specificSessionQuery, [specificSessionUID]);
+      console.log(`Found ${specificResult.rows.length} results for specific session ${specificSessionUID}`);
+      lapHistoryData = [...lapHistoryData, ...specificResult.rows];
+    } catch (err) {
+      console.error(`Error querying specific session ${specificSessionUID}:`, err);
+    }
+  }
+
+  console.log(`Total lap history data records: ${lapHistoryData.length}`);
+  if (lapHistoryData.length > 0) {
+    console.log('First lap history record:', lapHistoryData[0]);
+  }
+
   // Process results into historical data
   const historicalResults = [];
   const seasonMap = new Map();
 
+  // First process the race_results data
   rawResults.forEach(row => {
     const season = row.season;
     if (!seasonMap.has(season)) {
@@ -110,7 +190,30 @@ export default async function TrackPage({ params }) {
         time: row.fastest_lap_time_int,
         season,
         team: row.team,
+        source: 'race_results'
       };
+    }
+  });
+
+  // Then process lap_history_bulk_data and update fastest laps if faster
+  lapHistoryData.forEach(lap => {
+    const season = lap.season;
+    if (!seasonMap.has(season)) {
+      seasonMap.set(season, { podium: [], winner: null, team: null, fastestLap: null, pole: null });
+    }
+    const seasonData = seasonMap.get(season);
+
+    // Compare with existing fastest lap (if any)
+    if (lap.fastest_lap_time > 0 && (!seasonData.fastestLap || lap.fastest_lap_time < seasonData.fastestLap.time)) {
+      seasonData.fastestLap = {
+        driver: lap.driver,
+        time: lap.fastest_lap_time,
+        season,
+        team: lap.team,
+        source: 'lap_history_bulk_data',
+        session_uid: lap.session_uid
+      };
+      console.log(`Using faster lap from lap_history_bulk_data for season ${season}: ${formatTime(lap.fastest_lap_time)}`);
     }
   });
 
@@ -140,21 +243,47 @@ export default async function TrackPage({ params }) {
       season: `${result.season}`,
     }));
 
-  // Fastest Historical Race Lap
+  // Fastest Historical Race Lap - DEBUG before processing
+  console.log("All significantResults with fastestLapData:", significantResults
+    .filter(result => result.fastestLapData && result.fastestLapData.time > 0)
+    .map(result => ({
+      driver: result.fastestLapData.driver,
+      time: result.fastestLapData.time, 
+      formattedTime: formatTime(result.fastestLapData.time),
+      season: result.fastestLapData.season, 
+      source: result.fastestLapData.source || 'unknown'
+    })));
+
+  // Fastest Historical Race Lap - get the absolute fastest lap regardless of season
   const fastestLap = significantResults
     .filter(result => result.fastestLapData && result.fastestLapData.time > 0)
     .reduce((fastest, result) => {
-      const time = result.fastestLapData.time;
-      if (!fastest || time < fastest.time) {
+      // Convert time to a number to ensure correct comparison
+      const time = Number(result.fastestLapData.time);
+      if (!fastest || time < fastest.rawTime) {
         return {
           driver: result.fastestLapData.driver,
           time: formatTime(result.fastestLapData.time),
+          rawTime: time, // Store as number
           season: result.fastestLapData.season,
           team: result.fastestLapData.team,
+          source: result.fastestLapData.source || 'race_results'
         };
       }
       return fastest;
     }, null);
+    
+  // Log the final selected fastest lap
+  if (fastestLap) {
+    console.log("Selected fastest lap:", {
+      driver: fastestLap.driver,
+      time: fastestLap.time,
+      rawTime: fastestLap.rawTime,
+      season: fastestLap.season,
+      team: fastestLap.team,
+      source: fastestLap.source
+    });
+  }
 
   // Most Poles
   const poleCounts = significantResults.reduce((acc, result) => {
@@ -163,7 +292,7 @@ export default async function TrackPage({ params }) {
     }
     return acc;
   }, {});
-  const maxPoles = Math.max(...Object.values(poleCounts));
+  const maxPoles = Math.max(...Object.values(poleCounts), 0);
   const mostPoleDrivers = Object.entries(poleCounts)
     .filter(([, poles]) => poles === maxPoles)
     .map(([driver]) => driver)
@@ -179,7 +308,7 @@ export default async function TrackPage({ params }) {
     });
     return acc;
   }, {});
-  const maxPodiums = Math.max(...Object.values(podiumCounts));
+  const maxPodiums = Math.max(...Object.values(podiumCounts), 0);
   const mostPodiumDrivers = Object.entries(podiumCounts)
     .filter(([, podiums]) => podiums === maxPodiums)
     .map(([driver]) => driver)
@@ -197,7 +326,7 @@ export default async function TrackPage({ params }) {
     acc[row.driver] = (acc[row.driver] || 0) + basePoints + fastestLapPoint;
     return acc;
   }, {});
-  const maxPointsDriver = Math.max(...Object.values(pointsByDriver));
+  const maxPointsDriver = Math.max(...Object.values(pointsByDriver), 0);
   const mostSuccessfulDrivers = Object.entries(pointsByDriver)
     .filter(([, points]) => points === maxPointsDriver)
     .map(([driver]) => driver)
@@ -215,7 +344,7 @@ export default async function TrackPage({ params }) {
     acc[row.team] = (acc[row.team] || 0) + basePoints + fastestLapPoint;
     return acc;
   }, {});
-  const maxPointsTeam = Math.max(...Object.values(pointsByTeam));
+  const maxPointsTeam = Math.max(...Object.values(pointsByTeam), 0);
   const mostSuccessfulTeams = Object.entries(pointsByTeam)
     .filter(([, points]) => points === maxPointsTeam)
     .map(([team]) => team)
