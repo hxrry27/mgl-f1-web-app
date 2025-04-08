@@ -585,10 +585,10 @@ export default function DashboardClient({ user }) {
     // Transform the data to the chart format - multiplying by 100 to convert to percentage
     return sampledData.map(point => ({
       session_time: point.session_time,
-      front_left: point.tyre_wear_fl * 100,
-      front_right: point.tyre_wear_fr * 100,
-      rear_left: point.tyre_wear_rl * 100,
-      rear_right: point.tyre_wear_rr * 100,
+      front_left: point.tyre_wear_fl,
+      front_right: point.tyre_wear_fr,
+      rear_left: point.tyre_wear_rl ,
+      rear_right: point.tyre_wear_rr ,
       driver: point.driver,
       team: point.team
     }));
@@ -599,8 +599,8 @@ export default function DashboardClient({ user }) {
   const tyreWearYRange = useMemo(() => {
     if (!processedTyreWearData || processedTyreWearData.length === 0) return [0, 1];
     
-    let min = Infinity;
-    let max = -Infinity;
+    let min = 0;
+    let max = 100;
     
     processedTyreWearData.forEach(point => {
       if (point.front_left !== null) min = Math.min(min, point.front_left);
@@ -617,8 +617,8 @@ export default function DashboardClient({ user }) {
     if (min === Infinity) min = 0;
     if (max === -Infinity) max = 1;
     
-    // Add 10% padding to the top
-    return [0, Math.max(1, max * 1.1)];
+    // Removal of original 10% padding to the top
+    return [0, Math.max(1, max * 1)];
   }, [processedTyreWearData]);
 
   // Process telemetry data for individual lap analysis
@@ -1080,11 +1080,13 @@ export default function DashboardClient({ user }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                 <XAxis 
                   dataKey="lap" 
-                  label={{ value: 'Lap Number', position: 'insideBottom', offset: -10, fill: '#fff' }}
+                  label={{ value: 'Lap Number', position: 'insideBottom', offset: -50, fill: '#fff' }}
                   tick={{ fill: '#fff' }}
                   stroke="#777"
                   type="number"
                   domain={['dataMin', 'dataMax']}
+                  ticks={Array.from({ length: maxLapNumber }, (_, i) => i + 1)}
+                  // If there are too many laps, limit the number of ticks displayed
                 />
                 <YAxis 
                   label={{ value: 'Damage %', angle: -90, position: 'insideLeft', offset: -5, fill: '#fff' }}
@@ -1204,12 +1206,12 @@ export default function DashboardClient({ user }) {
             <ResponsiveContainer width="95%" height="90%">
               <LineChart
                 data={processedTyreWearData}
-                margin={{ top: 10, right: 30, bottom: 40, left: 10 }}
+                margin={{ top: 0, right: 30, bottom: 40, left: 10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                 <XAxis 
                   dataKey="session_time" 
-                  label={{ value: 'Session Time (s)', position: 'insideBottom', offset: -10, fill: '#fff' }}
+                  label={{ value: 'Session Time (s)', position: 'insideBottom', offset: -50, fill: '#fff' }}
                   tick={{ fill: '#fff' }}
                   stroke="#777"
                   type="number"
@@ -1218,10 +1220,13 @@ export default function DashboardClient({ user }) {
                   label={{ value: 'Wear %', angle: -90, position: 'insideLeft', offset: -5, fill: '#fff' }}
                   domain={tyreWearYRange}
                   tick={{ fill: '#fff' }}
+                  tickCount={5}
+                  ticks={[0, 25, 50, 75, 100]}
+                  tickFormatter={(value) => Math.round(value)}
                   stroke="#777"
                 />
                 <RechartsTooltip 
-                  formatter={(value) => [`${value.toFixed(4)}%`, '']}
+                  formatter={(value) => [`${value.toFixed(2)}%`, '']}
                   labelFormatter={(time) => `Session Time: ${time.toFixed(2)}s`}
                   contentStyle={{ backgroundColor: '#222', borderColor: '#444', color: '#fff' }}
                 />
