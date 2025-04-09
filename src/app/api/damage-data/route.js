@@ -8,6 +8,7 @@ export async function GET(request) {
     const season = searchParams.get('season');
     const raceSlug = searchParams.get('raceSlug');
     const sessionType = searchParams.get('sessionType') || 'race';
+    const specificDriver = searchParams.get('driver'); // New parameter to fetch specific driver data
 
     if (!season || !raceSlug) {
       return NextResponse.json(
@@ -17,6 +18,9 @@ export async function GET(request) {
     }
 
     console.log(`Fetching damage data for season ${season}, race ${raceSlug}, session type ${sessionType}`);
+    if (specificDriver) {
+      console.log(`Filtering for driver: ${specificDriver}`);
+    }
 
     // 1. Get the race_id by joining races with tracks to find by track slug
     const raceResult = await pool.query(`
@@ -93,8 +97,54 @@ export async function GET(request) {
       };
     });
 
-    // 4. Get damage data from car_damage_data table
-    const damageQuery = `
+    // New query to get a summary of damage by driver (efficiently determine who has damage)
+    const driverDamageSummaryQuery = `
+      SELECT
+        car_index,
+        MAX(front_left_wing_damage) as max_fl_wing,
+        MAX(front_right_wing_damage) as max_fr_wing,
+        MAX(rear_wing_damage) as max_rear_wing,
+        MAX(floor_damage) as max_floor,
+        MAX(diffuser_damage) as max_diffuser,
+        MAX(sidepod_damage) as max_sidepod
+      FROM
+        car_damage_data
+      WHERE
+        session_uid = $1
+      GROUP BY
+        car_index
+    `;
+    
+    const damageSummaryResult = await pool.query(driverDamageSummaryQuery, [sessionUid]);
+    
+    // Identify drivers with damage
+    const driversWithDamage = [];
+    damageSummaryResult.rows.forEach(row => {
+      const driver = driverMap[row.car_index];
+      if (!driver) return;
+      
+      // Check if any damage component is greater than zero
+      const hasDamage = 
+        (row.max_fl_wing > 0) || 
+        (row.max_fr_wing > 0) || 
+        (row.max_rear_wing > 0) || 
+        (row.max_floor > 0) || 
+        (row.max_diffuser > 0) || 
+        (row.max_sidepod > 0);
+      
+      if (hasDamage) {
+        driversWithDamage.push({
+          name: driver.name,
+          team: driver.team,
+          car_index: row.car_index
+        });
+      }
+    });
+    
+    console.log(`Found ${driversWithDamage.length} drivers with damage`);
+
+    // 4. Get damage data - filter by driver if specified
+    let damageQuery = `
       SELECT
         car_index,
         session_time,
@@ -112,10 +162,26 @@ export async function GET(request) {
         car_damage_data
       WHERE
         session_uid = $1
-      ORDER BY
-        car_index, session_time
     `;
-    const damageResult = await pool.query(damageQuery, [sessionUid]);
+    
+    const queryParams = [sessionUid];
+    
+    // If a specific driver is requested, add that to the query
+    if (specificDriver) {
+      // Find the car_index for this driver
+      const driverIndices = Object.entries(driverMap)
+        .filter(([_, driver]) => driver.name === specificDriver)
+        .map(([car_index]) => car_index);
+      
+      if (driverIndices.length > 0) {
+        // Add car_index filter to query
+        damageQuery += ` AND car_index IN (${driverIndices.join(',')})`;
+        console.log(`Filtering for car indices: ${driverIndices.join(',')}`);
+      }
+    }
+    
+    damageQuery += ` ORDER BY car_index, session_time`;
+    const damageResult = await pool.query(damageQuery, queryParams);
     
     console.log(`Found ${damageResult.rows.length} damage data entries`);
 
@@ -129,7 +195,10 @@ export async function GET(request) {
       };
     });
 
-    return NextResponse.json({ damageData });
+    return NextResponse.json({ 
+      damageData,
+      driversWithDamage // Include this new list in the response
+    });
   } catch (error) {
     console.error('Error fetching damage data:', error);
     return NextResponse.json(

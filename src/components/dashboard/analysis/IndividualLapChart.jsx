@@ -1,20 +1,24 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-import { Box, Typography, FormControl, InputLabel, Select, MenuItem, CircularProgress, Button } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import PersonIcon from '@mui/icons-material/Person';
-import TimerIcon from '@mui/icons-material/Timer';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import Card from '@mui/material/Card';
-import CardHeader from '@mui/material/CardHeader';
-import CardContent from '@mui/material/CardContent';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Select, SelectContent, SelectGroup, SelectItem, 
+  SelectLabel, SelectTrigger, SelectValue 
+} from "@/components/ui/select";
+import { 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { User, Clock, Download, BarChart2, AlertCircle, Plus, X } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default function IndividualLapChart({
+  className,
   isLoading,
-  lapTelemetry, // Now expecting the pre-processed telemetry for a specific lap
   lapTelemetryData,
   selectedDriver,
   selectedLap,
@@ -26,79 +30,128 @@ export default function IndividualLapChart({
   onLapSelect,
   showRawLapData,
   setShowRawLapData,
-  trackData
+  trackData,
+  exportChartAsImage,
+  // New prop for fetching additional driver data
+  fetchDriverTelemetry = async (driver, lap) => {
+    console.log(`Fetch telemetry for ${driver}, lap ${lap}`);
+    return []; // Return empty array by default
+  }
 }) {
   const chartRef = useRef(null);
   const [chartType, setChartType] = useState('speed'); // 'speed', 'throttle', 'brake'
   const [isExporting, setIsExporting] = useState(false);
+  
+  // State for additional drivers (beyond the main selected driver)
+  const [additionalDrivers, setAdditionalDrivers] = useState([]);
+  // State to store telemetry data for additional drivers
+  const [additionalTelemetryData, setAdditionalTelemetryData] = useState({});
 
-  const generateTicks = (trackLength) => {
-    // Default to 5000m if no track length available
-    const length = Math.round(trackLength || 5000);
+  // Team order for driver grouping
+  const teamOrder = [
+    'Racing Bulls', 
+    'Aston Martin', 
+    'Alpine', 
+    'Red Bull', 
+    'Mercedes', 
+    'McLaren', 
+    'Ferrari', 
+    'Williams', 
+    'Haas', 
+    'Kick Sauber'
+  ];
+
+  // Group drivers by team for dropdown
+  const teamGroups = {};
+  
+  // Initialize teams in the correct order
+  teamOrder.forEach(team => {
+    teamGroups[team] = [];
+  });
+  
+  // Populate driver groups
+  drivers.forEach(driver => {
+    const team = driverTeams[driver] || 'Unknown Team';
+    if (teamGroups[team]) {
+      teamGroups[team].push(driver);
+    } else {
+      teamGroups['Unknown Team'] = teamGroups['Unknown Team'] || [];
+      teamGroups['Unknown Team'].push(driver);
+    }
+  });
+
+  // Helper function for finding closest data point by distance
+  const findClosestPoint = (dataArray, targetDistance) => {
+    if (!dataArray || dataArray.length === 0) return null;
     
-    // Generate approximately 10 ticks, evenly spaced
-    const interval = Math.ceil(length / 10);
-    const roundedInterval = Math.ceil(interval / 500) * 500; // Round to nearest 500m
+    let closestPoint = dataArray[0];
+    let closestDistance = Math.abs((dataArray[0].distance || 0) - targetDistance);
     
-    // Create array of ticks
-    const ticks = [];
-    for (let i = 0; i <= length; i += roundedInterval) {
-      ticks.push(i);
+    for (let i = 1; i < dataArray.length; i++) {
+      const distance = Math.abs((dataArray[i].distance || 0) - targetDistance);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestPoint = dataArray[i];
+      }
     }
     
-    // Make sure the last tick is the track length
-    if (ticks[ticks.length - 1] !== length) {
-      ticks.push(length);
-    }
-    
-    return ticks;
+    // Only return if we found a reasonably close point (within 50m)
+    return closestDistance <= 50 ? closestPoint : null;
   };
 
-  // Custom tooltip component for telemetry data
-  const TelemetryTooltip = ({ active, payload, label }) => {
-    if (!active || !payload || !payload.length) return null;
+  // Function to add a driver to the comparison
+  const addDriver = async (driver) => {
+    // Don't add if already in the list or if it's the main selected driver
+    if (additionalDrivers.includes(driver) || driver === selectedDriver) {
+      return;
+    }
     
-    const getValueAndUnit = () => {
-      if (chartType === 'speed') {
-        return [`${payload[0].value} km/h`, 'Speed'];
-      } else if (chartType === 'throttle') {
-        return [`${payload[0].value}%`, 'Throttle'];
-      } else if (chartType === 'brake') {
-        return [`${payload[0].value}%`, 'Brake'];
-      }
-      return [payload[0].value, payload[0].name];
-    };
+    console.log(`Adding driver ${driver} to comparison`);
     
-    const [value, name] = getValueAndUnit();
+    // Add to our list of additional drivers
+    setAdditionalDrivers(prev => [...prev, driver]);
     
-    return (
-      <Box sx={{ 
-        bgcolor: 'rgba(31, 41, 55, 0.9)',
-        color: '#E5E7EB', 
-        p: 1.5, 
-        borderRadius: 1,
-        boxShadow: '0 4px 8px rgba(0,0,0,0.5)',
-        border: '1px solid rgba(100, 116, 139, 0.5)'
-      }}>
-        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-          Distance: {label.toFixed(2)}m
-        </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-          <Box 
-            sx={{ 
-              width: 12, 
-              height: 12, 
-              borderRadius: '50%', 
-              bgcolor: getChartColor(), 
-              mr: 1 
-            }} 
-          />
-          <Typography variant="body2">
-            {name}: {value}
-          </Typography>
-        </Box>
-      </Box>
-    );
+    // Fetch telemetry data for this driver
+    try {
+      const data = await fetchDriverTelemetry(driver, 1);
+      console.log(`Received ${data?.length || 0} data points for ${driver}`);
+      
+      // Store the complete data array
+      setAdditionalTelemetryData(prev => ({
+        ...prev,
+        [driver]: { 
+          lap: 1, 
+          data: data // Make sure this is the complete telemetry data array
+        }
+      }));
+    } catch (error) {
+      console.error(`Error fetching data for ${driver}:`, error);
+    }
+  };
+
+  // Function to remove a driver from the comparison
+  const removeDriver = (driver) => {
+    setAdditionalDrivers(prev => prev.filter(d => d !== driver));
+    
+    // Also remove their data from state
+    setAdditionalTelemetryData(prev => {
+      const newData = {...prev};
+      delete newData[driver];
+      return newData;
+    });
+  };
+
+  // Function to change a lap for an additional driver
+  const changeDriverLap = async (driver, lap) => {
+    try {
+      const data = await fetchDriverTelemetry(driver, lap);
+      setAdditionalTelemetryData(prev => ({
+        ...prev,
+        [driver]: { lap, data }
+      }));
+    } catch (error) {
+      console.error(`Error fetching data for ${driver} lap ${lap}:`, error);
+    }
   };
 
   const getChartColor = () => {
@@ -111,90 +164,76 @@ export default function IndividualLapChart({
   };
 
   const getChartData = () => {
-    console.log(`getChartData called for chart type: ${chartType}`);
-    console.log(`lapTelemetryData has ${lapTelemetryData?.length || 0} points`);
-    
     if (!lapTelemetryData || lapTelemetryData.length === 0) {
-      console.warn("No lap telemetry data available");
       return [];
     }
     
-    // Log the first data point to understand its structure
-    console.log("First telemetry data point:", lapTelemetryData[0]);
-    
-    // Check for critical fields
-    if (chartType === 'speed' && lapTelemetryData[0].speed === undefined) {
-      console.warn("Missing 'speed' data in telemetry");
-    } else if (chartType === 'throttle' && lapTelemetryData[0].throttle === undefined) {
-      console.warn("Missing 'throttle' data in telemetry");
-    } else if (chartType === 'brake' && lapTelemetryData[0].brake === undefined) {
-      console.warn("Missing 'brake' data in telemetry");
-    }
-    
-    // Check if we have distance values
-    if (lapTelemetryData[0].distance === undefined) {
-      console.warn("Missing 'distance' values in telemetry data");
-    }
-    
-    // Get all data points with correct values based on chartType
     try {
+      // Process the main driver's data
       const rawData = lapTelemetryData.map((point, index) => {
-        // Handle missing distance by using index position
         const distance = point.distance !== undefined 
           ? point.distance 
           : (index / lapTelemetryData.length) * (trackData?.length_meters || 5000);
         
-        // Handle different data types for each chart type
         let value;
         if (chartType === 'speed') {
           value = point.speed !== undefined ? point.speed : 0;
         } else if (chartType === 'throttle') {
-          // Check if throttle is already a percentage or needs conversion
           value = point.throttle !== undefined 
             ? (point.throttle > 1 ? point.throttle : point.throttle * 100)
             : 0;
         } else { // brake
-          // Check if brake is already a percentage or needs conversion
           value = point.brake !== undefined 
             ? (point.brake > 1 ? point.brake : point.brake * 100)
             : 0;
         }
         
+        // Create an object with main driver data
         return {
           Distance: distance,
-          [chartType === 'speed' ? 'Speed' : chartType === 'throttle' ? 'Throttle' : 'Brake']: value
+          [`${selectedDriver}_${chartType}`]: value
         };
       });
       
-      console.log(`Processed ${rawData.length} data points for charting`);
-      if (rawData.length > 0) {
-        console.log("Sample chart data point:", rawData[0]);
-      }
-      
-      // Sort by distance to ensure proper rendering
+      // Sort by distance
       const sortedData = rawData.sort((a, b) => a.Distance - b.Distance);
       
-      // Look for null/undefined/NaN values that might break the chart
-      const invalidPoints = sortedData.filter(point => {
-        const dataKey = Object.keys(point).find(key => key !== 'Distance');
-        return point.Distance === undefined || point.Distance === null || isNaN(point.Distance) ||
-               point[dataKey] === undefined || point[dataKey] === null || isNaN(point[dataKey]);
+      // Now add data for each additional driver
+      additionalDrivers.forEach(driver => {
+        // Check if we have data for this driver
+        const driverDataArray = additionalTelemetryData[driver]?.data;
+        
+        if (driverDataArray && driverDataArray.length > 0) {
+          console.log(`Processing ${driverDataArray.length} data points for ${driver}`);
+          
+          // For each distance point in our main data
+          sortedData.forEach((dataPoint, index) => {
+            // Find the closest point in the additional driver's data
+            const closestPoint = findClosestPoint(driverDataArray, dataPoint.Distance);
+            
+            if (closestPoint) {
+              // Extract the value based on the chartType
+              let value = 0;
+              if (chartType === 'speed') {
+                value = closestPoint.speed !== undefined ? closestPoint.speed : 0;
+              } else if (chartType === 'throttle') {
+                value = closestPoint.throttle !== undefined 
+                  ? (closestPoint.throttle > 1 ? closestPoint.throttle : closestPoint.throttle * 100)
+                  : 0;
+              } else { // brake
+                value = closestPoint.brake !== undefined 
+                  ? (closestPoint.brake > 1 ? closestPoint.brake : closestPoint.brake * 100)
+                  : 0;
+              }
+              
+              // Add this driver's data to the point
+              dataPoint[`${driver}_${chartType}`] = value;
+            }
+          });
+        } else {
+          console.log(`No data available for additional driver ${driver}`);
+        }
       });
-      
-      if (invalidPoints.length > 0) {
-        console.warn(`Found ${invalidPoints.length} invalid data points that may break the chart`);
-        console.log("First invalid point:", invalidPoints[0]);
-        
-        // Remove invalid points
-        const cleanedData = sortedData.filter(point => {
-          const dataKey = Object.keys(point).find(key => key !== 'Distance');
-          return point.Distance !== undefined && point.Distance !== null && !isNaN(point.Distance) &&
-                 point[dataKey] !== undefined && point[dataKey] !== null && !isNaN(point[dataKey]);
-        });
-        
-        console.log(`Cleaned data: ${cleanedData.length} points (removed ${sortedData.length - cleanedData.length} invalid points)`);
-        return cleanedData;
-      }
       
       return sortedData;
     } catch (error) {
@@ -207,28 +246,24 @@ export default function IndividualLapChart({
     switch(chartType) {
       case 'speed':
         return {
-          dataKey: 'Speed',
           domain: [0, 'auto'],
           tickFormatter: (value) => `${value} km/h`,
           label: { value: 'Speed (km/h)', angle: -90, position: 'insideLeft', offset: -5, fill: '#ccc' }
         };
       case 'throttle':
         return {
-          dataKey: 'Throttle',
           domain: [0, 100],
           tickFormatter: (value) => `${value}%`,
           label: { value: 'Throttle %', angle: -90, position: 'insideLeft', offset: -5, fill: '#ccc' }
         };
       case 'brake':
         return {
-          dataKey: 'Brake',
           domain: [0, 100],
           tickFormatter: (value) => `${value}%`,
           label: { value: 'Brake %', angle: -90, position: 'insideLeft', offset: -5, fill: '#ccc' }
         };
       default:
         return {
-          dataKey: 'Speed',
           domain: [0, 'auto'],
           tickFormatter: (value) => `${value} km/h`,
           label: { value: 'Speed (km/h)', angle: -90, position: 'insideLeft', offset: -5, fill: '#ccc' }
@@ -236,101 +271,138 @@ export default function IndividualLapChart({
     }
   };
 
-  const handleDownload = () => {
-    // Placeholder for chart export functionality
-    console.log('Download chart functionality would go here');
-    alert('Chart download functionality would be implemented here');
+  const handleDownload = async () => {
+    if (!chartRef.current || isLoading || !lapTelemetryData || lapTelemetryData.length === 0) {
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      // Brief delay to ensure chart is fully rendered
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Create a meaningful filename
+      let filename = `${selectedDriver}_lap${selectedLap}_${chartType}`;
+      if (additionalDrivers.length > 0) {
+        filename = `${chartType}_comparison_${selectedDriver}_and_others`;
+      }
+      
+      if (typeof exportChartAsImage === 'function') {
+        await exportChartAsImage(chartRef, filename);
+      } else {
+        console.log('Export chart function not available');
+      }
+    } catch (error) {
+      console.error('Failed to export chart:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const getCombinedChartData = () => {
+    // Get primary driver data
+    const mainData = getChartData();
+    
+    if (mainData.length === 0 || additionalDrivers.length === 0) {
+      return mainData;
+    }
+    
+    // Create a copy of the main data
+    const combinedData = [...mainData];
+    
+    // Add data for each additional driver
+    additionalDrivers.forEach(driver => {
+      const driverData = additionalTelemetryData[driver]?.data;
+      
+      if (!driverData || driverData.length === 0) {
+        return;
+      }
+      
+      // Process this driver's data points
+      const processedPoints = driverData.map((point, index) => {
+        const distance = point.distance !== undefined 
+          ? point.distance 
+          : (index / driverData.length) * (trackData?.length_meters || 5000);
+        
+        let value;
+        if (chartType === 'speed') {
+          value = point.speed !== undefined ? point.speed : 0;
+        } else if (chartType === 'throttle') {
+          value = point.throttle !== undefined 
+            ? (point.throttle > 1 ? point.throttle : point.throttle * 100)
+            : 0;
+        } else { // brake
+          value = point.brake !== undefined 
+            ? (point.brake > 1 ? point.brake : point.brake * 100)
+            : 0;
+        }
+        
+        return { Distance: distance, value };
+      });
+      
+      // Add this driver's data to each matching distance point in combined data
+      combinedData.forEach((dataPoint, index) => {
+        // Find the closest point in this driver's data
+        const nearestPoint = processedPoints.reduce((nearest, current) => {
+          return Math.abs(current.Distance - dataPoint.Distance) < 
+                 Math.abs(nearest.Distance - dataPoint.Distance) 
+                 ? current : nearest;
+        }, processedPoints[0]);
+        
+        // Only add if the point is reasonably close (within 5m)
+        if (nearestPoint && Math.abs(nearestPoint.Distance - dataPoint.Distance) <= 5) {
+          dataPoint[`${driver}_${chartType}`] = nearestPoint.value;
+        }
+      });
+    });
+    
+    return combinedData;
   };
 
   const renderContent = () => {
-    console.log("renderContent called");
-    console.log(`isLoading: ${isLoading}, lapTelemetryData length: ${lapTelemetryData?.length || 0}`);
-    
     if (isLoading) {
       return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(17, 24, 39, 0.5)', 
-          borderRadius: 1
-        }}>
-          <CircularProgress />
-        </Box>
+        <div className="w-full h-full flex items-center justify-center bg-gray-900/50 rounded-lg">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
       );
     }
     
     if (!lapTelemetryData || lapTelemetryData.length === 0) {
-      console.warn("No lap telemetry data to display");
       return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(17, 24, 39, 0.8)', 
-          border: '1px solid rgba(220, 38, 38, 0.3)', 
-          borderRadius: 1,
-          color: 'rgba(248, 113, 113, 1)'
-        }}>
-          <ErrorOutlineIcon sx={{ width: 40, height: 40, mb: 1 }} />
-          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-            No telemetry data available
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(156, 163, 175, 1)', mt: 0.5 }}>
+        <div className="w-full h-full bg-gray-900/80 border border-red-500/30 rounded-lg flex flex-col items-center justify-center text-red-400">
+          <AlertCircle className="w-10 h-10 mb-2" />
+          <p className="font-semibold">No telemetry data available</p>
+          <p className="text-xs text-gray-500 mt-1">
             No {chartType} data found for {selectedDriver} lap {selectedLap}
-          </Typography>
-        </Box>
+          </p>
+        </div>
       );
     }
   
-    const chartData = getChartData();
-    console.log(`chartData has ${chartData.length} points`);
+    // Get the main driver's data
+    let chartData = getChartData();
     
     if (chartData.length === 0) {
-      console.warn("No chart data after processing");
       return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(17, 24, 39, 0.8)', 
-          border: '1px solid rgba(220, 38, 38, 0.3)', 
-          borderRadius: 1,
-          color: 'rgba(248, 113, 113, 1)'
-        }}>
-          <ErrorOutlineIcon sx={{ width: 40, height: 40, mb: 1 }} />
-          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-            Error processing telemetry data
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(156, 163, 175, 1)', mt: 0.5 }}>
-            Could not generate chart data
-          </Typography>
-        </Box>
+        <div className="w-full h-full bg-gray-900/80 border border-red-500/30 rounded-lg flex flex-col items-center justify-center text-red-400">
+          <AlertCircle className="w-10 h-10 mb-2" />
+          <p className="font-semibold">Error processing telemetry data</p>
+          <p className="text-xs text-gray-500 mt-1">Could not generate chart data</p>
+        </div>
       );
     }
     
     const yAxisProps = getYAxisProps();
-    const dataKey = yAxisProps.dataKey;
+    const dataKey = `${selectedDriver}_${chartType}`;
     
-    console.log(`Rendering chart with ${chartData.length} points`);
-    console.log(`X-axis domain: [0, ${trackData?.length_meters || 5000}]`);
-    console.log(`Y-axis props:`, yAxisProps);
-  
-    try {
-      return (
-        <ResponsiveContainer width="100%" height={280} className="export-chart-container">
+    return (
+      <div className="w-full h-full" style={{ minHeight: '280px' }}>
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart 
-            data={chartData} 
-            margin={{ top: 0, right: 10, left: -15, bottom: 5 }}
-          >
+              data={chartData} 
+              margin={{ top: 0, right: 10, left: -15, bottom: 40 }} // Increase bottom from 5 to 40
+            >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(100, 116, 139, 0.3)" />
             <XAxis 
               type="number" 
@@ -338,7 +410,7 @@ export default function IndividualLapChart({
               stroke="rgba(156, 163, 175, 0.7)" 
               tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
               tickFormatter={(value) => `${Math.round(value)}m`}
-              domain={[0, trackData?.length_meters || 5000]} // Use actual track length
+              domain={[0, trackData?.length_meters || 5000]} 
               label={{ value: 'Distance (m)', position: 'insideBottom', offset: -15, fill: '#ccc' }}
               allowDecimals={false}
             />
@@ -349,252 +421,420 @@ export default function IndividualLapChart({
               width={50}
             />
             <Tooltip 
-              content={<TelemetryTooltip />} 
-              isAnimationActive={false}  // Disable animation for more responsive tooltips
-              cursor={{ strokeDasharray: '3 3' }} // Make the cursor line more visible
+              contentStyle={{ 
+                backgroundColor: 'rgba(31, 41, 55, 0.9)', 
+                borderColor: 'rgba(100, 116, 139, 0.5)', 
+                color: '#E5E7EB', 
+                borderRadius: '6px', 
+                boxShadow: '0 2px 10px rgba(0,0,0,0.5)' 
+              }} 
+              labelStyle={{ color: '#ffffff', fontWeight: 'bold', marginBottom: '5px' }} 
+              formatter={(value, name) => {
+                // Extract driver by taking everything before the LAST underscore
+                const lastUnderscoreIndex = name.lastIndexOf('_');
+                const driver = lastUnderscoreIndex > 0 ? name.substring(0, lastUnderscoreIndex) : name;
+                
+                if (chartType === 'speed') {
+                  return [`${value} km/h`, `${driver} Speed`];
+                } else if (chartType === 'throttle') {
+                  return [`${value}%`, `${driver} Throttle`];
+                } else {
+                  return [`${value}%`, `${driver} Brake`];
+                }
+              }}
+              labelFormatter={(label) => `Distance: ${label.toFixed(2)}m`}
+              isAnimationActive={false}
+              cursor={{ strokeDasharray: '3 3' }}
             />
+
+            {/* Legend Component (the key) */}
+            <Legend 
+              wrapperStyle={{ paddingTop: 10 }}
+              iconType="plainline"
+              iconSize={30}
+              content={(props) => {
+                const { payload } = props;
+                
+                // First, find all team groups
+                const teamDrivers = {};
+                payload.forEach(entry => {
+                  // Extract driver name more carefully - taking everything before the LAST underscore
+                  const fullKey = entry.value;
+                  const lastUnderscoreIndex = fullKey.lastIndexOf('_');
+                  const driver = lastUnderscoreIndex > 0 ? fullKey.substring(0, lastUnderscoreIndex) : fullKey;
+                  
+                  const team = driverTeams[driver] || 'Unknown';
+                  if (!teamDrivers[team]) teamDrivers[team] = [];
+                  teamDrivers[team].push(driver);
+                });
+                
+                return (
+                  <div className="flex flex-wrap items-center justify-center mt-4 mb-2">
+                    {payload.map((entry, index) => {
+                      // Extract driver name the same way
+                      const fullKey = entry.value;
+                      const lastUnderscoreIndex = fullKey.lastIndexOf('_');
+                      const driver = lastUnderscoreIndex > 0 ? fullKey.substring(0, lastUnderscoreIndex) : fullKey;
+                      
+                      const team = driverTeams[driver] || 'Unknown';
+                      
+                      const isMainSelectedDriver = driver === selectedDriver;
+                      const teamDriversList = teamDrivers[team];
+                      const isFirstTeamDriver = teamDriversList[0] === driver || isMainSelectedDriver;
+                      
+                      const useDashedLine = !isFirstTeamDriver;
+                      
+                      return (
+                        <div key={`item-${index}`} className="flex items-center mx-2 my-1">
+                          <div 
+                            className="w-8 h-0 mr-2 border-t-2"
+                            style={{ 
+                              borderColor: entry.color,
+                              borderStyle: useDashedLine ? 'dashed' : 'solid'
+                            }} 
+                          />
+                          <span className="text-xs text-gray-300">{driver}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }}
+            />
+            
+            {/* Main driver line */}
             <Line 
               type="monotone" 
               dataKey={dataKey} 
-              stroke={getChartColor()} 
+              stroke={driverColorMap?.[selectedDriver] || '#1e88e5'} 
               strokeWidth={2} 
               dot={false} 
-              isAnimationActive={false} // Disable animation for more responsive chart
+              isAnimationActive={false}
               activeDot={{ 
                 r: 4, 
                 strokeWidth: 1, 
                 stroke: 'rgba(255,255,255,0.5)', 
-                fill: getChartColor() 
+                fill: driverColorMap?.[selectedDriver] || '#1e88e5'
               }} 
               connectNulls={true} 
             />
+            
+            {/* Add lines for additional drivers */}
+            {additionalDrivers.map((driver, index) => {
+              // Check if this driver is from the same team as the main driver
+              const mainDriverTeam = driverTeams[selectedDriver];
+              const thisDriverTeam = driverTeams[driver];
+              const sameTeamAsMain = mainDriverTeam === thisDriverTeam;
+              
+              // Also check if this driver has the same team as any previous additional driver
+              // This handles cases where you add multiple drivers from the same team
+              const sameTeamAsPrevious = additionalDrivers
+                .slice(0, index)
+                .some(prevDriver => driverTeams[prevDriver] === thisDriverTeam);
+              
+              // Apply dashed line if this driver is from the same team as main or any previous driver
+              const useDashedLine = sameTeamAsMain || sameTeamAsPrevious;
+              
+              return (
+                <Line 
+                  key={driver}
+                  type="monotone" 
+                  dataKey={`${driver}_${chartType}`} 
+                  stroke={driverColorMap?.[driver] || '#888888'} 
+                  strokeWidth={2} 
+                  strokeDasharray={useDashedLine ? "3 3" : "0"} // Add dashes for same team
+                  dot={false} 
+                  isAnimationActive={false}
+                  activeDot={{ 
+                    r: 4, 
+                    strokeWidth: 1, 
+                    stroke: 'rgba(255,255,255,0.5)', 
+                    fill: driverColorMap?.[driver] || '#888888'
+                  }} 
+                  connectNulls={true} 
+                />
+              );
+            })}
           </LineChart>
         </ResponsiveContainer>
-      );
-    } catch (error) {
-      console.error("Error rendering chart:", error);
-      return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(17, 24, 39, 0.8)', 
-          border: '1px solid rgba(220, 38, 38, 0.3)', 
-          borderRadius: 1,
-          color: 'rgba(248, 113, 113, 1)'
-        }}>
-          <ErrorOutlineIcon sx={{ width: 40, height: 40, mb: 1 }} />
-          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-            Error rendering chart
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(156, 163, 175, 1)', mt: 0.5 }}>
-            {error.message}
-          </Typography>
-        </Box>
-      );
-    }
+      </div>
+    );
   };
 
-  const chartTitle = `${selectedDriver ? `${selectedDriver}'s ` : ''}${
-    selectedLap === 'fastest' ? 'Fastest Lap' : `Lap ${selectedLap}`
-  } ${chartType.charAt(0).toUpperCase() + chartType.slice(1)}`;
+  const chartTitle = additionalDrivers.length > 0
+    ? `Driver ${chartType.charAt(0).toUpperCase() + chartType.slice(1)} Comparison`
+    : `${selectedDriver ? `${selectedDriver}'s ` : ''}${
+      selectedLap === 'fastest' ? 'Fastest Lap' : `Lap ${selectedLap}`
+    } ${chartType.charAt(0).toUpperCase() + chartType.slice(1)}`;
 
   return (
     <Card 
       ref={chartRef} 
-      sx={{ 
-        bgcolor: 'rgba(17, 24, 39, 0.7)', 
-        border: '1px solid rgba(75, 85, 99, 0.8)', 
-        borderRadius: 2,
-        backdropFilter: 'blur(8px)',
-        overflow: 'hidden'
-      }}
+      className={cn("chart-container bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-full flex flex-col", className)}
     >
-      <CardHeader 
-        title={
-          <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'semibold' }}>
-            {chartTitle}
-          </Typography>
-        }
-        sx={{ pb: 1 }}
-        action={
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <FormControl size="small" sx={{ minWidth: 100 }}>
-              <InputLabel id="chart-type-label" sx={{ color: '#ccc' }}>Chart Type</InputLabel>
-              <Select
-                labelId="chart-type-label"
-                value={chartType}
-                label="Chart Type"
-                onChange={(e) => setChartType(e.target.value)}
-                sx={{ 
-                  color: '#fff', 
-                  bgcolor: 'rgba(31, 41, 55, 0.8)', 
-                  '.MuiOutlinedInput-notchedOutline': { 
-                    borderColor: 'rgba(75, 85, 99, 0.8)' 
-                  }
-                }}
-              >
-                <MenuItem value="speed">Speed</MenuItem>
-                <MenuItem value="throttle">Throttle</MenuItem>
-                <MenuItem value="brake">Brake</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        }
-      />
-      <CardContent sx={{ pt: 0 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <FormControl size="small" sx={{ minWidth: 150 }}>
-              <InputLabel id="driver-select-label" sx={{ color: '#ccc' }}>
-                <PersonIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'middle' }} />
-                Driver
-              </InputLabel>
-              <Select
-                labelId="driver-select-label"
-                value={selectedDriver}
-                label="Driver"
-                onChange={(e) => onDriverSelect(e.target.value)}
-                sx={{ 
-                  color: '#fff', 
-                  bgcolor: 'rgba(31, 41, 55, 0.8)', 
-                  '.MuiOutlinedInput-notchedOutline': { 
-                    borderColor: 'rgba(75, 85, 99, 0.8)' 
-                  }
-                }}
-                disabled={isLoading}
-              >
-                {drivers.map(driver => (
-                  <MenuItem key={driver} value={driver}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Box 
-                        sx={{ 
-                          width: 12, 
-                          height: 12, 
-                          borderRadius: '50%', 
-                          bgcolor: driverColorMap?.[driver] || '#888', 
-                          mr: 1 
-                        }} 
-                      />
-                      {driver} ({driverTeams[driver] || 'Unknown Team'})
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            
-            <FormControl size="small" sx={{ minWidth: 100 }}>
-              <InputLabel id="lap-select-label" sx={{ color: '#ccc' }}>
-                <TimerIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'middle' }} />
-                Lap
-              </InputLabel>
-              <Select
-                labelId="lap-select-label"
-                value={selectedLap}
-                label="Lap"
-                onChange={(e) => onLapSelect(e.target.value)}
-                sx={{ 
-                  color: '#fff', 
-                  bgcolor: 'rgba(31, 41, 55, 0.8)', 
-                  '.MuiOutlinedInput-notchedOutline': { 
-                    borderColor: 'rgba(75, 85, 99, 0.8)' 
-                  }
-                }}
-                disabled={isLoading || maxLapNumber <= 0}
-              >
+      <CardHeader className="pb-2">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg font-semibold text-white">{chartTitle}</CardTitle>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Select
+              value={chartType}
+              onValueChange={setChartType}
+            >
+              <SelectTrigger className="w-full sm:w-[120px] bg-gray-800/80 border-gray-700 text-gray-200 text-sm h-9">
+                <BarChart2 className="w-4 h-4 mr-2 opacity-70"/>
+                <SelectValue placeholder="Chart Type" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-900 border-gray-700 text-gray-200">
+                <SelectGroup>
+                  <SelectLabel className="text-xs text-gray-500">Chart Type</SelectLabel>
+                  <SelectItem value="speed" className="text-sm">Speed</SelectItem>
+                  <SelectItem value="throttle" className="text-sm">Throttle</SelectItem>
+                  <SelectItem value="brake" className="text-sm">Brake</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0 flex-grow flex flex-col">
+        <div className="flex flex-wrap gap-2 mb-4">
+          {/* Main driver selection */}
+          <Select
+            value={selectedDriver}
+            onValueChange={onDriverSelect}
+            disabled={isLoading}
+          >
+            <SelectTrigger className="w-full sm:w-[180px] bg-gray-800/80 border-gray-700 text-gray-200 text-sm h-9">
+              <User className="w-4 h-4 mr-2 opacity-70"/>
+              <SelectValue placeholder="Select Driver" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700 text-gray-200 max-h-[300px]">
+              {Object.entries(teamGroups).map(([team, teamDrivers]) => (
+                teamDrivers.length > 0 && (
+                  <SelectGroup key={team}>
+                    <SelectLabel className="text-xs text-gray-500">{team}</SelectLabel>
+                    {teamDrivers.map(driver => (
+                      <SelectItem key={driver} value={driver} className="text-sm">
+                        <div className="flex items-center">
+                          <div 
+                            className="w-3 h-3 rounded-full mr-2" 
+                            style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
+                          />
+                          {driver}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select
+            value={selectedLap?.toString() || ''}
+            onValueChange={(value) => onLapSelect(value === 'fastest' ? 'fastest' : parseInt(value, 10))}
+            disabled={isLoading || maxLapNumber <= 0}
+          >
+            <SelectTrigger className="w-full sm:w-[120px] bg-gray-800/80 border-gray-700 text-gray-200 text-sm h-9">
+              <Clock className="w-4 h-4 mr-2 opacity-70"/>
+              <SelectValue placeholder="Lap" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700 text-gray-200">
+              <SelectGroup>
+                <SelectLabel className="text-xs text-gray-500">Lap</SelectLabel>
                 {maxLapNumber > 0 && (
-                  <MenuItem value="fastest">Fastest</MenuItem>
+                  <SelectItem value="fastest" className="text-sm">Fastest</SelectItem>
                 )}
                 {Array.from({ length: maxLapNumber }, (_, i) => (
-                  <MenuItem key={i + 1} value={i + 1}>
+                  <SelectItem key={i + 1} value={(i + 1).toString()} className="text-sm">
                     {i + 1}
-                  </MenuItem>
+                  </SelectItem>
                 ))}
-              </Select>
-            </FormControl>
-          </Box>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
           
-          {/* Toggle Raw Data - optional */}
+          {/* Add driver dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="h-9 bg-gray-800/80 hover:bg-gray-700 text-gray-200 border border-gray-700"
+                disabled={isLoading}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Driver
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="bg-gray-900 border border-gray-700 text-gray-200">
+              <DropdownMenuLabel className="text-xs text-gray-500">Add Driver to Comparison</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-gray-700" />
+              
+              {/* Group by teams */}
+              {Object.entries(teamGroups).map(([team, teamDrivers]) => (
+                teamDrivers.length > 0 && (
+                  <React.Fragment key={team}>
+                    <DropdownMenuLabel className="text-xs text-gray-500">{team}</DropdownMenuLabel>
+                    {teamDrivers.map(driver => (
+                      // Only show drivers not already selected
+                      !additionalDrivers.includes(driver) && driver !== selectedDriver && (
+                        <DropdownMenuItem 
+                          key={driver} 
+                          onClick={() => addDriver(driver)}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center">
+                            <div 
+                              className="w-3 h-3 rounded-full mr-2" 
+                              style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
+                            />
+                            {driver}
+                          </div>
+                        </DropdownMenuItem>
+                      )
+                    ))}
+                  </React.Fragment>
+                )
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          {/* Toggle Raw Data button (if needed) */}
           {showRawLapData !== undefined && (
             <Button 
-              size="small"
-              variant="outlined"
+              variant="secondary"
+              size="sm"
               onClick={() => setShowRawLapData(!showRawLapData)}
-              sx={{ 
-                color: '#ccc', 
-                borderColor: 'rgba(75, 85, 99, 0.8)',
-                '&:hover': { 
-                  borderColor: '#fff',
-                  bgcolor: 'rgba(55, 65, 81, 0.3)'
-                } 
-              }}
+              className="h-9 bg-gray-800/80 hover:bg-gray-700 text-gray-200 border border-gray-700"
             >
               {showRawLapData ? 'Hide Raw Data' : 'Show Raw Data'}
             </Button>
           )}
-        </Box>
+        </div>
+        
+        {/* Additional drivers badges - show which drivers are being compared */}
+        {additionalDrivers.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {additionalDrivers.map(driver => (
+              <Badge 
+                key={driver}
+                className="bg-gray-800 hover:bg-gray-700 pl-2 pr-1 py-1 flex items-center gap-1"
+              >
+                <div 
+                  className="w-2 h-2 rounded-full mr-1" 
+                  style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
+                />
+                <span className="mr-1">{driver}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 rounded-full hover:bg-gray-600"
+                  onClick={() => removeDriver(driver)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Lap Selection for additional drivers */}
+        {additionalDrivers.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {additionalDrivers.map(driver => (
+              <Select
+                key={driver}
+                value={(additionalTelemetryData[driver]?.lap || 1).toString()}
+                onValueChange={(value) => {
+                  const lapValue = parseInt(value, 10);
+                  changeDriverLap(driver, lapValue);
+                }}
+                disabled={isLoading}
+              >
+                <SelectTrigger className="w-auto bg-gray-800/80 border-gray-700 text-gray-200 text-sm h-8">
+                  <div className="flex items-center">
+                    <div 
+                      className="w-2 h-2 rounded-full mr-1" 
+                      style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
+                    />
+                    <span className="mr-1">{driver}</span>
+                    <Clock className="w-3 h-3 mx-1 opacity-70"/>
+                    <SelectValue placeholder="Lap" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-gray-700 text-gray-200">
+                  <SelectGroup>
+                    <SelectLabel className="text-xs text-gray-500">Lap for {driver}</SelectLabel>
+                    {Array.from({ length: maxLapNumber }, (_, i) => (
+                      <SelectItem key={i + 1} value={(i + 1).toString()} className="text-sm">
+                        {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            ))}
+          </div>
+        )}
         
         {/* Debug panel for raw data */}
         {showRawLapData && (
-          <Box sx={{ 
-            maxHeight: '300px', 
-            overflowY: 'auto', 
-            mb: 2, 
-            p: 2, 
-            border: '1px solid rgba(75, 85, 99, 0.8)',
-            borderRadius: 1,
-            bgcolor: 'rgba(17, 24, 39, 0.5)'
-          }}>
-            <Typography variant="subtitle2" sx={{ color: '#fff', mb: 2 }}>
-              Debug Information
-            </Typography>
+          <div className="max-h-[300px] overflow-y-auto mb-4 p-4 border border-gray-700/80 rounded bg-gray-900/50">
+            <p className="text-sm font-medium text-white mb-2">Debug Information</p>
             
-            <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#ccc' }}>
+            <p className="text-xs text-gray-400 mb-1">
               Selected Driver: {selectedDriver}, Lap: {selectedLap}, Max Laps: {maxLapNumber}
-            </Typography>
+            </p>
             
-            <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#ccc' }}>
-              Telemetry Points: {lapTelemetry?.length || 0} 
-            </Typography>
+            <p className="text-xs text-gray-400 mb-1">
+              Telemetry Points: {lapTelemetryData?.length || 0} 
+            </p>
             
-            {lapTelemetry && lapTelemetry.length > 0 && (
+            {lapTelemetryData && lapTelemetryData.length > 0 && (
               <>
-                <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#ccc' }}>
-                  Sample Data Point:
-                </Typography>
-                <pre style={{ fontSize: '0.75rem', color: '#aaa' }}>
-                  {JSON.stringify(lapTelemetry[0], null, 2)}
+                <p className="text-xs text-gray-400 mb-1">Sample Data Point:</p>
+                <pre className="text-xs text-gray-500 bg-gray-800/50 p-2 rounded overflow-x-auto">
+                  {JSON.stringify(lapTelemetryData[0], null, 2)}
                 </pre>
               </>
             )}
-          </Box>
+            
+            {/* Show additional drivers data if available */}
+            {additionalDrivers.length > 0 && (
+              <>
+                <p className="text-xs text-gray-400 mt-3 mb-1">Additional Drivers:</p>
+                {additionalDrivers.map(driver => (
+                  <p key={driver} className="text-xs text-gray-400 mb-1">
+                    {driver}: {additionalTelemetryData[driver]?.data?.length || 0} data points
+                  </p>
+                ))}
+              </>
+            )}
+          </div>
         )}
         
-        {renderContent()}
+        {/* Chart content */}
+        <div className="flex-grow" style={{ minHeight: '280px', height: 'calc(100% - 60px)' }}>
+          {renderContent()}
+        </div>
         
-        {lapTelemetry && lapTelemetry.length > 0 && (
-          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        {/* Download button */}
+        {lapTelemetryData && lapTelemetryData.length > 0 && (
+          <div className="mt-4 flex justify-end">
             <Button 
-              variant="outlined" 
-              size="small" 
-              startIcon={<DownloadIcon />}
+              variant="secondary" 
+              size="sm" 
+              className="h-7 px-2.5 text-xs bg-gray-800 hover:bg-gray-700 text-white flex items-center gap-1.5 border border-gray-700"
               onClick={handleDownload}
               disabled={isExporting}
-              sx={{ 
-                color: '#ccc', 
-                borderColor: 'rgba(75, 85, 99, 0.8)',
-                '&:hover': { 
-                  borderColor: '#fff',
-                  bgcolor: 'rgba(55, 65, 81, 0.3)'
-                } 
-              }}
             >
+              <Download className="h-3.5 w-3.5" />
               {isExporting ? "Exporting..." : "Download Chart"}
             </Button>
-          </Box>
+          </div>
         )}
       </CardContent>
     </Card>

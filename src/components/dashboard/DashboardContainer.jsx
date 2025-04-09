@@ -57,6 +57,7 @@ export default function DashboardContainer({ user = null }) {
     // Selected drivers state
     const [selectedDrivers, setSelectedDrivers] = useState({});
     const [selectedDriver, setSelectedDriver] = useState('Verstappen');
+    const [additionalDriversData, setAdditionalDriversData] = useState({});
 
     // New state for real data
     const [tyreWearData, setTyreWearData] = useState([]);
@@ -66,6 +67,8 @@ export default function DashboardContainer({ user = null }) {
     const [lapTelemetryData, setLapTelemetryData] = useState([]);
     
     const [trackData, setTrackData] = useState(null);
+
+    const [driversWithDamage, setDriversWithDamage] = useState([]);
   
   // ALL THE USE EFFECT HOOKS
 
@@ -220,6 +223,12 @@ export default function DashboardContainer({ user = null }) {
             const data = await response.json();
             console.log("Damage API Response:", data);
             setDamageData(data.damageData || []);
+            
+            // Store the list of drivers who have damage
+            if (data.driversWithDamage && Array.isArray(data.driversWithDamage)) {
+              console.log(`Found ${data.driversWithDamage.length} drivers with damage`);
+              setDriversWithDamage(data.driversWithDamage.map(d => d.name));
+            }
           }
         } catch (error) {
           console.error('Error fetching damage data:', error);
@@ -330,6 +339,11 @@ export default function DashboardContainer({ user = null }) {
         console.log("Sample point from state:", lapTelemetryData[0]);
       }
     }, [lapTelemetryData]);
+
+    useEffect(() => {
+      // Clear additional drivers when changing analysis type
+      setAdditionalDriversData({});
+    }, [analysisType]);
   
   // ALL THE DATA PROCESSING FUNCTIONS / CONSTS
   
@@ -891,6 +905,248 @@ export default function DashboardContainer({ user = null }) {
 
     }, [telemetryData, selectedDriver, selectedLap, trackData]);
 
+    const fetchDriverTelemetry = async (driver, lap) => {
+      // Ensure lap is a number
+      const lapValue = typeof lap === 'string' ? parseInt(lap, 10) || 1 : lap;
+      
+      // Log what we're fetching
+      console.log(`Fetching telemetry for driver: ${driver}, lap: ${lapValue}`);
+      setIsLoading(true);
+      
+      try {
+        const response = await fetch(
+          `/api/telemetry-lap-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}&lap=${lapValue}&driver=${driver}`, 
+          { credentials: 'include' }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data && data.lapTelemetry && Array.isArray(data.lapTelemetry)) {
+            console.log(`✅ Fetched ${data.lapTelemetry.length} telemetry points for ${driver}`);
+            
+            // Add to additionalDriversData state
+            setAdditionalDriversData(prev => ({
+              ...prev,
+              [driver]: {
+                driver,
+                lap: lapValue,  // Use the numeric lap value
+                telemetryData: data.lapTelemetry
+              }
+            }));
+            
+            return data.lapTelemetry;
+          } else {
+            console.warn(`❌ No telemetry data found for ${driver}, lap ${lapValue}`);
+            return [];
+          }
+        } else {
+          console.error(`❌ API returned error: ${response.status}`);
+          return [];
+        }
+      } catch (error) {
+        console.error(`❌ Error fetching telemetry for ${driver}, lap ${lapValue}:`, error);
+        return [];
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const fetchDriverTyreWearData = async (driver) => {
+      console.log(`Fetching tyre wear data for driver: ${driver}`);
+      setIsLoading(true);
+      
+      try {
+        // If your API supports driver parameter:
+        const response = await fetch(
+          `/api/tyre-wear-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}&driver=${driver}`, 
+          { credentials: 'include' }
+        );
+        
+        // If your API doesn't support driver parameter, use the existing endpoint and filter client-side:
+        // const response = await fetch(
+        //   `/api/tyre-wear-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}`, 
+        //   { credentials: 'include' }
+        // );
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Filter for specific driver if using client-side filtering
+          const driverData = data.tyreWearData.filter(item => item.driver === driver);
+          
+          // Sample the data to avoid performance issues
+          const sampleRate = Math.max(1, Math.floor(driverData.length / 5000));
+          const sampledData = driverData.filter((_, index) => index % sampleRate === 0);
+          
+          // Sort by session time
+          sampledData.sort((a, b) => a.session_time - b.session_time);
+          
+          // Add driver prefix to keys for the chart
+          return sampledData.map(point => ({
+            session_time: point.session_time,
+            [`${driver}_front_left`]: point.tyre_wear_fl,
+            [`${driver}_front_right`]: point.tyre_wear_fr,
+            [`${driver}_rear_left`]: point.tyre_wear_rl,
+            [`${driver}_rear_right`]: point.tyre_wear_rr,
+            driver: point.driver,
+            team: point.team
+          }));
+        } else {
+          console.error(`API returned error: ${response.status}`);
+          return [];
+        }
+      } catch (error) {
+        console.error(`Error fetching tyre wear data for ${driver}:`, error);
+        return [];
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const fetchDriverDamageData = async (driver) => {
+      console.log(`Fetching damage data for driver: ${driver}`);
+      setIsLoading(true);
+      
+      try {
+        // Use API endpoint with driver parameter
+        const response = await fetch(
+          `/api/damage-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}&driver=${driver}`, 
+          { credentials: 'include' }
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (!data.damageData || data.damageData.length === 0) {
+            console.warn(`No damage data found for ${driver}`);
+            return [];
+          }
+          
+          console.log(`Received ${data.damageData.length} damage data points for ${driver}`);
+          
+          // Filter for the selected driver (should already be filtered by API, but double-check)
+          const driverData = data.damageData.filter(dp => dp.driver === driver);
+          
+          if (driverData.length === 0) {
+            console.log(`No damage data for driver: ${driver}`);
+            return [];
+          }
+          
+          // Sort by session_time
+          driverData.sort((a, b) => a.session_time - b.session_time);
+          
+          // Sample the data to reduce points (take every Nth point)
+          const sampleSize = Math.max(1, Math.floor(driverData.length / 2000));
+          const sampledData = driverData.filter((_, i) => i % sampleSize === 0);
+          
+          console.log(`Sampled damage data from ${driverData.length} to ${sampledData.length} points`);
+          
+          // Calculate approximate lap time from the data
+          const totalTime = driverData[driverData.length-1].session_time - driverData[0].session_time;
+          const estimatedLapTime = Math.floor(totalTime / (maxLapNumber || 50)); // Use maxLapNumber as fallback
+          const pointsPerLap = Math.max(1, Math.floor(sampledData.length / (maxLapNumber || 50)));
+          
+          // Assign lap numbers more evenly
+          const processedData = sampledData.map((dataPoint, index) => {
+            // Calculate lap number based on index in the array
+            const lap = Math.floor(index / pointsPerLap) + 1;
+            
+            return {
+              lap,
+              frontWing: (dataPoint.front_left_wing_damage + dataPoint.front_right_wing_damage) / 2,
+              rearWing: dataPoint.rear_wing_damage,
+              diffuser: dataPoint.diffuser_damage,
+              floor: dataPoint.floor_damage,
+              sidepod: dataPoint.sidepod_damage,
+              session_time: dataPoint.session_time
+            };
+          });
+          
+          // Group by lap and calculate average values
+          const lapMap = {};
+          processedData.forEach(dataPoint => {
+            if (!lapMap[dataPoint.lap]) {
+              lapMap[dataPoint.lap] = {
+                lap: dataPoint.lap,
+                frontWing: 0,
+                rearWing: 0,
+                diffuser: 0,
+                floor: 0,
+                sidepod: 0,
+                count: 0
+              };
+            }
+            
+            lapMap[dataPoint.lap].frontWing += dataPoint.frontWing;
+            lapMap[dataPoint.lap].rearWing += dataPoint.rearWing;
+            lapMap[dataPoint.lap].diffuser += dataPoint.diffuser;
+            lapMap[dataPoint.lap].floor += dataPoint.floor;
+            lapMap[dataPoint.lap].sidepod += dataPoint.sidepod;
+            lapMap[dataPoint.lap].count++;
+          });
+          
+          // Calculate averages
+          const finalData = Object.values(lapMap)
+            .map(lap => ({
+              lap: lap.lap,
+              frontWing: lap.frontWing / lap.count,
+              rearWing: lap.rearWing / lap.count,
+              diffuser: lap.diffuser / lap.count,
+              floor: lap.floor / lap.count,
+              sidepod: lap.sidepod / lap.count
+            }))
+            .sort((a, b) => a.lap - b.lap); // Ensure laps are in order
+          
+          console.log(`Processed damage data into ${finalData.length} laps`);
+          return finalData;
+        } else {
+          console.error(`API returned error: ${response.status}`);
+          return [];
+        }
+      } catch (error) {
+        console.error(`Error fetching damage data for ${driver}:`, error);
+        return [];
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    // Function to add a driver to the comparison
+    const addDriverToComparison = async (driver, lap = 1) => {  // Changed default from 'fastest' to 1
+      // Don't add if it's the currently selected driver
+      if (driver === selectedDriver) {
+        console.log(`${driver} is already the main selected driver`);
+        return;
+      }
+      
+      // Don't add if already in additionalDriversData
+      if (additionalDriversData[driver]) {
+        console.log(`${driver} is already in the comparison`);
+        return;
+      }
+      
+      console.log(`Adding ${driver} (lap ${lap}) to comparison`);
+      
+      // Always use a numeric lap value
+      const lapToUse = typeof lap === 'string' ? parseInt(lap, 10) || 1 : lap;
+      
+      // Fetch the data with the numeric lap
+      await fetchDriverTelemetry(driver, lapToUse);
+    };
+    
+    // Function to remove a driver from the comparison
+    const removeDriverFromComparison = (driver) => {
+      console.log(`Removing ${driver} from comparison`);
+      
+      // Remove from additionalDriversData
+      setAdditionalDriversData(prev => {
+        const newData = {...prev};
+        delete newData[driver];
+        return newData;
+      });
+    };
+
   // ALL THE EVENT HANDLERS
 
     const handleSeasonChange = (event) => {
@@ -982,6 +1238,8 @@ export default function DashboardContainer({ user = null }) {
       setSelectedLap(lap);
     };
 
+    
+
     return (
         <Box sx={{ minHeight: 'calc(89vh)', display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#fff', backgroundColor: '#0a0e27', p: 4 }}>
         <Typography variant="h4" sx={{ mb: 2, fontWeight: 'bold' }}>F1 Telemetry Analysis</Typography>
@@ -1005,7 +1263,7 @@ export default function DashboardContainer({ user = null }) {
         />
 
         {/* Render the appropriate analysis component based on selected type */}
-        <Box sx={{ width: '100%', height: '70vh', border: '1px solid #444', borderRadius: 3, p: 2, backgroundColor: '#0a0e27', overflow: 'hidden' }}>
+        <Box sx={{ width: '100%', height: '70vh', border: '0px solid #444', borderRadius: 3, p: 2, backgroundColor: '#0a0e27', overflow: 'visible' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ color: '#fff' }}>
                 {analysisType === 'race-time' ? 'Lap Time Comparison' : 
@@ -1053,6 +1311,8 @@ export default function DashboardContainer({ user = null }) {
                 driverTeams={driverTeams}
                 driverColorMap={driverColorMap}
                 onDriverSelect={handleDamageDriverSelect}
+                fetchDriverDamageData={fetchDriverDamageData}
+                driversWithDamage={driversWithDamage}
             />
             )}
 
@@ -1068,25 +1328,35 @@ export default function DashboardContainer({ user = null }) {
                 onDriverSelect={handleTyreWearDriverSelect}
                 showRawLapData={showRawLapData}
                 setShowRawLapData={setShowRawLapData}
+                fetchDriverTyreWearData={fetchDriverTyreWearData}
               />
             )}
 
             {analysisType === 'individual-lap' && (
               <IndividualLapChart 
-                isLoading={isLoading}
-                lapTelemetryData={lapTelemetryData}
-                selectedDriver={selectedDriver}
-                selectedLap={selectedLap}
-                maxLapNumber={maxLapNumber}
-                drivers={drivers}
-                driverTeams={driverTeams}
-                driverColorMap={driverColorMap}
-                onDriverSelect={handleIndividualLapDriverSelect}
-                onLapSelect={handleLapSelect}
-                showRawLapData={showRawLapData}
-                setShowRawLapData={setShowRawLapData}
-                trackData={trackData}
-              />
+              isLoading={isLoading}
+              lapTelemetry={lapTelemetryData} // Add this or make sure both are defined
+              lapTelemetryData={lapTelemetryData}
+              selectedDriver={selectedDriver}
+              selectedLap={selectedLap}
+              maxLapNumber={maxLapNumber}
+              drivers={drivers}
+              driverTeams={driverTeams}
+              driverColorMap={driverColorMap}
+              onDriverSelect={handleIndividualLapDriverSelect}
+              onLapSelect={handleLapSelect}
+              showRawLapData={showRawLapData}
+              setShowRawLapData={setShowRawLapData}
+              trackData={trackData}
+              additionalDriversData={additionalDriversData}
+              fetchDriverTelemetry={fetchDriverTelemetry}
+              addDriverToComparison={addDriverToComparison}
+              removeDriverFromComparison={removeDriverFromComparison}
+              exportChartAsImage={(ref, filename) => {
+                console.log('Export chart functionality would go here', ref, filename);
+                // Define a simple function or import your actual export function
+              }}
+            />
             )}
 
             {analysisType === 'n/a' && (
