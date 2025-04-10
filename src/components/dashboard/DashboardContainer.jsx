@@ -8,6 +8,7 @@ import RaceTimeChart from './analysis/RaceTimeChart';
 import DamageChart from './analysis/DamageChart';
 import TyreWearChart from './analysis/TyreWearChart';
 import IndividualLapChart from './analysis/IndividualLapChart';
+import GeneralStatsChart from './analysis/GeneralStatsChart';
 
 
 export default function DashboardContainer({ user = null }) {
@@ -40,7 +41,7 @@ export default function DashboardContainer({ user = null }) {
     const [maxLapNumber, setMaxLapNumber] = useState(0);
 
     // New state for analysis type toggle
-    const [analysisType, setAnalysisType] = useState('race-time');
+    const [analysisType, setAnalysisType] = useState('general-stats');
 
     // Data correction options
     const [correctPitTransitions, setCorrectPitTransitions] = useState(true);
@@ -69,6 +70,10 @@ export default function DashboardContainer({ user = null }) {
     const [trackData, setTrackData] = useState(null);
 
     const [driversWithDamage, setDriversWithDamage] = useState([]);
+
+    const [generalStats, setGeneralStats] = useState(null);
+    const [isLoadingStats, setIsLoadingStats] = useState(false);
+    const [selectedStat, setSelectedStat] = useState('overview');
   
   // ALL THE USE EFFECT HOOKS
 
@@ -344,6 +349,31 @@ export default function DashboardContainer({ user = null }) {
       // Clear additional drivers when changing analysis type
       setAdditionalDriversData({});
     }, [analysisType]);
+
+  
+    useEffect(() => {
+      if (!selectedSeason || !selectedRace || !selectedSessionType) return;
+      
+      const fetchGeneralStats = async () => {
+        try {
+          setIsLoadingStats(true);
+          const response = await fetch(
+            `/api/general-stats?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}`, 
+            { credentials: 'include' }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setGeneralStats(data);
+          }
+        } catch (error) {
+          console.error('Error fetching general stats:', error);
+        } finally {
+          setIsLoadingStats(false);
+        }
+      };
+      
+      fetchGeneralStats();
+    }, [selectedSeason, selectedRace, selectedSessionType]);
   
   // ALL THE DATA PROCESSING FUNCTIONS / CONSTS
   
@@ -1270,7 +1300,7 @@ export default function DashboardContainer({ user = null }) {
                 analysisType === 'damage' ? 'Damage Analysis' :
                 analysisType === 'tyre-wear' ? 'Tyre Wear Analysis' :
                 analysisType === 'individual-lap' ? 'Individual Lap Analysis' :
-                'General Statistics'}
+                analysisType === 'general-stats' ? 'General Statistics' : ''}
             </Typography>
             </Box>
 
@@ -1359,16 +1389,14 @@ export default function DashboardContainer({ user = null }) {
             />
             )}
 
-            {analysisType === 'n/a' && (
-            <DamageChart 
-              isLoading={isLoading}
-              processedDamageData={processedDamageData}
-              selectedDriver={selectedDriver}
-              maxLapNumber={maxLapNumber}
+            {analysisType === 'general-stats' && (
+              <GeneralStatsChart
+              isLoading={isLoadingStats}
+              generalStats={generalStats}
               drivers={drivers}
               driverTeams={driverTeams}
-              driverColorMap={driverColorMap}
-              onDriverSelect={handleDamageDriverSelect}
+              selectedStat={selectedStat}
+              setSelectedStat={setSelectedStat}
             />
             )}
             
