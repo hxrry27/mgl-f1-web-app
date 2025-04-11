@@ -1,12 +1,12 @@
-// src/app/teams/layout.jsx
 'use client';
 
-import * as React from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Box, Divider, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { Separator } from "@/components/ui/separator";
 import Header from '@/components/Header';
-import { teams } from '@/lib/data.js'
-
+import { teams } from '@/lib/data.js';
+import { cn } from "@/lib/utils";
+import { usePathname } from 'next/navigation';
 
 // Function to normalize team names for URLs
 const normalizeTeamName = (name) => {
@@ -14,90 +14,56 @@ const normalizeTeamName = (name) => {
 };
 
 export default function TeamsLayout({ children }) {
+  const pathname = usePathname();
+  
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      minHeight: '100vh', 
-      backgroundColor: '#0a0e27', 
-      color: 'white',
-    }}>
-      {/* Fixed Header and Banner */}
-      <Box sx={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        zIndex: 1100, // Above content but below potential modals
-      }}>
-        <Header />
-      </Box>
-
+    <div className="flex flex-col min-h-screen bg-gray-900 bg-opacity-90 text-white">
+      
       {/* Main Layout Container */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexGrow: 1, 
-        pt: '128px', // Account for header (32px banner + 64px header) height
-        overflow: 'hidden', // Prevent main content from causing scroll
-      }}>
+      <div className="flex flex-grow">
         {/* Fixed Sidebar */}
-        <Box sx={{ 
-          position: 'fixed', 
-          top: '128px', // Align with bottom of header
-          left: 0, 
-          width: 240, 
-          height: 'calc(100vh - 128px)', // Full height minus header
-          backgroundColor: '#0a0e27', 
-          borderRight: '1px solid #444', 
-          p: 2, 
-          overflowY: 'auto', // Scrollable sidebar if content overflows
-        }}>
-          <List sx={{ p: 0 }}>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} href="/teams/lineups">
-                <ListItemText primary="Lineups" />
-              </ListItemButton>
-            </ListItem>
-            <Divider sx={{ my: 1, backgroundColor: '#444' }} />
-            {teams.map((team) => (
-              <ListItem disablePadding key={team} sx={{ my: 0.2 }}>
-                <ListItemButton
-                  component={Link}
+        <div className="fixed top-16 left-0 w-60 h-[calc(100vh-4rem)] bg-gray-900/70 border-r border-gray-800 p-4 overflow-y-auto">
+          <nav className="space-y-1">
+            <div>
+              <Link 
+                href="/teams/lineups"
+                className={cn(
+                  "block px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  pathname === "/teams/lineups" ? 
+                    "bg-gray-800 text-white" : 
+                    "text-gray-300 hover:bg-gray-800 hover:text-white"
+                )}
+              >
+                Lineups
+              </Link>
+            </div>
+            
+            <Separator className="my-2 bg-gray-800" />
+            
+            <div className="space-y-1">
+              {teams.map((team) => (
+                <Link 
+                  key={team}
                   href={`/teams/${normalizeTeamName(team)}`}
-                  sx={{
-                    py: 0.3,
-                    px: 2,
-                    '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' },
-                  }}
+                  className={cn(
+                    "block px-3 py-1.5 rounded-md text-sm transition-colors",
+                    pathname === `/teams/${normalizeTeamName(team)}` ? 
+                      "bg-gray-800 text-white" : 
+                      "text-gray-300 hover:bg-gray-800 hover:text-white"
+                  )}
                 >
-                  <ListItemText
-                    primary={team}
-                    primaryTypographyProps={{
-                      fontSize: '0.9rem',
-                      fontWeight: 400,
-                    }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-
-        {/* Main Content (Scrollable) */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            ml: '240px', // Offset for sidebar width
-            p: 2,
-            backgroundColor: '#0a0e27',
-            overflowY: 'auto', // Scrollable content
-            height: 'calc(100vh - 128px)', // Full height minus header
-          }}
-        >
+                  {team}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        </div>
+        
+        {/* Main Content */}
+        <div className="flex-grow ml-60 p-6 overflow-y-auto min-h-[calc(100vh-4rem)]">
           {children}
-        </Box>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }

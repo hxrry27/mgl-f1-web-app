@@ -1,5 +1,4 @@
-// src/app/standings/season/[season]/page.jsx
-import StandingsTabs from './StandingsTabs'; // New client component
+import StandingsTabs from './StandingsTabs';
 import pool from '@/lib/db';
 import { teamColors, lightTeams } from '@/lib/data';
 
@@ -40,7 +39,6 @@ async function processRaceResults(raceIds) {
     fastestLapDrivers.set(row.race_id, drivers);
   });
 
-  const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
   const driverStandingsMap = new Map();
   const constructorStandingsMap = new Map();
 
@@ -52,10 +50,6 @@ async function processRaceResults(raceIds) {
     const isFastestLap = result.fastest_lap_time_int && fastestLapDrivers.get(result.race_id)?.includes(driver) && position <= 10;
     const fastestLapPoint = isFastestLap ? 1 : 0;
     const totalPoints = points + fastestLapPoint;
-
-    if (driver === 'hxrry27') {
-      //console.log(`Race ${result.race_id}: Pos ${position}, Points ${points}, Fastest Lap ${fastestLapPoint} (Time: ${result.fastest_lap_time_int}, Race Best: ${fastestLapDrivers.get(result.race_id)?.includes(driver) ? result.fastest_lap_time_int : 'N/A'})`);
-    }
 
     if (driverStandingsMap.has(driver)) {
       const existing = driverStandingsMap.get(driver);
@@ -89,7 +83,6 @@ async function processRaceResults(raceIds) {
       points: Math.round(entry.points),
     }));
 
-  //console.log('hxrry27 Total:', driverStandingsMap.get('hxrry27')?.points);
   return { driverStandings, constructorStandings };
 }
 
@@ -137,7 +130,6 @@ export default async function SeasonStandingsPage({ params }) {
         [season]
       );
       const raceIds = racesRes.rows.map(r => r.id);
-      //console.log(`Season ${season} has ${raceIds.length} races:`, raceIds);
 
       if (raceIds.length > 0) {
         const { driverStandings, constructorStandings } = await processRaceResults(raceIds);

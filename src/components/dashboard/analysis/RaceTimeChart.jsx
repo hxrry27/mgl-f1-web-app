@@ -234,7 +234,7 @@ export default function RaceTimeChart({
     
     return (
       <div className="w-full h-full" style={{ minHeight: '280px' }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={500}>
           <LineChart
             data={chartData}
             margin={{ top: 10, right: 30, bottom: 40, left: 50 }}

@@ -1,8 +1,14 @@
-// src/app/tracks/[track]/page.jsx
 import { Pool } from 'pg';
-import { Box, Typography, Divider, Grid, List, ListItem } from '@mui/material';
 import Image from 'next/image';
 import { teamColors } from '@/lib/data';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { 
+  Trophy, Flag, MapPin, Timer, GitBranch, 
+  Users, UsersRound, Medal
+} from 'lucide-react';
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -103,7 +109,7 @@ export default async function TrackPage({ params }) {
   // Step 3: Fetch lap data for each session individually
   let lapHistoryData = [];
   
-  // SIMPLIFIED APPROACH: Process each session individually
+  // Process each session individually
   for (const sessionUID of sessionUIDs) {
     const singleSessionQuery = `
       SELECT 
@@ -129,7 +135,7 @@ export default async function TrackPage({ params }) {
     }
   }
 
-  // FALLBACK: Try also checking the specific session you mentioned directly
+  // FALLBACK: Try also checking the specific session directly
   const specificSessionUID = -5092816217294772112;
   if (!sessionUIDs.includes(specificSessionUID)) {
     const specificSessionQuery = `
@@ -154,11 +160,6 @@ export default async function TrackPage({ params }) {
     } catch (err) {
       console.error(`Error querying specific session ${specificSessionUID}:`, err);
     }
-  }
-
-  console.log(`Total lap history data records: ${lapHistoryData.length}`);
-  if (lapHistoryData.length > 0) {
-    console.log('First lap history record:', lapHistoryData[0]);
   }
 
   // Process results into historical data
@@ -213,7 +214,6 @@ export default async function TrackPage({ params }) {
         source: 'lap_history_bulk_data',
         session_uid: lap.session_uid
       };
-      console.log(`Using faster lap from lap_history_bulk_data for season ${season}: ${formatTime(lap.fastest_lap_time)}`);
     }
   });
 
@@ -243,18 +243,7 @@ export default async function TrackPage({ params }) {
       season: `${result.season}`,
     }));
 
-  // Fastest Historical Race Lap - DEBUG before processing
-  console.log("All significantResults with fastestLapData:", significantResults
-    .filter(result => result.fastestLapData && result.fastestLapData.time > 0)
-    .map(result => ({
-      driver: result.fastestLapData.driver,
-      time: result.fastestLapData.time, 
-      formattedTime: formatTime(result.fastestLapData.time),
-      season: result.fastestLapData.season, 
-      source: result.fastestLapData.source || 'unknown'
-    })));
-
-  // Fastest Historical Race Lap - get the absolute fastest lap regardless of season
+  // Fastest Historical Race Lap
   const fastestLap = significantResults
     .filter(result => result.fastestLapData && result.fastestLapData.time > 0)
     .reduce((fastest, result) => {
@@ -272,18 +261,6 @@ export default async function TrackPage({ params }) {
       }
       return fastest;
     }, null);
-    
-  // Log the final selected fastest lap
-  if (fastestLap) {
-    console.log("Selected fastest lap:", {
-      driver: fastestLap.driver,
-      time: fastestLap.time,
-      rawTime: fastestLap.rawTime,
-      season: fastestLap.season,
-      team: fastestLap.team,
-      source: fastestLap.source
-    });
-  }
 
   // Most Poles
   const poleCounts = significantResults.reduce((acc, result) => {
@@ -370,190 +347,202 @@ export default async function TrackPage({ params }) {
     : 'No pit stops recorded';
 
   return (
-    <Box sx={{ pt: '5vh', pl: '15vw', pr: '15vw' }}>
-      {/* Full-width Title Box */}
-      <Box sx={{ mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography
-            variant="h4"
-            sx={{
-              fontSize: 80,
-              fontFamily: 'Formula1',
-              color: 'white',
-              mr: 2,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {trackInfo.country}
-          </Typography>
-          <Box sx={{ position: 'relative', width: 100, height: 95 }}>
+    <div className="container mx-auto px-4 py-6 bg-gray-900/30 min-h-screen">
+      {/* Track Header Section */}
+      <div className="mb-6">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <h1 className="text-5xl font-formula1 font-bold text-white">
+              {trackInfo.country}
+            </h1>
+          </div>
+          <div className="relative w-24 h-24">
             <Image
               src={`/images/flags/${flagCountry}.png`}
               alt={`${trackInfo.country} Flag`}
               fill
               style={{ objectFit: 'contain' }}
+              className="object-contain"
             />
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
 
-<Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: 3, mb: 3, alignItems: 'flex-start' }}>
-  
-  <Box sx={{ flex: '1 1 33%', minWidth: 300 }}>
-    <Typography sx={{ color: 'white' }}>
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>Track Name - </Typography>
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>{trackInfo.name}</Typography>
-    </Typography>
-    <Typography sx={{ color: 'white' }}>
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>Circuit Length - </Typography> 
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>{trackInfo.length} km</Typography>
-    </Typography>
-    <Typography sx={{ color: 'white' }}>
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>Turns - </Typography> 
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>{trackInfo.turns}</Typography>
-    </Typography>
-    <Typography sx={{ color: 'white' }}>
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>First Grand Prix - </Typography> 
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>{trackInfo.first_grand_prix}</Typography>
-    </Typography>
-    <Typography sx={{ color: 'white' }}>
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>Laps (50%) - </Typography> 
-      <Typography component="span" variant="h6" sx={{ fontSize: 26, color: 'white' }}>{halfLaps}</Typography>
-    </Typography>
-    
-  </Box>
+      {/* Track Info Section */}
+      <div className="flex flex-col md:flex-row gap-6 mb-8">
+        <Card className="flex-1 bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-blue-500" />
+              <CardTitle className="text-md font-semibold text-white">Circuit Information</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Track Name</span>
+                <span className="font-semibold text-white">{trackInfo.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Circuit Length</span>
+                <span className="font-semibold text-white">{trackInfo.length} km</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Turns</span>
+                <span className="font-semibold text-white">{trackInfo.turns}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">First Grand Prix</span>
+                <span className="font-semibold text-white">{trackInfo.first_grand_prix}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Race Laps (50%)</span>
+                <span className="font-semibold text-white">{halfLaps}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <div className="flex-1 relative aspect-video md:h-auto min-h-64">
+          <Image
+            src={`/images/tracks/${track}.png`}
+            alt={`${trackInfo.name} Track Map`}
+            fill
+            className="object-contain"
+          />
+        </div>
+      </div>
 
-  <Box sx={{ flex: '1 1 67%', minWidth: 300, position: 'relative', height: 500 }}>
-    <Image
-      src={`/images/tracks/${track}.png`}
-      alt={`${trackInfo.name} Track Map`}
-      fill
-      style={{ objectFit: 'contain' }}
-    />
-  </Box>
+      <Separator className="my-8 bg-gray-700" />
 
-</Box>
-
-<Divider sx={{ my: 3, borderColor: '#444' }} />
-
-      <Grid container spacing={2} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
-          <Box sx={{ backgroundColor: '#1a1e37', border: '1px solid #444', borderRadius: 1, p: 2, height: '100%' }}>
-            <Typography variant="h6" sx={{ mb: 1, color: 'white' }}>Previous Winners</Typography>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Previous Winners Card */}
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden md:row-span-2">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              <CardTitle className="text-md font-semibold text-white">Previous Winners</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
             {previousWinners.length > 0 ? (
-              <List dense sx={{ maxHeight: 300, overflowY: 'auto' }}>
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
                 {previousWinners.map((win, index) => (
-                  <ListItem key={index} sx={{ py: 0.5 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        width: '100%',
-                      }}
-                    >
-                      <Typography sx={{ color: 'white', width: '55%', pr: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {win.driver}
-                      </Typography>
-                      <Box
-                        sx={{
+                  <div key={index} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
+                    <div className="flex-1 truncate font-medium text-white">{win.driver}</div>
+                    <div className="px-2">
+                      <Badge 
+                        className="font-medium"
+                        style={{ 
                           backgroundColor: teamColors[win.team] || '#444',
-                          color: lightTeams.includes(win.team) ? 'black' : 'white',
-                          px: 0.5,
-                          py: 0.2,
-                          borderRadius: 1,
-                          width: '30%',
-                          textAlign: 'center',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          color: lightTeams.includes(win.team) ? 'black' : 'white' 
                         }}
                       >
                         {win.team}
-                      </Box>
-                      <Typography
-                        component="span"
-                        sx={{
-                          color: '#888',
-                          width: '15%',
-                          textAlign: 'right',
-                          pl: 1,
-                        }}
-                      >
-                        S{win.season}
-                      </Typography>
-                    </Box>
-                  </ListItem>
+                      </Badge>
+                    </div>
+                    <div className="text-gray-500 text-sm w-14 text-right">S{win.season}</div>
+                  </div>
                 ))}
-              </List>
+              </div>
             ) : (
-              <Typography sx={{ color: 'white' }}>No previous winners recorded.</Typography>
+              <p className="text-gray-400">No previous winners recorded.</p>
             )}
-          </Box>
-        </Grid>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} md={8}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ backgroundColor: '#1a1e37', border: '1px solid #444', borderRadius: 1, p: 2, height: '10vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h6" sx={{ mb: 1, color: 'white' }}>Most Successful Driver</Typography>
-                <Typography sx={{ color: 'white' }}>{mostSuccessfulDriverText}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ backgroundColor: '#1a1e37', border: '1px solid #444', borderRadius: 1, p: 2, height: '10vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h6" sx={{ mb: 1, color: 'white' }}>Most Successful Constructor</Typography>
-                <Typography sx={{ color: 'white' }}>{mostSuccessfulTeamText}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ backgroundColor: '#1a1e37', border: '1px solid #444', borderRadius: 1, p: 2, height: '10vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h6" sx={{ mb: 1, color: 'white' }}>Most Pole Positions</Typography>
-                <Typography sx={{ color: 'white' }}>{mostPolesText}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ backgroundColor: '#1a1e37', border: '1px solid #444', borderRadius: 1, p: 2, height: '10vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h6" sx={{ mb: 1, color: 'white' }}>Most Podiums</Typography>
-                <Typography sx={{ color: 'white' }}>{mostPodiumsText}</Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ backgroundColor: '#1a1e37', border: '1px solid #444', borderRadius: 1, p: 2, height: '10vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h6" sx={{ mb: 1, color: 'white' }}>Fastest Race Lap</Typography>
-                {fastestLap ? (
-                  <Typography sx={{ display: 'flex', alignItems: 'center', color: 'white' }}>
-                    {fastestLap.driver}{' '}
-                    <Box
-                      sx={{
-                        backgroundColor: teamColors[fastestLap.team] || '#444',
-                        color: lightTeams.includes(fastestLap.team) ? 'black' : 'white',
-                        px: 0.5,
-                        py: 0.2,
-                        borderRadius: 1,
-                        ml: 1,
-                        mr: 1,
-                        fontSize: '0.8rem',
-                      }}
-                    >
-                      {fastestLap.team}
-                    </Box>
-                    - {fastestLap.time} (S{fastestLap.season})
-                  </Typography>
-                ) : (
-                  <Typography sx={{ color: 'white' }}>No fastest lap recorded.</Typography>
-                )}
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <Box sx={{ backgroundColor: '#1a1e37', border: '1px solid #444', borderRadius: 1, p: 2, height: '10vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Typography variant="h6" sx={{ mb: 1, color: 'white' }}>Most Pit Stops</Typography>
-                <Typography sx={{ color: 'white' }}>{mostPitsText}</Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
-    </Box>
+        {/* Stats Cards */}
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-500" />
+              <CardTitle className="text-md font-semibold text-white">Most Successful Driver</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-medium text-white">{mostSuccessfulDriverText}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <UsersRound className="h-5 w-5 text-red-500" />
+              <CardTitle className="text-md font-semibold text-white">Most Successful Constructor</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-medium text-white">{mostSuccessfulTeamText}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Flag className="h-5 w-5 text-purple-500" />
+              <CardTitle className="text-md font-semibold text-white">Most Pole Positions</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-medium text-white">{mostPolesText}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Medal className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-md font-semibold text-white">Most Podiums</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-medium text-white">{mostPodiumsText}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <Timer className="h-5 w-5 text-green-500" />
+              <CardTitle className="text-md font-semibold text-white">Fastest Race Lap</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {fastestLap ? (
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-white">{fastestLap.driver}</span>
+                <Badge 
+                  className="font-medium"
+                  style={{ 
+                    backgroundColor: teamColors[fastestLap.team] || '#444',
+                    color: lightTeams.includes(fastestLap.team) ? 'black' : 'white' 
+                  }}
+                >
+                  {fastestLap.team}
+                </Badge>
+                <span className="text-gray-300">{fastestLap.time}</span>
+                <span className="text-gray-500 text-sm">(S{fastestLap.season})</span>
+              </div>
+            ) : (
+              <p className="text-gray-400">No fastest lap recorded.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5 text-cyan-500" />
+              <CardTitle className="text-md font-semibold text-white">Most Pit Stops</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-lg font-medium text-white">{mostPitsText}</p>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
 

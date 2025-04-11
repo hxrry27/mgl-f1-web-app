@@ -22,3 +22,4 @@ export async function exportChartAsImage(chartRef, fileName) {
     console.error('Error exporting chart:', error);
   }
 }
+

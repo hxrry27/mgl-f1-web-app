@@ -398,7 +398,7 @@ export default function IndividualLapChart({
     
     return (
       <div className="w-full h-full" style={{ minHeight: '280px' }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={500}>
           <LineChart 
               data={chartData} 
               margin={{ top: 0, right: 10, left: -15, bottom: 40 }} // Increase bottom from 5 to 40
@@ -570,7 +570,7 @@ export default function IndividualLapChart({
   return (
     <Card 
       ref={chartRef} 
-      className={cn("chart-container bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-full flex flex-col", className)}
+      className={cn("chart-container bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-[600px]", className)}
     >
       <CardHeader className="pb-2">
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">

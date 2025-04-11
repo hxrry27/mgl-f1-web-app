@@ -1,39 +1,48 @@
-// src/app/drivers/lineups/ClientSeasonSelector.jsx
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "lucide-react";
 
 export default function ClientSeasonSelector({ seasons, defaultSeason }) {
   const [season, setSeason] = useState(defaultSeason);
   const router = useRouter();
-
-  const handleSeasonChange = (event) => {
-    const newSeason = event.target.value;
+  
+  const handleSeasonChange = (newSeason) => {
     setSeason(newSeason);
     router.push(`/teams/lineups?season=${newSeason}`);
   };
-
+  
   return (
-    <FormControl sx={{ mb: 4, minWidth: 120 }}>
-      <InputLabel sx={{ color: 'white' }}>Season</InputLabel>
+    <div className="flex items-center gap-2 mb-6">
+      <Calendar className="h-5 w-5 text-blue-500" />
       <Select
         value={season}
-        label="Season"
-        onChange={handleSeasonChange}
-        sx={{
-          color: 'white',
-          backgroundColor: '#0a0e27',
-          border: '1px solid #444',
-          '& .MuiOutlinedInput-notchedOutline': { borderColor: '#444' },
-          '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#666' },
-        }}
+        onValueChange={handleSeasonChange}
       >
-        {seasons.map((s) => (
-          <MenuItem key={s} value={s}>Season {s}</MenuItem>
-        ))}
+        <SelectTrigger className="w-40 bg-gray-900 border-gray-700 text-white">
+          <SelectValue placeholder="Select Season" />
+        </SelectTrigger>
+        <SelectContent className="bg-gray-900 border-gray-700 text-white">
+          <SelectGroup>
+            <SelectLabel className="text-gray-400">Select Season</SelectLabel>
+            {seasons.map((s) => (
+              <SelectItem key={s} value={s} className="text-white hover:bg-gray-800">
+                Season {s}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
       </Select>
-    </FormControl>
+    </div>
   );
 }

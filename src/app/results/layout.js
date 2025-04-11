@@ -1,10 +1,9 @@
-// src/app/results/layout.jsx
-import { Box } from '@mui/material';
-import pool from '@/lib/db';
+import React from 'react';
 import Header from '@/components/Header';
 import ClientResultsSidebar from './ClientResultsSidebar';
+import pool from '@/lib/db';
 
-// Map slugs to full track names (same as in page.jsx)
+// Map slugs to full track names
 const trackNames = {
   'bahrain': 'Bahrain',
   'jeddah': 'Saudi Arabia',
@@ -30,9 +29,8 @@ const trackNames = {
   'las-vegas': 'Las Vegas',
   'losail': 'Qatar',
   'imola': 'Emilia-Romagna',
-  'portimao' : 'Portugal',
-  'paul-ricard' : 'France'
-  // Add more as needed
+  'portimao': 'Portugal',
+  'paul-ricard': 'France'
 };
 
 async function getRacesForSeason(season) {
@@ -54,56 +52,19 @@ async function getRacesForSeason(season) {
 export default async function ResultsLayout({ children, params }) {
   const season = params.season || '11'; // Default to Season 11
   const races = await getRacesForSeason(season);
-
+  
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        backgroundColor: '#0a0e27',
-        color: 'white',
-      }}
-    >
-      {/* Fixed Header */}
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1100,
-        }}
-      >
-        <Header />
-      </Box>
-
+    <div className="flex flex-col min-h-screen bg-gray-900 bg-opacity-90 text-white">      
       {/* Main Layout Container */}
-      <Box
-        sx={{
-          display: 'flex',
-          flexGrow: 1,
-          pt: '128px', // Header height (32px banner + 64px header)
-          overflow: 'hidden',
-        }}
-    >
+      <div className="flex flex-grow">
         <ClientResultsSidebar season={season} races={races} trackNames={trackNames} />
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            ml: '240px',
-            p: 2,
-            backgroundColor: '#0a0e27',
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            height: 'calc(100vh - 128px)',
-          }}
-        >
+        
+        {/* Main Content */}
+        <div className="flex-grow ml-60 p-6 overflow-y-auto min-h-[calc(100vh-4rem)]">
           {children}
-        </Box>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 }
 

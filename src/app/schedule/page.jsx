@@ -1,10 +1,12 @@
-// src/app/schedule/page.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Typography, Grid, TextField, Button } from '@mui/material';
 import Image from 'next/image';
 import Cookies from 'js-cookie';
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Calendar } from 'lucide-react';
 
 function isBST(date) {
   const year = date.getUTCFullYear();
@@ -98,59 +100,70 @@ export default function SchedulePage() {
   };
 
   return (
-    <Box sx={{ pl: { xs: 2, md: 80 }, pr: { xs: 2, md: 80 }, py: 2, color: 'white', textAlign: 'center'}}>
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold' }}>
-        Season {currentSeason} Race Schedule
-      </Typography>
-      <Grid container spacing={3} justifyContent="center">
+    <div className="container mx-auto px-4 py-6 bg-gray-900/30 min-h-screen">
+      <div className="flex justify-center mb-8">
+        <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+          <Calendar className="h-7 w-7 text-blue-500" />
+          Season {currentSeason} Race Schedule
+        </h1>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {schedule.map((race) => (
-          <Grid item xs={12} sm={6} md={4} key={race.id}>
-            <Box
-              sx={{
-                border: '1px solid #444',
-                borderRadius: 1,
-                p: 2,
-                backgroundColor: '#0a0e27',
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' },
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 1 }}>
+          <Card 
+            key={race.id}
+            className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden hover:bg-gray-900/80 transition-colors"
+          >
+            <div className="p-4">
+              <h3 className="text-lg font-semibold text-white mb-2">
                 {race.track.charAt(0).toUpperCase() + race.track.slice(1).replace(/-/g, ' ')}
-              </Typography>
-              <Box sx={{ position: 'relative', height: { xs: 100, md: 150 }, width: '100%' }}>
+              </h3>
+              
+              <div className="relative h-32 w-full mb-3">
                 <Image
                   src={`/images/tracks/${race.track}.png`}
                   alt={`${race.track} Track Map`}
-                  layout="fill"
-                  objectFit="contain"
+                  fill
+                  style={{ objectFit: 'contain' }}
                 />
-              </Box>
+              </div>
+              
               {editing === race.id && isAdmin ? (
-                <>
-                  <TextField
+                <div className="space-y-2">
+                  <Input
                     type="datetime-local"
                     value={newDateTime}
                     onChange={(e) => setNewDateTime(e.target.value)}
-                    sx={{ mt: 1, input: { color: 'white' }, label: { color: 'white' }, width: '100%' }}
+                    className="bg-gray-800 border-gray-700 text-white"
                   />
-                  <Button onClick={() => handleSave(race.id)} sx={{ mt: 1, backgroundColor: '#00A0F0' }}>
+                  <Button 
+                    onClick={() => handleSave(race.id)} 
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
                     Save
                   </Button>
-                </>
+                </div>
               ) : (
-                <Typography sx={{ mt: 1, color: 'white' }}>
-                  {formatRaceDateTime(race.date, race.time)}
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-200">
+                    {formatRaceDateTime(race.date, race.time)}
+                  </span>
                   {isAdmin && (
-                    <Button onClick={() => handleEdit(race.id, race.date, race.time)} sx={{ ml: 1, color: '#00A0F0' }}>
+                    <Button 
+                      onClick={() => handleEdit(race.id, race.date, race.time)} 
+                      size="sm" 
+                      variant="ghost" 
+                      className="text-blue-400 hover:text-blue-300"
+                    >
                       Edit
                     </Button>
                   )}
-                </Typography>
+                </div>
               )}
-            </Box>
-          </Grid>
+            </div>
+          </Card>
         ))}
-      </Grid>
-    </Box>
+      </div>
+    </div>
   );
 }

@@ -390,7 +390,7 @@ export default function DamageChart(props) {
     
     return (
       <div className="w-full h-full" style={{ minHeight: '280px' }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={500}>
           <LineChart
             data={mergedData.length > 0 ? mergedData : processedDamageData}
             margin={{ top: 10, right: 30, bottom: 50, left: 10 }} // Increased bottom margin

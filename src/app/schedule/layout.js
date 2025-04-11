@@ -1,43 +1,18 @@
-// src/app/standings/layout.jsx
 'use client';
 
-import * as React from 'react';
-import { Box } from '@mui/material';
+import React from 'react';
+import Header from '@/components/Header';
 
-const seasons = [...Array(11)].map((_, i) => i + 1); // Seasons 1-9
-
-export default function StandingsLayout({ children }) {
+export default function ScheduleLayout({ children }) {
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      minHeight: '100vh', 
-      backgroundColor: '#0a0e27', 
-      color: 'white',
-    }}>
+    <div className="flex flex-col min-h-screen bg-gray-900 bg-opacity-90 text-white">
       
-      {/* Main Layout Container */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexGrow: 1, 
-        pt: '128px', // Account for header (32px banner + 64px header) height
-        overflow: 'hidden', // Prevent main content from causing scroll
-      }}>
-
-        {/* Main Content (Scrollable) */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 2,
-            backgroundColor: '#0a0e27',
-            overflowY: 'auto', // Scrollable content
-            height: 'calc(100vh - 128px)', // Full height minus header
-          }}
-        >
+      {/* Main Content */}
+      <div className="flex-grow">
+        <main className="pt-6">
           {children}
-        </Box>
-      </Box>
-    </Box>
+        </main>
+      </div>
+    </div>
   );
 }

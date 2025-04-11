@@ -1,5 +1,14 @@
-// src/app/drivers/lineups/page.jsx
-import { Box, Typography, FormControl, InputLabel, Select, MenuItem, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Users } from "lucide-react";
 import pool from '@/lib/db';
 import ClientSeasonSelector from './ClientSeasonSelector';
 import { teamColors, lightTeams } from '@/lib/data';
@@ -16,7 +25,7 @@ async function getLineupsForSeason(season) {
       'ORDER BY t.name, d.name',
       [season]
     );
-
+    
     const teamMap = {};
     res.rows.forEach(({ driver, team }) => {
       if (!teamMap[team]) {
@@ -30,7 +39,7 @@ async function getLineupsForSeason(season) {
         console.warn(`More than 2 drivers for ${team} in Season ${season}: ${driver}`);
       }
     });
-
+    
     return Object.values(teamMap).sort((a, b) => a.team.localeCompare(b.team));
   } catch (error) {
     console.error('Error fetching lineups:', error);
@@ -48,51 +57,61 @@ async function getSeasons() {
   }
 }
 
-export default async function DriversLineupsPage({ searchParams }) {
+export default async function LineupsPage({ searchParams }) {
   const seasons = await getSeasons();
   const defaultSeason = seasons[0] || '11'; // Latest season
   const season = searchParams.season || defaultSeason;
   const lineups = await getLineupsForSeason(season);
 
   return (
-    <Box sx={{ pt: 15, pl: 0, pr: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white' }}>
-      <Typography variant="h4" sx={{ mb: 2, fontWeight: 'bold' }}>
-        Driver Lineups
-      </Typography>
-      <ClientSeasonSelector seasons={seasons} defaultSeason={season} />
-      <Box sx={{ border: '1px solid #444', borderRadius: 1, width: 'fit-content', maxWidth: '100%', overflow: 'hidden' }}>
-        <Table sx={{ color: 'white', tableLayout: 'fixed', width: '800px', backgroundColor: '#0a0e27' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ color: 'white', borderColor: '#444', fontWeight: 'bold', width: '200px' }}>Team</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', fontWeight: 'bold', width: '200px' }}>Driver 1</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', fontWeight: 'bold', width: '200px' }}>Driver 2</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {lineups.map((row, index) => (
-              <TableRow key={index} sx={{ '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' } }}>
-                <TableCell sx={{ color: 'white', borderColor: '#444' }}>
-                  <Box
-                    sx={{
-                      backgroundColor: teamColors[row.team] || '#444',
-                      color: lightTeams.includes(row.team) ? 'black' : 'white',
-                      p: 0.5,
-                      borderRadius: 1,
-                      display: 'inline-block',
-                    }}
-                  >
-                    {row.team}
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ color: 'white', borderColor: '#444' }}>{row.driver1 || 'N/A'}</TableCell>
-                <TableCell sx={{ color: 'white', borderColor: '#444' }}>{row.driver2 || 'N/A'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
-    </Box>
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex flex-col items-center">
+        <h1 className="text-3xl font-bold text-white mb-6 flex items-center gap-2">
+          <Users className="h-6 w-6 text-blue-500" />
+          Driver Lineups
+        </h1>
+        
+        <ClientSeasonSelector seasons={seasons} defaultSeason={season} />
+        
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden w-full max-w-3xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xl text-white">
+              Season {season} Teams
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-white w-1/3">Team</TableHead>
+                  <TableHead className="text-white w-1/3">Driver 1</TableHead>
+                  <TableHead className="text-white w-1/3">Driver 2</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lineups.map((row, index) => (
+                  <TableRow key={index} className="hover:bg-gray-800/50 border-gray-800">
+                    <TableCell>
+                      <Badge 
+                        className="font-medium"
+                        style={{ 
+                          backgroundColor: teamColors[row.team] || '#444',
+                          color: lightTeams.includes(row.team) ? 'black' : 'white',
+                        }}
+                      >
+                        {row.team}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-white">{row.driver1 || 'N/A'}</TableCell>
+                    <TableCell className="text-white">{row.driver2 || 'N/A'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
 

@@ -1,18 +1,20 @@
-// src/app/results/ClientResultsSidebar.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Box, Divider, List, ListItem, ListItemButton, ListItemText, Typography } from '@mui/material';
+import { useParams, useRouter, usePathname } from 'next/navigation';
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { MapPin } from 'lucide-react';
 
 export default function ClientResultsSidebar({ season: initialSeason, races: initialRaces, trackNames }) {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const [races, setRaces] = useState(initialRaces);
-
+  
   // Current season from URL
   const currentSeason = params.season || initialSeason;
-
+  
   // Fetch races when season changes
   useEffect(() => {
     async function fetchRaces() {
@@ -27,37 +29,31 @@ export default function ClientResultsSidebar({ season: initialSeason, races: ini
     }
     fetchRaces();
   }, [currentSeason, initialRaces]);
-
+  
   return (
-    <Box
-      sx={{
-        position: 'fixed',
-        top: '128px',
-        left: 0,
-        width: 240,
-        height: 'calc(100vh - 128px)',
-        backgroundColor: '#0a0e27',
-        borderRight: '1px solid #444',
-        p: 2,
-        overflowY: 'auto',
-      }}
-    >
-      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-        Season {currentSeason} Races
-      </Typography>
-      <Divider sx={{ mb: 1, backgroundColor: '#444' }} />
-      <List sx={{ p: 0 }}>
+    <div className="fixed top-16 left-0 w-60 h-[calc(100vh-4rem)] bg-gray-900/70 border-r border-gray-800 p-4 overflow-y-auto">
+      <div className="flex items-center gap-2 mb-2">
+        <MapPin className="h-4 w-4 text-blue-500" />
+        <h3 className="text-lg font-semibold">Season {currentSeason} Races</h3>
+      </div>
+      <Separator className="mb-4 bg-gray-800" />
+      
+      <nav className="space-y-1">
         {races.map((race) => (
-          <ListItem disablePadding key={race}>
-            <ListItemButton onClick={() => router.push(`/results/season/${currentSeason}/${race}`)}>
-              <ListItemText
-                primary={trackNames[race] || race.replace(/-/g, ' ')}
-                primaryTypographyProps={{ color: 'white' }}
-              />
-            </ListItemButton>
-          </ListItem>
+          <button
+            key={race}
+            onClick={() => router.push(`/results/season/${currentSeason}/${race}`)}
+            className={cn(
+              "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+              pathname === `/results/season/${currentSeason}/${race}` ? 
+                "bg-gray-800 text-white" : 
+                "text-gray-300 hover:bg-gray-800 hover:text-white"
+            )}
+          >
+            {trackNames[race] || race.replace(/-/g, ' ')}
+          </button>
         ))}
-      </List>
-    </Box>
+      </nav>
+    </div>
   );
 }

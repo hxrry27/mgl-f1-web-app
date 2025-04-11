@@ -1,11 +1,23 @@
-// DashboardHeader.jsx
+'use client';
+
 import React from 'react';
-import { Box, FormControl, InputLabel, Select, MenuItem, ToggleButtonGroup, ToggleButton, Tooltip } from '@mui/material';
-import TimerIcon from '@mui/icons-material/Timer';
-import BuildIcon from '@mui/icons-material/Build';
-import SpeedIcon from '@mui/icons-material/Speed';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import BarChartIcon from '@mui/icons-material/BarChart';
+import {
+  BarChart2,
+  Clock,
+  Gauge,
+  Droplets,
+  Activity,
+  LineChart,
+} from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export default function DashboardHeader({
   seasons,
@@ -15,89 +27,117 @@ export default function DashboardHeader({
   analysisType,
   handleSeasonChange,
   handleRaceChange,
-  handleAnalysisTypeChange
+  handleAnalysisTypeChange,
 }) {
   return (
-    <Box sx={{ display: 'flex', width: '100%', mb: 4, justifyContent: 'space-between', alignItems: 'center' }}>
-      {/* Analysis Type Toggle - Left Aligned */}
-      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <ToggleButtonGroup
-          value={analysisType}
-          exclusive
-          onChange={handleAnalysisTypeChange}
-          aria-label="analysis type"
-          sx={{ 
-            backgroundColor: '#1a1f3b',
-            '& .MuiToggleButton-root': {
-              color: '#aaa',
-              '&.Mui-selected': {
-                color: '#fff',
-                backgroundColor: '#2d355b'
-              }
-            }
-          }}
-        >
-          <ToggleButton value="race-time" aria-label="race time analysis">
-            <Tooltip title="Race Time Analysis">
-              <TimerIcon />
-            </Tooltip>
-          </ToggleButton>
-          <ToggleButton value="damage" aria-label="damage analysis">
-            <Tooltip title="Damage Analysis">
-              <BuildIcon />
-            </Tooltip>
-          </ToggleButton>
-          <ToggleButton value="tyre-wear" aria-label="tyre wear analysis">
-            <Tooltip title="Tyre Wear Analysis">
-              <SpeedIcon />
-            </Tooltip>
-          </ToggleButton>
-          <ToggleButton value="individual-lap" aria-label="individual lap analysis">
-            <Tooltip title="Individual Lap Analysis">
-              <AssessmentIcon />
-            </Tooltip>
-          </ToggleButton>
-          <ToggleButton value="general-stats" aria-label="general stats">
-            <Tooltip title="General Stats">
-              <BarChartIcon />
-            </Tooltip>
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-      
-      {/* Season/Race Filters - Right Aligned */}
-      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-        <FormControl sx={{ minWidth: 150 }}>
-          <InputLabel sx={{ color: '#fff' }}>Season</InputLabel>
+    <div className="mb-6">
+      {/* Season & Race Selectors */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold">F1 Telemetry Dashboard</h1>
+        
+        <div className="flex flex-col sm:flex-row gap-2">
+          {/* Season Selector */}
           <Select 
             value={selectedSeason} 
-            onChange={handleSeasonChange} 
-            label="Season" 
-            sx={{ color: '#fff', backgroundColor: '#1a1f3b', '& .MuiSvgIcon-root': { color: '#fff' } }}
+            onValueChange={(value) => handleSeasonChange({ target: { value } })}
           >
-            {seasons.map(season => (
-              <MenuItem key={season} value={season}>Season {season}</MenuItem>
-            ))}
+            <SelectTrigger className="w-[180px] bg-gray-800/70 border-gray-700">
+              <SelectValue placeholder="Select Season" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700">
+              {seasons.map((season) => (
+                <SelectItem key={season} value={season} className="hover:bg-gray-800">
+                  Season {season}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
-        </FormControl>
-        
-        <FormControl sx={{ minWidth: 200 }}>
-          <InputLabel sx={{ color: '#fff' }}>Race</InputLabel>
+          
+          {/* Race Selector */}
           <Select 
             value={selectedRace} 
-            onChange={handleRaceChange} 
-            label="Race" 
-            sx={{ color: '#fff', backgroundColor: '#1a1f3b', '& .MuiSvgIcon-root': { color: '#fff' } }}
-            disabled={!selectedSeason || races.length === 0}
+            onValueChange={(value) => handleRaceChange({ target: { value } })}
+            disabled={!selectedSeason}
           >
-            {races.map(race => (
-              <MenuItem key={race.slug} value={race.slug}>
-                {race.name}
-              </MenuItem>
-            ))}
+            <SelectTrigger className="w-[180px] bg-gray-800/70 border-gray-700">
+              <SelectValue placeholder="Select Race" />
+            </SelectTrigger>
+            <SelectContent className="bg-gray-900 border-gray-700">
+              {races.map((race) => (
+                <SelectItem key={race.slug} value={race.slug} className="hover:bg-gray-800">
+                  {race.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
-        </FormControl>
-      </Box>
-    </Box>
+        </div>
+      </div>
+      
+      {/* Analysis Type Tabs */}
+      <div className="bg-gray-900/50 rounded-lg p-1 border border-gray-800 backdrop-blur-sm">
+        <Tabs 
+          value={analysisType} 
+          onValueChange={(value) => handleAnalysisTypeChange({ target: { value } }, value)}
+          className="w-full"
+        >
+          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-1 bg-transparent h-auto w-full">
+            <TabsTrigger 
+              value="general-stats" 
+              className={cn(
+                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
+                "hover:bg-gray-800 transition-colors"
+              )}
+            >
+              <BarChart2 className="h-4 w-4" />
+              <span className="hidden md:inline">General Stats</span>
+              <span className="inline md:hidden">Stats</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="race-time" 
+              className={cn(
+                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
+                "hover:bg-gray-800 transition-colors"
+              )}
+            >
+              <Clock className="h-4 w-4" />
+              <span className="hidden md:inline">Race Time</span>
+              <span className="inline md:hidden">Time</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="tyre-wear" 
+              className={cn(
+                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
+                "hover:bg-gray-800 transition-colors"
+              )}
+            >
+              <Droplets className="h-4 w-4" />
+              <span className="hidden md:inline">Tyre Wear</span>
+              <span className="inline md:hidden">Tyres</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="damage" 
+              className={cn(
+                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
+                "hover:bg-gray-800 transition-colors"
+              )}
+            >
+              <Activity className="h-4 w-4" />
+              <span>Damage</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="individual-lap" 
+              className={cn(
+                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
+                "hover:bg-gray-800 transition-colors"
+              )}
+            >
+              <LineChart className="h-4 w-4" />
+              <span className="hidden md:inline">Individual Lap</span>
+              <span className="inline md:hidden">Lap</span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+    </div>
   );
 }

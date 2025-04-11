@@ -1,6 +1,26 @@
-// src/app/results/season/[season]/[race]/page.jsx
-import { Box, Typography, Table, TableBody, TableCell, TableHead, TableRow, Tabs, Tab } from '@mui/material';
 import Image from 'next/image';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Trophy, Clock } from 'lucide-react';
 import pool from '@/lib/db';
 import { teamColors, lightTeams } from '@/lib/data';
 
@@ -31,9 +51,9 @@ const trackNames = {
   'interlagos': 'Autodromo Jose Carlos Pace',
   'las-vegas': 'Las Vegas Strip Circuit',
   'losail': 'Lusail International Circuit',
-  'imola' : 'Autodromo Enzo e Dino Ferrari',
-  'portimao' : 'Algarve International Circuit',
-  'paul-ricard' : 'Circuit Paul Ricard'
+  'imola': 'Autodromo Enzo e Dino Ferrari',
+  'portimao': 'Algarve International Circuit',
+  'paul-ricard': 'Circuit Paul Ricard'
 };
 
 // Format gap time in milliseconds to a readable string
@@ -85,7 +105,7 @@ export default async function RaceResultsPage({ params }) {
       [seasonId, race]
     );
     const raceData = raceRes.rows[0];
-    isUpcoming = !raceData; // No race ID means it hasn’t happened yet
+    isUpcoming = !raceData; // No race ID means it hasn't happened yet
 
     if (raceData) {
       const resultsRes = await pool.query(
@@ -192,113 +212,117 @@ export default async function RaceResultsPage({ params }) {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', p: 2, overflowX: 'hidden' }}>
-      <Typography variant="h4" gutterBottom sx={{ color: 'white', fontWeight: 'bold' }}>
+    <div className="container mx-auto px-4 max-w-6xl">
+      <h1 className="text-3xl font-bold text-white text-center mb-6 flex items-center justify-center gap-2">
+        <Trophy className="text-yellow-500 h-6 w-6" />
         {raceName} - Season {season}
-      </Typography>
+      </h1>
 
       {isUpcoming && (
-        <Typography sx={{ color: '#888', mb: 2 }}>
+        <div className="text-gray-400 text-center mb-6 italic">
           This race has not yet occurred. Results will be available after the event.
-        </Typography>
+        </div>
       )}
 
-      <Tabs value={0} sx={{ mb: 2, '& .MuiTabs-indicator': { backgroundColor: '#00A0F0' }, '& .MuiTab-root': { color: 'white', fontWeight: 'bold' }, '& .Mui-selected': { color: '#00A0F0' } }}>
-        <Tab label="Race Results" />
-        <Tab label="Qualifying" disabled />
-      </Tabs>
+      <Tabs defaultValue="race" className="w-full">
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-gray-800/60 border border-gray-700/60 mb-6">
+          <TabsTrigger value="race" className="data-[state=active]:bg-gray-700">
+            Race Results
+          </TabsTrigger>
+          <TabsTrigger value="qualifying" disabled className="data-[state=active]:bg-gray-700">
+            Qualifying
+          </TabsTrigger>
+        </TabsList>
 
-      <Box sx={{ border: '1px solid #444', p: 1, borderRadius: 1, width: 'fit-content', maxWidth: '100%', backgroundColor: '#0a0e27', overflowX: 'auto' }}>
-        <Table sx={{ color: 'white', tableLayout: 'fixed', width: '1100px' }}>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '60px', fontWeight: 'bold' }}>Pos</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '180px', fontWeight: 'bold' }}>Driver</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '140px', fontWeight: 'bold' }}>Team</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '100px', fontWeight: 'bold' }}>Gap</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '100px', fontWeight: 'bold' }}>Fastest Lap</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '100px', fontWeight: 'bold' }}>Pos +/-</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '60px', fontWeight: 'bold' }}>Points</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '100px', fontWeight: 'bold' }}>Penalties</TableCell>
-              <TableCell sx={{ color: 'white', borderColor: '#444', width: '160px', fontWeight: 'bold' }}>Strategy</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {results.map((result, index) => (
-              <TableRow key={index} sx={{ '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' } }}>
-                <TableCell sx={{ color: 'white', borderColor: '#444' }}>{`P${result.position}`}</TableCell>
-                <TableCell sx={{ color: 'white', borderColor: '#444' }}>{result.driver}</TableCell>
-                <TableCell sx={{ color: 'white', borderColor: '#444' }}>
-                  <Box
-                    sx={{
-                      backgroundColor: teamColors[result.team] || '#444',
-                      color: lightTeams.includes(result.team) ? 'black' : 'white',
-                      p: 0.5,
-                      borderRadius: 1,
-                      display: 'inline-block',
-                    }}
-                  >
-                    {result.team}
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ 
-                  color: ['DNF', 'DNS', 'DSQ', 'Lapped'].includes(result.gap) ? '#888' : 'white', 
-                  borderColor: '#444',
-                  fontStyle: result.gap === 'Lapped' ? 'italic' : 'normal'
-                }}>
-                  {result.gap}
-                </TableCell>
-                <TableCell sx={{ 
-                  color: result.isFastestLap ? '#800080' : 'white', 
-                  borderColor: '#444', 
-                  fontWeight: result.isFastestLap ? 'bold' : 'normal' 
-                }}>
-                  {formatTime(result.fastest_lap)}
-                </TableCell>
-                <TableCell sx={{ borderColor: '#444', textAlign: 'center' }}>
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Image
-                      src={`/images/misc/${result.positions_changed > 0 ? 'up' : result.positions_changed < 0 ? 'down' : 'equal'}.png`}
-                      alt={result.positions_changed > 0 ? 'Up' : result.positions_changed < 0 ? 'Down' : 'Equal'}
-                      width={16}
-                      height={16}
-                      style={{ marginRight: '4px' }}
-                    />
-                    <Box sx={{ color: result.positions_changed > 0 ? '#00FF00' : result.positions_changed < 0 ? '#FF0000' : 'white' }}>
-                      {Math.abs(result.positions_changed)}
-                    </Box>
-                  </Box>
-                </TableCell>
-                <TableCell sx={{ 
-                  color: result.isFastestLap ? '#800080' : 'white', 
-                  borderColor: '#444', 
-                  fontWeight: result.isFastestLap ? 'bold' : 'normal' 
-                }}>
-                  {result.points}
-                </TableCell>
-                <TableCell sx={{ color: result.penalties === null ? '#888' : 'white', borderColor: '#444' }}>
-                  {result.penalties === null ? '-' : `${result.penalties}s`}
-                </TableCell>
-                <TableCell sx={{ borderColor: '#444' }}>
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                    {result.strategy.length > 0 ? result.strategy.map((tyre, i) => (
-                      <Image
-                        key={i}
-                        src={`/images/tyres/${tyre}.png`}
-                        alt={`${tyre} tyre`}
-                        width={25}
-                        height={25}
-                        style={{ marginRight: '1px' }}
-                      />
-                    )) : <Box sx={{ color: 'white' }}>N/A</Box>}
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
-    </Box>
+        <TabsContent value="race" className="mt-0">
+          <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-white w-16">Pos</TableHead>
+                      <TableHead className="text-white w-40">Driver</TableHead>
+                      <TableHead className="text-white w-32">Team</TableHead>
+                      <TableHead className="text-white w-32">Gap</TableHead>
+                      <TableHead className="text-white w-32">Fastest Lap</TableHead>
+                      <TableHead className="text-white w-24">Pos +/-</TableHead>
+                      <TableHead className="text-white w-16">Points</TableHead>
+                      <TableHead className="text-white w-24">Penalties</TableHead>
+                      <TableHead className="text-white w-36">Strategy</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((result, index) => (
+                      <TableRow key={index} className="hover:bg-gray-800/50 border-gray-800">
+                        <TableCell className="text-white font-semibold">
+                          {`P${result.position}`}
+                        </TableCell>
+                        <TableCell className="text-white">
+                          {result.driver}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            className="font-medium"
+                            style={{ 
+                              backgroundColor: teamColors[result.team] || '#444',
+                              color: lightTeams.includes(result.team) ? 'black' : 'white',
+                            }}
+                          >
+                            {result.team}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className={`${['DNF', 'DNS', 'DSQ', 'Lapped'].includes(result.gap) ? 'text-gray-400' : 'text-white'} ${result.gap === 'Lapped' ? 'italic' : ''}`}>
+                          {result.gap}
+                        </TableCell>
+                        <TableCell className={`${result.isFastestLap ? 'text-purple-400 font-semibold' : 'text-white'}`}>
+                          {formatTime(result.fastest_lap)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-1">
+                            <div className="relative w-4 h-4">
+                              <Image
+                                src={`/images/misc/${result.positions_changed > 0 ? 'up' : result.positions_changed < 0 ? 'down' : 'equal'}.png`}
+                                alt={result.positions_changed > 0 ? 'Up' : result.positions_changed < 0 ? 'Down' : 'Equal'}
+                                fill
+                                style={{ objectFit: 'contain' }}
+                              />
+                            </div>
+                            <span className={`${result.positions_changed > 0 ? 'text-green-500' : result.positions_changed < 0 ? 'text-red-500' : 'text-white'}`}>
+                              {Math.abs(result.positions_changed)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className={`${result.isFastestLap ? 'text-purple-400 font-semibold' : 'text-white'}`}>
+                          {result.points}
+                        </TableCell>
+                        <TableCell className={`${result.penalties === null ? 'text-gray-400' : 'text-white'}`}>
+                          {result.penalties === null ? '-' : `${result.penalties}s`}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap items-center">
+                            {result.strategy.length > 0 ? result.strategy.map((tyre, i) => (
+                              <div key={i} className="relative w-6 h-6 mr-0.5">
+                                <Image
+                                  src={`/images/tyres/${tyre}.png`}
+                                  alt={`${tyre} tyre`}
+                                  fill
+                                  style={{ objectFit: 'contain' }}
+                                />
+                              </div>
+                            )) : <span className="text-white">N/A</span>}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
 

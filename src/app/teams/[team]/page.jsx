@@ -1,4 +1,19 @@
-import { Box, Typography, Table, TableBody, TableCell, TableHead, TableRow, Grid } from '@mui/material';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Users, Trophy, Flag, Clock, Car } from "lucide-react";
 import pool from '@/lib/db';
 import { teamColors, lightTeams } from '@/lib/data';
 
@@ -15,14 +30,12 @@ export default async function TeamPage({ params }) {
   const teamData = teamRes.rows[0];
   if (!teamData) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'hidden' }}>
-        <Typography variant="body1" sx={{ color: 'white' }}>Team not found.</Typography>
-      </Box>
+      <div className="flex flex-col items-center">
+        <p className="text-white">Team not found.</p>
+      </div>
     );
   }
   const { id: teamId, name: teamNameFormatted } = teamData;
-
-  //console.log(`Team ${teamNameFormatted} loaded, fetching stats...`);
 
   // Season-by-season stats (S6+)
   const seasonStatsRes = await pool.query(
@@ -81,13 +94,6 @@ export default async function TeamPage({ params }) {
   );
   teamStats.career.wins = winsRes.rows.length || 0;
 
-  // // Debug logging for wins
-  // winsRes.rows.forEach(row => {
-  //   console.log(
-  //     `Win: Race ${row.race_id}, Driver ${row.driver_name}, Team ${row.team_name}, Position ${row.position}, Adjusted Position ${row.adjusted_position}`
-  //   );
-  // });
-
   // Fetch podiums
   const podiumsRes = await pool.query(
     'SELECT DISTINCT rr.race_id, ' +
@@ -105,13 +111,6 @@ export default async function TeamPage({ params }) {
   );
   teamStats.career.podiums = podiumsRes.rows.length || 0;
 
-  // // Debug logging for podiums
-  // podiumsRes.rows.forEach(row => {
-  //   console.log(
-  //     `Podium: Race ${row.race_id}, Driver ${row.driver_name}, Team ${row.team_name}, Position ${row.position}, Adjusted Position ${row.adjusted_position}`
-  //   );
-  // });
-
   // Fetch poles
   const polesRes = await pool.query(
     'SELECT DISTINCT rr.race_id, rr.grid_position, d.name AS driver_name, t.name AS team_name ' +
@@ -126,13 +125,6 @@ export default async function TeamPage({ params }) {
     [teamId]
   );
   teamStats.career.poles = polesRes.rows.length || 0;
-
-  // // Debug logging for poles
-  // polesRes.rows.forEach(row => {
-  //   console.log(
-  //     `Pole: Race ${row.race_id}, Driver ${row.driver_name}, Team ${row.team_name}, Grid Position ${row.grid_position}`
-  //   );
-  // });
 
   const fastestLapsRes = await pool.query(
     'SELECT rr.race_id, rr.fastest_lap_time_int, d.name AS driver_name, t.name AS team_name ' +
@@ -154,108 +146,108 @@ export default async function TeamPage({ params }) {
   );
   teamStats.career.fastestLaps = fastestLapsRes.rows.length || 0;
 
-  // // Debug logging for fastest laps
-  // fastestLapsRes.rows.forEach(row => {
-  //   console.log(
-  //     `Fastest Lap: Race ${row.race_id}, Driver ${row.driver_name}, Team ${row.team_name}, Fastest Lap Time ${row.fastest_lap_time_int}`
-  //   );
-  // });
-
-  // // Debug logging for unique races
-  // console.log('Unique Races:', uniqueRaces);
-  // console.log('Team Participations:', teamStats.career.races);
-
   // Calculate Stats by Season height
   const seasonCount = Object.keys(teamStats.seasons).length;
-  const statsBySeasonHeight = 64 + (seasonCount * 48);
 
   return (
-    <Box sx={{ p: 2, width: '100%', mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom sx={{ color: 'white', textAlign: 'center', fontWeight: 'bold', mb: 4 }}>
+    <div className="container mx-auto px-4">
+      <h1 className="text-3xl font-bold text-white text-center mb-8">
         {teamNameFormatted}
-      </Typography>
+      </h1>
 
-      <Grid container spacing={3}>
-        <Grid item xs={3}></Grid>
-        <Grid item xs={3}>
-          <Box sx={{ border: '1px solid #444', borderRadius: 1, p: 2, backgroundColor: '#0a0e27', minHeight: statsBySeasonHeight }}>
-            <Typography variant="h6" sx={{ color: 'white' }}>Season-by-Season Stats</Typography>
-            <Table sx={{ color: 'white', tableLayout: 'fixed', width: '100%' }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ color: 'white', borderColor: '#444', width: '25%', fontWeight: 'bold' }}>Season</TableCell>
-                  <TableCell sx={{ color: 'white', borderColor: '#444', width: '50%', fontWeight: 'bold' }}>Drivers</TableCell>
-                  <TableCell sx={{ color: 'white', borderColor: '#444', width: '25%', fontWeight: 'bold' }}>Points</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {Object.entries(teamStats.seasons).map(([season, stats]) => (
-                  <TableRow key={season}>
-                    <TableCell sx={{ color: 'white', borderColor: '#444' }}>{season}</TableCell>
-                    <TableCell sx={{ color: 'white', borderColor: '#444' }}>
-  <Box
-    sx={{
-      backgroundColor: stats.drivers === "No Drivers" ? '#444' : teamColors[teamNameFormatted] || '#444',
-      p: 0.5,
-      borderRadius: 1,
-      display: 'inline-block',
-      color: stats.drivers === "No Drivers" ? '#888' : (lightTeams.includes(teamNameFormatted) ? 'black' : 'white'),
-      fontStyle: stats.drivers === "No Drivers" ? 'italic' : 'normal',
-    }}
-  >
-    {stats.drivers}
-  </Box>
-</TableCell>
-                    <TableCell sx={{ color: 'white', borderColor: '#444' }}>
-                      {typeof stats.points === 'string' ? (
-                        <Typography sx={{ color: '#888', fontStyle: 'italic' }}>{stats.points}</Typography>
-                      ) : (
-                        stats.points
-                      )}
-                    </TableCell>
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+        {/* Empty column for spacing on larger screens */}
+        <div className="hidden md:block md:col-span-1"></div>
+        
+        {/* Season-by-Season Stats */}
+        <div className="md:col-span-2">
+          <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-xl text-white">
+                <Users className="h-5 w-5 text-blue-500" />
+                Season-by-Season Stats
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-white w-24">Season</TableHead>
+                    <TableHead className="text-white">Drivers</TableHead>
+                    <TableHead className="text-white w-24">Points</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-        </Grid>
-        <Grid item xs={3}>
-          <Box sx={{ border: '1px solid #444', borderRadius: 1, p: 2, backgroundColor: '#0a0e27', height: 385 }}>
-            <Typography variant="h6" sx={{ color: 'white' }}>Career Stats</Typography>
-            <Typography variant="subtitle2" sx={{ color: 'grey', fontStyle: 'italic', mb: 1 }}>these run from S6 onwards</Typography>
-            <Grid container spacing={2}>
-              {[
-                { title: 'Career Races', value: teamStats.career.races },
-                { title: 'Career Wins', value: teamStats.career.wins },
-                { title: 'Career Podiums', value: teamStats.career.podiums },
-                { title: 'Career Poles', value: teamStats.career.poles },
-                { title: 'Career Fastest Laps', value: teamStats.career.fastestLaps },
-                { title: 'Career Points', value: teamStats.career.points },
-              ].map((stat, index) => (
-                <Grid item xs={6} key={index}>
-                  <Box
-                    sx={{
-                      border: '1px solid #444',
-                      borderRadius: 1,
-                      p: 1,
-                      height: (statsBySeasonHeight - 64 - (2 * 16)) / 3,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      backgroundColor: '#1a1e37',
-                    }}
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(teamStats.seasons).map(([season, stats]) => (
+                    <TableRow key={season} className="hover:bg-gray-800/50 border-gray-800">
+                      <TableCell className="text-white">{season}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          className="font-medium"
+                          style={{ 
+                            backgroundColor: stats.drivers === "No Drivers" ? '#444' : teamColors[teamNameFormatted] || '#444',
+                            color: stats.drivers === "No Drivers" ? '#888' : (lightTeams.includes(teamNameFormatted) ? 'black' : 'white'),
+                            fontStyle: stats.drivers === "No Drivers" ? 'italic' : 'normal',
+                          }}
+                        >
+                          {stats.drivers}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-white">
+                        {typeof stats.points === 'string' ? (
+                          <span className="text-gray-400 italic">{stats.points}</span>
+                        ) : (
+                          stats.points
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Career Stats */}
+        <div className="md:col-span-2">
+          <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-full">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-xl text-white">
+                <Trophy className="h-5 w-5 text-yellow-500" />
+                Career Stats
+              </CardTitle>
+              <p className="text-gray-400 text-xs italic">these run from S6 onwards</p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { title: 'Career Races', value: teamStats.career.races, icon: <Car className="h-4 w-4 text-blue-400" /> },
+                  { title: 'Career Wins', value: teamStats.career.wins, icon: <Trophy className="h-4 w-4 text-yellow-400" /> },
+                  { title: 'Career Podiums', value: teamStats.career.podiums, icon: <Trophy className="h-4 w-4 text-amber-400" /> },
+                  { title: 'Career Poles', value: teamStats.career.poles, icon: <Flag className="h-4 w-4 text-purple-400" /> },
+                  { title: 'Career Fastest Laps', value: teamStats.career.fastestLaps, icon: <Clock className="h-4 w-4 text-green-400" /> },
+                  { title: 'Career Points', value: teamStats.career.points, icon: <Trophy className="h-4 w-4 text-blue-400" /> },
+                ].map((stat, index) => (
+                  <div 
+                    key={index} 
+                    className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 flex flex-col items-center"
                   >
-                    <Typography variant="subtitle1" sx={{ color: 'white', fontSize: '0.9rem' }}>{stat.title}</Typography>
-                    <Typography sx={{ color: 'white' }}>{stat.value}</Typography>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-        </Grid>
-        <Grid item xs={3}></Grid>
-      </Grid>
-    </Box>
+                    <div className="flex items-center gap-2 mb-1 text-gray-300 text-sm">
+                      {stat.icon}
+                      <span>{stat.title}</span>
+                    </div>
+                    <p className="text-xl font-semibold text-white">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Empty column for spacing on larger screens */}
+        <div className="hidden md:block md:col-span-1"></div>
+      </div>
+    </div>
   );
 }
 
