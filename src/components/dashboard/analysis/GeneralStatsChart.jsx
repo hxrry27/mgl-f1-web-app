@@ -7,17 +7,13 @@ import {
 } from 'recharts';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { 
-  BarChart3, Battery, Zap, Gauge, GitBranch, Activity,
-  Timer, BarChart2, Car, Map, Clock, 
-  TrendingUp, TrendingDown, AlertTriangle, ThermometerSun, 
+  Battery, Zap, Gauge, GitBranch, Activity,
+  Timer, BarChart2, Car, Clock, 
+  TrendingDown, AlertTriangle, ThermometerSun, 
   Download, Flame, Users, Navigation
 } from 'lucide-react';
 
@@ -144,11 +140,45 @@ const ChartCard = ({ title, data, dataKey, nameKey, color = "#3b82f6", icon: Ico
             />
             <Bar dataKey={dataKey} fill={color}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={color} fillOpacity={0.8 - (index * 0.1)} />
+                <Cell key={`cell-${index}`} fill={color} fillOpacity={0.8 - (index * 0.05)} />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Surface group card component
+const SurfaceGroupCard = ({ surfaceType, data, className }) => {
+  return (
+    <Card className={cn("bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden", className)}>
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-2">
+          <Navigation className="w-5 h-5 text-blue-500" />
+          <CardTitle className="text-md font-semibold text-white">Most Time on {surfaceType}</CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="grid gap-3">
+          {data.map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between border-b border-gray-800 pb-2 last:border-0">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center">
+                  <span className="text-xs font-bold text-gray-300">{idx + 1}</span>
+                </div>
+                <div>
+                  <p className="font-medium text-white">{item.driver}</p>
+                  <p className="text-xs text-gray-400">{item.team}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-white">{item.time.toFixed(1)}s</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
@@ -208,7 +238,13 @@ export default function GeneralStatsChart({
         { driver: "Pierre Gasly", team: "Alpine", surface: "Grass", time: 14.2 },
         { driver: "Lance Stroll", team: "Aston Martin", surface: "Gravel", time: 8.7 },
         { driver: "Fernando Alonso", team: "Aston Martin", surface: "Rumble Strips", time: 35.4 },
-        { driver: "Max Verstappen", team: "Red Bull Racing", surface: "Sand", time: 6.3 }
+        { driver: "Max Verstappen", team: "Red Bull Racing", surface: "Sand", time: 6.3 },
+        { driver: "Lewis Hamilton", team: "Mercedes", surface: "Grass", time: 12.5 },
+        { driver: "Charles Leclerc", team: "Ferrari", surface: "Gravel", time: 7.9 },
+        { driver: "Lando Norris", team: "McLaren", surface: "Rumble Strips", time: 29.8 },
+        { driver: "Carlos Sainz", team: "Ferrari", surface: "Sand", time: 5.7 },
+        { driver: "Oscar Piastri", team: "McLaren", surface: "Grass", time: 11.1 },
+        { driver: "Sergio Perez", team: "Red Bull Racing", surface: "Gravel", time: 7.2 }
       ]
     },
     delta: {
@@ -230,6 +266,9 @@ export default function GeneralStatsChart({
     maxBrakeTemps: [],
     maxTyreTemps: []
   });
+  
+  // State for processed surface data
+  const [surfaceGroups, setSurfaceGroups] = useState({});
   
   // Prepare data from API for charts
   useEffect(() => {
@@ -258,8 +297,36 @@ export default function GeneralStatsChart({
       
       // Set chart data
       setDerivedData(chartData);
+      
+      // Process surface data
+      processSurfaceData(generalStats.surfaces?.timeBySurface || stats.surfaces.timeBySurface);
+    } else {
+      processSurfaceData(stats.surfaces.timeBySurface);
     }
   }, [generalStats]);
+  
+  // Process surface data to group by surface type and get top 3 for each
+  const processSurfaceData = (surfaceData) => {
+    // Group by surface type
+    const groupedBySurface = {};
+    
+    surfaceData.forEach(item => {
+      if (!groupedBySurface[item.surface]) {
+        groupedBySurface[item.surface] = [];
+      }
+      groupedBySurface[item.surface].push(item);
+    });
+    
+    // Sort each group by time (descending) and take top 3
+    const result = {};
+    for (const surface in groupedBySurface) {
+      result[surface] = groupedBySurface[surface]
+        .sort((a, b) => b.time - a.time)
+        .slice(0, 3);
+    }
+    
+    setSurfaceGroups(result);
+  };
   
   // Function to render loading state
   const renderLoading = () => (
@@ -268,7 +335,7 @@ export default function GeneralStatsChart({
     </div>
   );
   
-  // Prepare surface time data for chart from API
+  // Prepare surface time data for chart from API (for overview tab)
   const surfaceTimeData = stats.surfaces.timeBySurface.map(item => ({
     name: `${item.driver} (${item.surface})`,
     value: item.time,
@@ -306,55 +373,6 @@ export default function GeneralStatsChart({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="h-9 bg-gray-800/80 hover:bg-gray-700 text-gray-200 border border-gray-700 flex items-center gap-2"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>View Options</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="bg-gray-900 border border-gray-700 text-gray-200"
-              >
-                <DropdownMenuLabel>Stat Categories</DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-gray-700" />
-                <DropdownMenuItem 
-                  className="cursor-pointer"
-                  onClick={() => setActiveTab("overview")}
-                >
-                  Overview
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer"
-                  onClick={() => setActiveTab("ers")}
-                >
-                  ERS Stats
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer"
-                  onClick={() => setActiveTab("performance")}
-                >
-                  Performance Stats
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer"
-                  onClick={() => setActiveTab("temperature")}
-                >
-                  Temperature Stats
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="cursor-pointer"
-                  onClick={() => setActiveTab("surfaces")}
-                >
-                  Surface Time Stats
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
@@ -433,7 +451,7 @@ export default function GeneralStatsChart({
                 />
                 <ChartCard 
                   title="Top Speeds"
-                  data={derivedData.topSpeeds.slice(0, 8)}
+                  data={derivedData.topSpeeds}
                   dataKey="value"
                   nameKey="name"
                   color="#ef4444"
@@ -563,7 +581,7 @@ export default function GeneralStatsChart({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ChartCard 
                   title="Delta to Next Car"
-                  data={derivedData.deltaToNext.slice(0, 8)}
+                  data={derivedData.deltaToNext}
                   dataKey="value"
                   nameKey="name"
                   color="#8b5cf6"
@@ -572,7 +590,7 @@ export default function GeneralStatsChart({
                 />
                 <ChartCard 
                   title="Gear Shifts Distribution"
-                  data={derivedData.gearShifts.slice(0, 8)}
+                  data={derivedData.gearShifts}
                   dataKey="value"
                   nameKey="name"
                   color="#6366f1"
@@ -635,7 +653,7 @@ export default function GeneralStatsChart({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ChartCard 
                   title="Maximum Brake Temperatures"
-                  data={derivedData.maxBrakeTemps.slice(0, 8)}
+                  data={derivedData.maxBrakeTemps}
                   dataKey="value"
                   nameKey="name"
                   color="#ef4444"
@@ -644,7 +662,7 @@ export default function GeneralStatsChart({
                 />
                 <ChartCard 
                   title="Maximum Tyre Temperatures"
-                  data={derivedData.maxTyreTemps.slice(0, 8)}
+                  data={derivedData.maxTyreTemps}
                   dataKey="value"
                   nameKey="name"
                   color="#f97316"
@@ -656,29 +674,12 @@ export default function GeneralStatsChart({
             
             {/* Surfaces Tab */}
             <TabsContent value="surfaces" className="mt-0">
-              <div className="grid grid-cols-1 gap-4 mb-6">
-                <ChartCard 
-                  title="Time Spent on Different Surfaces"
-                  data={surfaceTimeData}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#0ea5e9"
-                  icon={Navigation}
-                  tooltip="Time in seconds spent on non-track surfaces"
-                  className="h-96"
-                />
-              </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stats.surfaces.timeBySurface.map((item, index) => (
-                  <DriverStatCard 
-                    key={index}
-                    driver={item.driver}
-                    team={item.team}
-                    title={`Most Time on ${item.surface}`}
-                    value={`${item.time.toFixed(1)}s`}
-                    icon={Navigation}
-                    color={index % 2 === 0 ? "text-blue-500" : "text-teal-500"}
+                {Object.entries(surfaceGroups).map(([surfaceType, data], index) => (
+                  <SurfaceGroupCard 
+                    key={surfaceType}
+                    surfaceType={surfaceType}
+                    data={data}
                   />
                 ))}
               </div>

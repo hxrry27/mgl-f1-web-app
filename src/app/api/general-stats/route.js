@@ -367,19 +367,105 @@ export async function GET(request) {
 
     // 11. Surface time stats
     const surfaceQuery = `
+      WITH surface_events AS (
+        -- Find all points where a car transitions to or from a surface
+        SELECT
+          car_index,
+          frame_identifier,
+          session_time,
+          -- Consider car off-track if ANY wheel is not on tarmac (0)
+          CASE 
+            WHEN surface_type_fl > 0 OR surface_type_fr > 0 OR surface_type_rl > 0 OR surface_type_rr > 0 
+            THEN TRUE 
+            ELSE FALSE 
+          END as is_off_track,
+          -- Determine the primary surface type (using the most common non-zero value)
+          GREATEST(
+            COALESCE(surface_type_fl, 0),
+            COALESCE(surface_type_fr, 0),
+            COALESCE(surface_type_rl, 0),
+            COALESCE(surface_type_rr, 0)
+          ) as surface_type,
+          -- Track previous state for transition detection
+          LAG(CASE 
+            WHEN surface_type_fl > 0 OR surface_type_fr > 0 OR surface_type_rl > 0 OR surface_type_rr > 0 
+            THEN TRUE 
+            ELSE FALSE 
+          END) OVER (PARTITION BY car_index ORDER BY frame_identifier) as prev_is_off_track
+        FROM
+          car_telemetry_data
+        WHERE
+          session_uid = $1
+        ORDER BY
+          car_index, frame_identifier
+      ),
+      
+      surface_segments AS (
+        -- Identify segments where surface type changes or transitions on/off track
+        SELECT
+          car_index,
+          frame_identifier,
+          session_time,
+          surface_type,
+          is_off_track,
+          -- Mark when we have a transition (either surface change or on/off track)
+          CASE
+            WHEN prev_is_off_track IS NULL THEN 1
+            WHEN is_off_track != prev_is_off_track THEN 1
+            ELSE 0
+          END as is_transition,
+          -- Create segment groups for continuous segments
+          SUM(CASE
+            WHEN prev_is_off_track IS NULL THEN 1
+            WHEN is_off_track != prev_is_off_track THEN 1
+            ELSE 0
+          END) OVER (PARTITION BY car_index ORDER BY frame_identifier) as segment_id
+        FROM
+          surface_events
+        WHERE
+          surface_type > 0 -- Only care about non-tarmac surfaces
+      ),
+      
+      segment_durations AS (
+        -- Calculate duration of each segment
+        SELECT
+          car_index,
+          segment_id,
+          surface_type,
+          MIN(session_time) as start_time,
+          MAX(session_time) as end_time,
+          MAX(session_time) - MIN(session_time) as duration_seconds
+        FROM
+          surface_segments
+        GROUP BY
+          car_index, segment_id, surface_type
+        HAVING
+          COUNT(*) > 1 -- Must have at least two points to calculate duration
+      ),
+      
+      surface_totals AS (
+        -- Sum up time by surface type for each car
+        SELECT
+          car_index,
+          surface_type,
+          SUM(duration_seconds) as total_time_seconds
+        FROM
+          segment_durations
+        GROUP BY
+          car_index, surface_type
+      )
+      
+      -- Get final results
       SELECT
-        car_index,
-        surface_type_fl,
-        COUNT(*) * 0.1 as estimated_time_seconds
+        st.car_index,
+        st.surface_type,
+        st.total_time_seconds
       FROM
-        car_telemetry_data
+        surface_totals st
       WHERE
-        session_uid = $1
-        AND surface_type_fl != 0
-      GROUP BY
-        car_index, surface_type_fl
+        st.total_time_seconds > 0
       ORDER BY
-        estimated_time_seconds DESC
+        st.surface_type, st.total_time_seconds DESC
     `;
 
     // Execute all queries in parallel
@@ -685,11 +771,28 @@ export async function GET(request) {
 
       const surfaceData = surfaceResults.rows.map(row => ({
         car_index: row.car_index,
-        surface_type: row.surface_type_fl,
-        surface_name: surfaceTypeNames[row.surface_type_fl] || 'Unknown',
-        time: parseFloat(row.estimated_time_seconds || 0),
+        surface_type: row.surface_type,
+        surface_name: surfaceTypeNames[row.surface_type] || 'Unknown',
+        time: parseFloat(row.total_time_seconds || 0),
         ...driverMap[row.car_index]
       }));
+
+      const surfacesByType = {};
+        surfaceData.forEach(item => {
+          if (!surfacesByType[item.surface_name]) {
+            surfacesByType[item.surface_name] = [];
+          }
+          surfacesByType[item.surface_name].push({
+            driver: item.name,
+            team: item.team,
+            surface: item.surface_name,
+            time: item.time
+          });
+      });
+
+      Object.keys(surfacesByType).forEach(surface => {
+        surfacesByType[surface].sort((a, b) => b.time - a.time);
+      });
 
       // Format the data for the response
       const formattedStats = {
@@ -935,6 +1038,15 @@ export async function GET(request) {
           }).sort((a, b) => a.value - b.value)
         }
       };
+
+      formattedStats.surfaces.timeBySurface = surfaceData.map(item => ({
+        driver: item.name,
+        team: item.team,
+        surface: item.surface_name,
+        time: item.time
+      }));
+
+      formattedStats.surfaces.surfaceGroups = surfacesByType;
 
       return NextResponse.json(formattedStats);
     } catch (queryError) {

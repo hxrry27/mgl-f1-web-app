@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { Calendar, Trophy } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Calendar } from 'lucide-react';
+
 
 function isBST(date) {
   const year = date.getUTCFullYear();
@@ -67,37 +69,88 @@ function formatRaceDateTime(isoDate, time) {
 
 export default function SchedulePage() {
   const [schedule, setSchedule] = useState([]);
-  const [currentSeason, setCurrentSeason] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentSeason, setCurrentSeason] = useState('');
   const [editing, setEditing] = useState(null);
   const [newDateTime, setNewDateTime] = useState('');
-  const user = Cookies.get('user') ? JSON.parse(Cookies.get('user')) : null;
-  const isAdmin = user?.username === 'hxrry27' && user?.is_admin;
+  const isAdmin = false;
 
   useEffect(() => {
-    fetch('/api/schedule')
-      .then(res => res.json())
-      .then(data => {
-        console.log('Schedule Page Data:', data);
+    async function fetchSchedule() {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/schedule');
+        const data = await res.json();
         setSchedule(data.schedule || []);
-        setCurrentSeason(data.schedule[0]?.season || 'Unknown');
-      });
+        if (data.schedule && data.schedule.length > 0) {
+          setCurrentSeason(data.schedule[0].season);
+        }
+      } catch (error) {
+        console.error('Error fetching schedule:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchSchedule();
   }, []);
 
-  const handleEdit = (id, currentDate, currentTime) => {
+  const handleEdit = (id, date, time) => {
     setEditing(id);
-    setNewDateTime(`${currentDate}T${currentTime.slice(0, 5)}`);
+    // Format date and time for datetime-local input
+    if (date && date !== 'TBD') {
+      const [year, month, day] = date.split('-');
+      const [hour, minute] = time.split(':');
+      setNewDateTime(`${year}-${month}-${day}T${hour}:${minute}`);
+    } else {
+      setNewDateTime('');
+    }
   };
 
   const handleSave = async (id) => {
-    const [date, time] = newDateTime.split('T');
-    await fetch('/api/schedule/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, date, time }),
-    });
-    setSchedule(schedule.map(item => item.id === id ? { ...item, date, time } : item));
-    setEditing(null);
+    if (!newDateTime) return;
+
+    try {
+      const [dateStr, timeStr] = newDateTime.split('T');
+      const response = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          date: dateStr,
+          time: timeStr + ':00'
+        })
+      });
+
+      if (response.ok) {
+        // Update local state
+        const updatedSchedule = schedule.map(race => {
+          if (race.id === id) {
+            return {
+              ...race,
+              date: dateStr,
+              time: timeStr + ':00'
+            };
+          }
+          return race;
+        });
+        setSchedule(updatedSchedule);
+        setEditing(null);
+      } else {
+        console.error('Failed to update');
+      }
+    } catch (error) {
+      console.error('Error updating schedule:', error);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-6 flex justify-center items-center min-h-screen">
+        <div className="text-white">Loading schedule...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-900/30 min-h-screen">
@@ -107,27 +160,54 @@ export default function SchedulePage() {
           Season {currentSeason} Race Schedule
         </h1>
       </div>
-      
+     
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {schedule.map((race) => (
-          <Card 
+          <Card
             key={race.id}
-            className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden hover:bg-gray-900/80 transition-colors"
+            className={`transition-all duration-200 border overflow-hidden ${
+              race.status_class === 'completed' 
+                ? 'bg-gray-900/60 border-green-800/50' 
+                : race.status_class === 'next-up'
+                  ? 'bg-gray-900/70 border-amber-500/80 shadow-lg shadow-amber-900/20 transform scale-[1.02]' 
+                  : 'bg-gray-900/70 border-gray-700/80'
+            } backdrop-blur-sm hover:bg-gray-900/80`}
           >
             <div className="p-4">
-              <h3 className="text-lg font-semibold text-white mb-2">
+              <h3 className="text-lg font-semibold text-white mb-2 flex items-center">
+                {race.status_class === 'completed' && (
+                  <span className="text-green-400 mr-2 flex-shrink-0">✓</span>
+                )}
+                {race.status_class === 'next-up' && (
+                  <span className="px-2 py-0.5 bg-amber-500 text-black text-xs rounded-full mr-2 flex-shrink-0">
+                    NEXT
+                  </span>
+                )}
                 {race.track.charAt(0).toUpperCase() + race.track.slice(1).replace(/-/g, ' ')}
               </h3>
-              
+             
               <div className="relative h-32 w-full mb-3">
                 <Image
                   src={`/images/tracks/${race.track}.png`}
                   alt={`${race.track} Track Map`}
                   fill
-                  style={{ objectFit: 'contain' }}
+                  style={{ 
+                    objectFit: 'contain',
+                    opacity: race.status_class === 'completed' ? 0.8 : 1
+                  }}
                 />
+                
+                {race.status_class === 'completed' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Link href={`/results/season/${currentSeason}/${race.track}`} passHref>
+                      <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm flex items-center gap-1">
+                        <Trophy className="h-4 w-4" /> Results
+                      </button>
+                    </Link>
+                  </div>
+                )}
               </div>
-              
+             
               {editing === race.id && isAdmin ? (
                 <div className="space-y-2">
                   <Input
@@ -136,8 +216,8 @@ export default function SchedulePage() {
                     onChange={(e) => setNewDateTime(e.target.value)}
                     className="bg-gray-800 border-gray-700 text-white"
                   />
-                  <Button 
-                    onClick={() => handleSave(race.id)} 
+                  <Button
+                    onClick={() => handleSave(race.id)}
                     className="w-full bg-blue-600 hover:bg-blue-700"
                   >
                     Save
@@ -145,14 +225,16 @@ export default function SchedulePage() {
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-200">
+                  <span className={`${
+                    race.status_class === 'next-up' ? 'text-amber-300 font-medium' : 'text-gray-200'
+                  }`}>
                     {formatRaceDateTime(race.date, race.time)}
                   </span>
                   {isAdmin && (
-                    <Button 
-                      onClick={() => handleEdit(race.id, race.date, race.time)} 
-                      size="sm" 
-                      variant="ghost" 
+                    <Button
+                      onClick={() => handleEdit(race.id, race.date, race.time)}
+                      size="sm"
+                      variant="ghost"
                       className="text-blue-400 hover:text-blue-300"
                     >
                       Edit

@@ -46,17 +46,54 @@ export default async function DriverPage({ params }) {
   
   const { name: driverName, id: driverId } = driverData;
 
-  // Season-by-season stats (S6+)
+  // Season-by-season stats (S6 to 10, which are done this way because theyre based off of the standings table, which is legacy)
   const seasonStatsRes = await pool.query(
     'SELECT s.season, STRING_AGG(t.name, \'/\') AS teams, st.points ' +
     'FROM seasons s ' +
     'LEFT JOIN lineups l ON l.season_id = s.id AND l.driver_id = $1 ' +
     'LEFT JOIN teams t ON l.team_id = t.id ' +
     'LEFT JOIN standings st ON st.season_id = s.id AND st.driver_id = $1 AND st.type = $2 ' +
-    'WHERE CAST(s.season AS INTEGER) >= 6 ' +
+    'WHERE CAST(s.season AS INTEGER) >= 6 AND CAST(s.season AS INTEGER) <= 10 ' +
     'GROUP BY s.season, st.points ' +
     'ORDER BY s.season DESC',
     [driverId, 'drivers']
+  );
+
+  // Season-by-season stats (s11 onwards, done this way to avoid having a seperate standalone table for standings, just dynamically calculates instead. this DOES account for adjusted position post penalties)
+  const calculatedPointsRes = await pool.query(
+    `SELECT 
+      s.season,
+      STRING_AGG(DISTINCT t.name, '/') AS teams, 
+      SUM(
+        CASE 
+          WHEN COALESCE(rr.adjusted_position, rr.position) <= 10 
+            AND rr.status != 'DSQ' AND rr.status != 'DNS'
+          THEN 
+            (ARRAY[25, 18, 15, 12, 10, 8, 6, 4, 2, 1])[COALESCE(rr.adjusted_position, rr.position)]
+          ELSE 0
+        END + 
+        CASE 
+          WHEN rr.fastest_lap_time_int > 0 
+            AND rr.fastest_lap_time_int = (
+              SELECT MIN(rr2.fastest_lap_time_int) 
+              FROM race_results rr2 
+              WHERE rr2.race_id = rr.race_id AND rr2.fastest_lap_time_int > 0
+            ) 
+            AND COALESCE(rr.adjusted_position, rr.position) <= 10
+            AND rr.status != 'DSQ' AND rr.status != 'DNS'
+          THEN 1 
+          ELSE 0 
+        END
+      ) AS points
+    FROM race_results rr
+    JOIN races r ON rr.race_id = r.id
+    JOIN seasons s ON r.season_id = s.id
+    JOIN teams t ON rr.team_id = t.id
+    WHERE CAST(s.season AS INTEGER) >= 11
+    AND rr.driver_id = $1
+    GROUP BY s.season
+    ORDER BY s.season DESC`,
+    [driverId]
   );
 
   const driverStats = {
@@ -64,12 +101,22 @@ export default async function DriverPage({ params }) {
     career: { races: 0, wins: 0, podiums: 0, poles: 0, fastestLaps: 0, points: 0 },
   };
 
+  // adding the data from the standings table (s6 - s10)
   seasonStatsRes.rows.forEach((row) => {
     driverStats.seasons[row.season] = {
       team: row.teams || "Didn't Race",
       points: row.points !== null ? row.points : 'Unavailable',
     };
     if (row.points !== null) driverStats.career.points += parseInt(row.points, 10) || 0;
+  });
+
+  //adding the data from the calculated season standings (s11 onwards)
+  calculatedPointsRes.rows.forEach((row) => {
+    driverStats.seasons[row.season] = {
+      team: row.teams || "Didn't Race",
+      points: row.points || 0,
+    };
+    driverStats.career.points += parseInt(row.points, 10) || 0;
   });
 
   // Fetch race results for career stats (S6+)
