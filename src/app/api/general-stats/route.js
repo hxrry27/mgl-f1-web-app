@@ -840,18 +840,32 @@ export async function GET(request) {
             value: leastTotalHarvested.total_harvested_mj
           } : null,
           
-          // NEW: Add per-driver deployment data for the chart
+          // Per-driver deployment data for the chart
           allDriversDeployment: ersData.map(d => ({
             driver: d.name,
             team: d.team,
             value: d.max_deployed_mj
           })).sort((a, b) => b.value - a.value),
           
-          // NEW: Add per-driver harvesting data for the chart
+          // Per-driver harvesting data for the chart
           allDriversHarvesting: ersData.map(d => ({
             driver: d.name,
             team: d.team,
             value: d.max_harvested_mj
+          })).sort((a, b) => b.value - a.value),
+
+          // Per-driver TOTAL deployment data for the chart
+          allDriversTotalDeployment: ersTotalData.map(d => ({
+            driver: d.name,
+            team: d.team,
+            value: d.total_deployed_mj
+          })).sort((a, b) => b.value - a.value),
+          
+          // Per-driver TOTAL harvesting data for the chart  
+          allDriversTotalHarvesting: ersTotalData.map(d => ({
+            driver: d.name,
+            team: d.team,
+            value: d.total_harvested_mj
           })).sort((a, b) => b.value - a.value)
         },
         stints: {
@@ -907,7 +921,7 @@ export async function GET(request) {
             corner: "Unknown" // Would need more complex analysis to determine
           } : { driver: "No Data", team: "No Team", value: 0, corner: "Unknown" },
           
-          // NEW: Add per-driver G-force data
+          // Per-driver G-force data
           allDriversGForce: gForceData.map(d => ({
             driver: d.name,
             team: d.team,
@@ -922,7 +936,7 @@ export async function GET(request) {
             tyre: highestTyreWear.most_worn_tyre
           } : { driver: "No Data", team: "No Team", value: 0, tyre: "Unknown" },
           
-          // NEW: Add per-driver tyre wear data
+          // Per-driver tyre wear data
           allDriversTyreWear: tyreWearData.map(d => ({
             driver: d.name,
             team: d.team,
@@ -989,19 +1003,33 @@ export async function GET(request) {
             location: lowestTyreTemp.min_tyre_pos || "Front Right"
           } : { driver: "No Data", team: "No Team", value: 0, location: "Unknown" },
           
-          // NEW: Add per-driver brake temperature data
+          // Per-driver MAXIMUM brake temperature data
           allDriversBrakeTemps: tempData.map(d => ({
             driver: d.name,
             team: d.team,
             value: d.max_brake_temp
           })).sort((a, b) => b.value - a.value),
           
-          // NEW: Add per-driver tyre temperature data
+          // Per-driver MAXIMUM tyre temperature data
           allDriversTyreTemps: tempData.map(d => ({
             driver: d.name,
             team: d.team,
             value: d.max_tyre_temp
-          })).sort((a, b) => b.value - a.value)
+          })).sort((a, b) => b.value - a.value),
+
+          // Per-driver MINIMUM brake temperature data
+          allDriversMinBrakeTemps: tempData.map(d => ({
+            driver: d.name,
+            team: d.team,
+            value: d.min_brake_temp
+          })).sort((a, b) => a.value - b.value), // Sort ascending for minimums
+  
+          // Per-driver MINIMUM tyre temperature data
+          allDriversMinTyreTemps: tempData.map(d => ({
+            driver: d.name,
+            team: d.team,
+            value: d.min_tyre_temp  
+          })).sort((a, b) => a.value - b.value) // Sort ascending for minimums
         },
         surfaces: {
           timeBySurface: surfaceData.slice(0, 10).map(item => ({

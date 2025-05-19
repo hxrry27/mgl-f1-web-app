@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { 
   Battery, Zap, Gauge, GitBranch, Activity,
   Timer, BarChart2, Car, Clock, 
   TrendingDown, AlertTriangle, ThermometerSun, 
-  Download, Flame, Users, Navigation
+  Download, Flame, Users, Navigation, 
+  MousePointer2, X
 } from 'lucide-react';
 
 // Helper for formatting large numbers
@@ -55,102 +57,334 @@ const formatGForce = (g) => {
   return `${g.toFixed(2)}G`;
 };
 
-// Simple stat card component
-const StatCard = ({ title, value, icon: Icon, color = "text-blue-500", tooltip, className }) => {
-  return (
-    <Card className={cn("bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden", className)}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-gray-400 mb-1">{title}</p>
-            <p className="text-2xl font-semibold text-white">{value}</p>
-          </div>
-          <div className={cn("rounded-full p-2", color.replace("text-", "bg-").replace("500", "500/20"))}>
-            <Icon className={cn("w-5 h-5", color)} />
-          </div>
-        </div>
-        {tooltip && (
-          <p className="text-xs text-gray-500 mt-2">{tooltip}</p>
-        )}
-      </CardContent>
-    </Card>
-  );
+// Function to get team color with fallback logic
+const getTeamColor = (teamName) => {
+  if (!teamName) return '#6366f1';
+  
+  // Direct match first
+  if (teamColors[teamName]) {
+    return teamColors[teamName];
+  }
+  
+  // Try partial matches for flexible team name handling
+  const normalizedTeamName = teamName.toLowerCase();
+  
+  if (normalizedTeamName.includes('mercedes')) return '#00D2BE';
+  if (normalizedTeamName.includes('red bull')) return '#0600EF';
+  if (normalizedTeamName.includes('ferrari')) return '#DC0000';
+  if (normalizedTeamName.includes('mclaren')) return '#FF8700';
+  if (normalizedTeamName.includes('alpine')) return '#0090FF';
+  if (normalizedTeamName.includes('aston martin')) return '#006F62';
+  if (normalizedTeamName.includes('sauber') || normalizedTeamName.includes('alfa romeo') || normalizedTeamName.includes('kick')) return '#900000';
+  if (normalizedTeamName.includes('haas')) return '#FFFFFF';
+  if (normalizedTeamName.includes('williams')) return '#005AFF';
+  if (normalizedTeamName.includes('alphatauri') || normalizedTeamName.includes('racing bulls') || teamName === 'RB') return '#2B4562';
+  
+  // Default fallback
+  return '#6366f1';
+};
+const teamColors = {
+  // Mercedes variations
+  'Mercedes': '#00D2BE',
+  'Mercedes-AMG PETRONAS F1 Team': '#00D2BE',
+  'Mercedes-AMG': '#00D2BE',
+  
+  // Red Bull variations  
+  'Red Bull Racing': '#0600EF',
+  'Red Bull Racing Honda RBPT': '#0600EF',
+  'Red Bull': '#0600EF',
+  'Oracle Red Bull Racing': '#0600EF',
+  
+  // Ferrari variations
+  'Ferrari': '#DC0000',
+  'Scuderia Ferrari': '#DC0000',
+  'Scuderia Ferrari HP': '#DC0000',
+  
+  // McLaren variations
+  'McLaren': '#FF8700',
+  'McLaren F1 Team': '#FF8700',
+  'Papaya United McLaren F1 Team': '#FF8700',
+  
+  // Alpine variations
+  'Alpine': '#0090FF',
+  'BWT Alpine F1 Team': '#0090FF',
+  'Alpine F1 Team': '#0090FF',
+  
+  // Aston Martin variations
+  'Aston Martin': '#006F62',
+  'Aston Martin Aramco Cognizant F1 Team': '#006F62',
+  'Aston Martin F1 Team': '#006F62',
+  
+  // Sauber/Kick Sauber variations
+  'Kick Sauber': '#900000',
+  'Sauber': '#900000',
+  'Alfa Romeo': '#900000',
+  'Alfa Romeo F1 Team ORLEN': '#900000',
+  'Stake F1 Team Kick Sauber': '#900000',
+  
+  // RB/AlphaTauri/Racing Bulls variations
+  'RB': '#2B4562',
+  'AlphaTauri': '#2B4562',
+  'Scuderia AlphaTauri': '#2B4562',
+  'Racing Bulls': '#2B4562',
+  'Visa Cash App RB F1 Team': '#2B4562',
+  
+  // Haas variations
+  'Haas F1 Team': '#FFFFFF',
+  'Haas': '#FFFFFF',
+  'MoneyGram Haas F1 Team': '#FFFFFF',
+  
+  // Williams variations
+  'Williams': '#005AFF',
+  'Williams Racing': '#005AFF',
+  'Williams F1 Team': '#005AFF',
 };
 
-// Driver stat card with driver photo
-const DriverStatCard = ({ driver, team, value, title, icon: Icon, color = "text-blue-500", tooltip, className }) => {
+// Enhanced stat card component with click functionality
+const ClickableStatCard = ({ 
+  title, 
+  value, 
+  icon: Icon, 
+  color = "text-blue-500", 
+  tooltip, 
+  className,
+  onClick,
+  chartData = [],
+  chartTitle,
+  dataKey = "value",
+  formatValue
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleClick = () => {
+    if (chartData && Array.isArray(chartData) && chartData.length > 0) {
+      setIsOpen(true);
+    }
+  };
+
   return (
-    <Card className={cn("bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden", className)}>
-      <CardContent className="p-4">
-        <div className="flex items-center mb-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden mr-3 bg-gray-800 flex items-center justify-center">
-            <Users className="w-5 h-5 text-gray-400" />
+    <>
+      <Card 
+        className={cn(
+          "bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden cursor-pointer transition-all duration-200 hover:border-gray-600 hover:shadow-lg hover:shadow-blue-500/10",
+          className
+        )}
+        onClick={handleClick}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-400 mb-1">{title}</p>
+              <p className="text-2xl font-semibold text-white">{value}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn("rounded-full p-2", color.replace("text-", "bg-").replace("500", "500/20"))}>
+                <Icon className={cn("w-5 h-5", color)} />
+              </div>
+            <div className="flex items-center gap-2">
+              {chartData && Array.isArray(chartData) && chartData.length > 0 && (
+                <MousePointer2 className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-white">{driver}</p>
-            <p className="text-xs text-gray-400">{team}</p>
-          </div>
-          <div className={cn("ml-auto rounded-full p-2", color.replace("text-", "bg-").replace("500", "500/20"))}>
-            <Icon className={cn("w-5 h-5", color)} />
-          </div>
-        </div>
-        <div>
-          <p className="text-xs text-gray-400 mb-1">{title}</p>
-          <p className="text-xl font-semibold text-white">{value}</p>
           {tooltip && (
             <p className="text-xs text-gray-500 mt-2">{tooltip}</p>
           )}
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Chart Modal */}
+      {chartData && Array.isArray(chartData) && chartData.length > 0 && (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="max-w-4xl bg-gray-900 border-gray-700 text-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Icon className={cn("w-5 h-5", color)} />
+                {chartTitle || title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="h-96 mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.3)" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    tickFormatter={formatValue}
+                  />
+                  <RechartsTooltip
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+                      borderColor: 'rgba(75, 85, 99, 0.5)',
+                      borderRadius: '8px',
+                      color: 'white'
+                    }}
+                    labelStyle={{ color: 'white' }}
+                    itemStyle={{ color: 'white' }}
+                    formatter={(value, name, props) => [
+                      formatValue ? formatValue(value) : value,
+                      title
+                    ]}
+                    labelFormatter={(label) => `${label} (${chartData.find(d => d.name === label)?.team || 'Unknown Team'})`}
+                  />
+                  <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
+                    {chartData.map((entry, index) => {
+                      const teamColor = getTeamColor(entry.team);
+                      return (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={teamColor}
+                          fillOpacity={0.8}
+                        />
+                      );
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 
-// Chart card component for horizontal bar charts
-const ChartCard = ({ title, data, dataKey, nameKey, color = "#3b82f6", icon: Icon, tooltip, className }) => {
+// Driver stat card with click functionality
+const ClickableDriverStatCard = ({ 
+  driver, 
+  team, 
+  value, 
+  title, 
+  icon: Icon, 
+  color = "text-blue-500", 
+  tooltip, 
+  className,
+  chartData = [],
+  chartTitle,
+  dataKey = "value",
+  formatValue
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleClick = () => {
+    if (chartData && Array.isArray(chartData) && chartData.length > 0) {
+      setIsOpen(true);
+    }
+  };
+
   return (
-    <Card className={cn("bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-auto", className)}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <Icon className={cn("w-5 h-5", `text-${color}-500`)} />
-          <CardTitle className="text-md font-semibold text-white">{title}</CardTitle>
-        </div>
-        {tooltip && (
-          <p className="text-xs text-gray-500 mt-1">{tooltip}</p>
+    <>
+      <Card 
+        className={cn(
+          "bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden cursor-pointer transition-all duration-200 hover:border-gray-600 hover:shadow-lg hover:shadow-blue-500/10",
+          className
         )}
-      </CardHeader>
-      <CardContent className="pt-0 h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            layout="vertical"
-            data={data}
-            margin={{ top: 10, right: 30, left: 30, bottom: 5 }}
-          >
-            <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.3)" />
-            <XAxis type="number" tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} />
-            <YAxis 
-              dataKey={nameKey} 
-              type="category" 
-              tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
-              width={60}
-            />
-            <RechartsTooltip
-              contentStyle={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', borderColor: 'rgba(75, 85, 99, 0.5)' }}
-              labelStyle={{ color: 'rgba(209, 213, 219, 0.9)' }}
-            />
-            <Bar dataKey={dataKey} fill={color}>
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={color} fillOpacity={0.8 - (index * 0.05)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+        onClick={handleClick}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-center mb-3">
+            <div className="w-8 h-8 rounded-full overflow-hidden mr-3 bg-gray-800 flex items-center justify-center">
+              <Users className="w-5 h-5 text-gray-400" />
+            </div>
+            <div className="flex-grow">
+              <p className="font-medium text-white">{driver}</p>
+              <p className="text-xs text-gray-400">{team}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className={cn("rounded-full p-2", color.replace("text-", "bg-").replace("500", "500/20"))}>
+                <Icon className={cn("w-5 h-5", color)} />
+              </div>
+              {chartData && Array.isArray(chartData) && chartData.length > 0 && (
+                <MousePointer2 className="w-4 h-4 text-gray-400" />
+              )}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-gray-400 mb-1">{title}</p>
+            <p className="text-xl font-semibold text-white">{value}</p>
+            {tooltip && (
+              <p className="text-xs text-gray-500 mt-2">{tooltip}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Chart Modal */}
+      {chartData && Array.isArray(chartData) && chartData.length > 0 && (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="max-w-4xl bg-gray-900 border-gray-700 text-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Icon className={cn("w-5 h-5", color)} />
+                {chartTitle || title}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="h-96 mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={chartData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.3)" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    tickFormatter={formatValue}
+                  />
+                  <RechartsTooltip
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+                      borderColor: 'rgba(75, 85, 99, 0.5)',
+                      borderRadius: '8px',
+                      color: 'white'
+                    }}
+                    labelStyle={{ color: 'white' }}
+                    itemStyle={{ color: 'white' }}
+                    formatter={(value, name, props) => [
+                      formatValue ? formatValue(value) : value,
+                      title
+                    ]}
+                    labelFormatter={(label) => `${label} (${chartData.find(d => d.name === label)?.team || 'Unknown Team'})`}
+                  />
+                  <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
+                    {chartData.map((entry, index) => {
+                      const teamColor = getTeamColor(entry.team);
+                      return (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={teamColor}
+                          fillOpacity={0.8}
+                        />
+                      );
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 };
 
-// Surface group card component
+// Surface group card component (kept the same)
 const SurfaceGroupCard = ({ surfaceType, data, className }) => {
   return (
     <Card className={cn("bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden", className)}>
@@ -261,10 +495,16 @@ export default function GeneralStatsChart({
     topSpeeds: [],
     ersDeployment: [],
     ersHarvesting: [],
+    totalErsDeployment: [],
+    totalErsHarvesting: [],
     deltaToNext: [],
     gearShifts: [],
     maxBrakeTemps: [],
-    maxTyreTemps: []
+    minBrakeTemps: [],
+    maxTyreTemps: [],
+    minTyreTemps: [],
+    gForces: [],
+    tyreWear: []
   });
   
   // State for processed surface data
@@ -278,10 +518,16 @@ export default function GeneralStatsChart({
         topSpeeds: generalStats.speed?.allDriversTopSpeeds || [],
         ersDeployment: generalStats.ers?.allDriversDeployment || [],
         ersHarvesting: generalStats.ers?.allDriversHarvesting || [],
+        totalErsDeployment: generalStats.ers?.allDriversTotalDeployment || [],
+        totalErsHarvesting: generalStats.ers?.allDriversTotalHarvesting || [],
         deltaToNext: generalStats.delta?.allDriversDeltas || [],
         gearShifts: generalStats.speed?.allDriversGearShifts || [],
         maxBrakeTemps: generalStats.temperatures?.allDriversBrakeTemps || [],
-        maxTyreTemps: generalStats.temperatures?.allDriversTyreTemps || []
+        minBrakeTemps: generalStats.temperatures?.allDriversMinBrakeTemps || [],
+        maxTyreTemps: generalStats.temperatures?.allDriversTyreTemps || [],
+        minTyreTemps: generalStats.temperatures?.allDriversMinTyreTemps || [],
+        gForces: generalStats.forces?.allDriversGForce || [], // Note: singular "allDriversGForce" not plural
+        tyreWear: generalStats.tyres?.allDriversTyreWear || []
       };
       
       // Process data for charts - format for display
@@ -335,15 +581,6 @@ export default function GeneralStatsChart({
     </div>
   );
   
-  // Prepare surface time data for chart from API (for overview tab)
-  const surfaceTimeData = stats.surfaces.timeBySurface.map(item => ({
-    name: `${item.driver} (${item.surface})`,
-    value: item.time,
-    driver: item.driver,
-    team: item.team,
-    surface: item.surface
-  })).sort((a, b) => b.value - a.value).slice(0, 8);
-  
   return (
     <Card 
       className={cn("chart-container bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-full flex flex-col", className)}
@@ -352,6 +589,9 @@ export default function GeneralStatsChart({
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div className="flex items-center gap-2">
             <CardTitle className="text-lg font-semibold text-white">Race Statistics</CardTitle>
+            <div className="text-xs text-gray-400 bg-gray-800/60 px-2 py-1 rounded-md">
+              Click cards to view detailed charts
+            </div>
           </div>
           
           <div className="flex flex-wrap gap-2">
@@ -391,24 +631,30 @@ export default function GeneralStatsChart({
             
             {/* Overview Tab */}
             <TabsContent value="overview" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <DriverStatCard 
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <ClickableDriverStatCard 
                   driver={stats.ers.mostDeployed.driver}
                   team={stats.ers.mostDeployed.team}
                   title="Most ERS Deployed"
                   value={`${stats.ers.mostDeployed.value} MJ`}
                   icon={Battery}
                   color="text-green-500"
+                  chartData={derivedData.ersDeployment}
+                  chartTitle="ERS Deployment - All Drivers"
+                  formatValue={(val) => `${val.toFixed(1)} MJ`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.speed.topSpeed.driver}
                   team={stats.speed.topSpeed.team}
                   title="Highest Top Speed"
                   value={formatSpeed(stats.speed.topSpeed.value)}
                   icon={Gauge}
                   color="text-red-500"
+                  chartData={derivedData.topSpeeds}
+                  chartTitle="Top Speeds - All Drivers"
+                  formatValue={(val) => `${val} km/h`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.forces.highestG.driver}
                   team={stats.forces.highestG.team}
                   title="Highest G-Force"
@@ -416,8 +662,11 @@ export default function GeneralStatsChart({
                   icon={Activity}
                   color="text-purple-500"
                   tooltip={`Recorded at ${stats.forces.highestG.corner}`}
+                  chartData={derivedData.gForces}
+                  chartTitle="G-Forces - All Drivers"
+                  formatValue={(val) => `${val.toFixed(2)}G`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.events.mostOvertakes.driver}
                   team={stats.events.mostOvertakes.team}
                   title="Most Overtakes"
@@ -425,62 +674,47 @@ export default function GeneralStatsChart({
                   icon={GitBranch}
                   color="text-blue-500"
                 />
-                <StatCard 
+                <ClickableStatCard 
                   title="Total Overtakes"
                   value={stats.events.totalOvertakes}
                   icon={Car}
                   color="text-cyan-500"
                 />
-                <StatCard 
+                <ClickableStatCard 
                   title="Fastest Laps Set"
                   value={stats.events.fastestLapsSet}
                   icon={Timer}
                   color="text-amber-500"
                 />
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartCard 
-                  title="Surface Time Leaders"
-                  data={surfaceTimeData}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#2563eb"
-                  icon={Navigation}
-                  tooltip="Time spent (seconds) on non-track surfaces"
-                />
-                <ChartCard 
-                  title="Top Speeds"
-                  data={derivedData.topSpeeds}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#ef4444"
-                  icon={Gauge}
-                  tooltip="Maximum speed recorded (km/h)"
-                />
-              </div>
             </TabsContent>
             
             {/* ERS Tab */}
             <TabsContent value="ers" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <DriverStatCard 
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <ClickableDriverStatCard 
                   driver={stats.ers.mostDeployed?.driver || "No Data"}
                   team={stats.ers.mostDeployed?.team || "No Team"}
                   title="Highest Single-Lap ERS Deploy"
                   value={formatTotals(stats.ers.mostDeployed?.value)}
                   icon={Battery}
                   color="text-green-500"
+                  chartData={derivedData.ersDeployment}
+                  chartTitle="ERS Deployment - All Drivers"
+                  formatValue={(val) => `${val.toFixed(1)} MJ`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.ers.mostHarvested?.driver || "No Data"}
                   team={stats.ers.mostHarvested?.team || "No Team"}
                   title="Highest Single-Lap ERS Harvest"
                   value={formatTotals(stats.ers.mostHarvested?.value)}
                   icon={Zap}
                   color="text-blue-500"
+                  chartData={derivedData.ersHarvesting}
+                  chartTitle="ERS Harvesting - All Drivers"
+                  formatValue={(val) => `${val.toFixed(1)} MJ`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.ers.mostTotalDeployed?.driver || "No Data"}
                   team={stats.ers.mostTotalDeployed?.team || "No Team"}
                   title="Most Race Total ERS Deploy"
@@ -488,8 +722,11 @@ export default function GeneralStatsChart({
                   icon={Battery}
                   color="text-emerald-500"
                   tooltip="Total amount deployed during the race"
+                  chartData={derivedData.totalErsDeployment}
+                  chartTitle="Total ERS Deployment - All Drivers"
+                  formatValue={(val) => `${val.toFixed(1)} MJ`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.ers.mostTotalHarvested?.driver || "No Data"}
                   team={stats.ers.mostTotalHarvested?.team || "No Team"}
                   title="Most Race Total ERS Harvest"
@@ -497,59 +734,50 @@ export default function GeneralStatsChart({
                   icon={Zap}
                   color="text-indigo-500"
                   tooltip="Total amount harvested during the race"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartCard 
-                  title="ERS Deployment"
-                  data={derivedData.ersDeployment}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#22c55e"
-                  icon={Battery}
-                  tooltip="ERS deployed per lap (MJ)"
-                />
-                <ChartCard 
-                  title="ERS Harvesting"
-                  data={derivedData.ersHarvesting}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#3b82f6"
-                  icon={Zap}
-                  tooltip="ERS harvested per lap (MJ)"
+                  chartData={derivedData.totalErsHarvesting}
+                  chartTitle="Total ERS Harvesting - All Drivers"
+                  formatValue={(val) => `${val.toFixed(1)} MJ`}
                 />
               </div>
             </TabsContent>
             
             {/* Performance Tab */}
             <TabsContent value="performance" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <DriverStatCard 
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <ClickableDriverStatCard 
                   driver={stats.speed.topSpeed.driver}
                   team={stats.speed.topSpeed.team}
                   title="Highest Top Speed"
                   value={formatSpeed(stats.speed.topSpeed.value)}
                   icon={Gauge}
                   color="text-red-500"
+                  chartData={derivedData.topSpeeds}
+                  chartTitle="Top Speeds - All Drivers"
+                  formatValue={(val) => `${val} km/h`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.speed.mostGearShifts.driver}
                   team={stats.speed.mostGearShifts.team}
                   title="Most Gear Shifts"
                   value={formatNumber(stats.speed.mostGearShifts.value)}
                   icon={GitBranch}
                   color="text-indigo-500"
+                  chartData={derivedData.gearShifts}
+                  chartTitle="Gear Shifts - All Drivers"
+                  formatValue={(val) => formatNumber(val)}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.speed.leastGearShifts.driver}
                   team={stats.speed.leastGearShifts.team}
                   title="Least Gear Shifts"
                   value={formatNumber(stats.speed.leastGearShifts.value)}
                   icon={GitBranch}
                   color="text-teal-500"
+                  chartData={derivedData.gearShifts}
+                  chartTitle="Gear Shifts - All Drivers"
+                  formatValue={(val) => formatNumber(val)}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.stints.fastest.driver}
                   team={stats.stints.fastest.team}
                   title="Fastest Stint Pace"
@@ -558,7 +786,7 @@ export default function GeneralStatsChart({
                   color="text-emerald-500"
                   tooltip={`On ${stats.stints.fastest.compound} tyres`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.stints.slowest.driver}
                   team={stats.stints.slowest.team}
                   title="Slowest Stint Pace"
@@ -567,7 +795,7 @@ export default function GeneralStatsChart({
                   color="text-amber-500"
                   tooltip={`On ${stats.stints.slowest.compound} tyres`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.forces.highestG.driver}
                   team={stats.forces.highestG.team}
                   title="Highest G-Force"
@@ -575,35 +803,17 @@ export default function GeneralStatsChart({
                   icon={Activity}
                   color="text-purple-500"
                   tooltip={`Recorded at ${stats.forces.highestG.corner}`}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartCard 
-                  title="Delta to Next Car"
-                  data={derivedData.deltaToNext}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#8b5cf6"
-                  icon={TrendingDown}
-                  tooltip="Average delta time to car ahead (seconds)"
-                />
-                <ChartCard 
-                  title="Gear Shifts Distribution"
-                  data={derivedData.gearShifts}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#6366f1"
-                  icon={GitBranch}
-                  tooltip="Total number of gear shifts during race"
+                  chartData={derivedData.gForces}
+                  chartTitle="G-Forces - All Drivers"
+                  formatValue={(val) => `${val.toFixed(2)}G`}
                 />
               </div>
             </TabsContent>
             
             {/* Temperature Tab */}
             <TabsContent value="temperature" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                <DriverStatCard 
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <ClickableDriverStatCard 
                   driver={stats.temperatures.highestBrakeTemp.driver}
                   team={stats.temperatures.highestBrakeTemp.team}
                   title="Highest Brake Temp"
@@ -611,8 +821,11 @@ export default function GeneralStatsChart({
                   icon={Flame}
                   color="text-red-500"
                   tooltip={`${stats.temperatures.highestBrakeTemp.location} brake`}
+                  chartData={derivedData.maxBrakeTemps}
+                  chartTitle="Maximum Brake Temperatures - All Drivers"
+                  formatValue={(val) => `${val}°C`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.temperatures.lowestBrakeTemp.driver}
                   team={stats.temperatures.lowestBrakeTemp.team}
                   title="Lowest Brake Temp"
@@ -620,8 +833,11 @@ export default function GeneralStatsChart({
                   icon={Flame}
                   color="text-cyan-500"
                   tooltip={`${stats.temperatures.lowestBrakeTemp.location} brake`}
+                  chartData={derivedData.minBrakeTemps}
+                  chartTitle="Minimum Brake Temperatures - All Drivers"
+                  formatValue={(val) => `${val}°C`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.temperatures.highestTyreTemp.driver}
                   team={stats.temperatures.highestTyreTemp.team}
                   title="Highest Tyre Temp"
@@ -629,8 +845,11 @@ export default function GeneralStatsChart({
                   icon={ThermometerSun}
                   color="text-orange-500"
                   tooltip={`${stats.temperatures.highestTyreTemp.location} tyre`}
+                  chartData={derivedData.maxTyreTemps}
+                  chartTitle="Maximum Tyre Temperatures - All Drivers"
+                  formatValue={(val) => `${val}°C`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.temperatures.lowestTyreTemp.driver}
                   team={stats.temperatures.lowestTyreTemp.team}
                   title="Lowest Tyre Temp"
@@ -638,8 +857,11 @@ export default function GeneralStatsChart({
                   icon={ThermometerSun}
                   color="text-blue-500"
                   tooltip={`${stats.temperatures.lowestTyreTemp.location} tyre`}
+                  chartData={derivedData.minTyreTemps}
+                  chartTitle="Minimum Tyre Temperatures - All Drivers"
+                  formatValue={(val) => `${val}°C`}
                 />
-                <DriverStatCard 
+                <ClickableDriverStatCard 
                   driver={stats.tyres.highestWear.driver}
                   team={stats.tyres.highestWear.team}
                   title="Highest Tyre Wear"
@@ -647,32 +869,14 @@ export default function GeneralStatsChart({
                   icon={AlertTriangle}
                   color="text-yellow-500"
                   tooltip={`${stats.tyres.highestWear.tyre} tyre`}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ChartCard 
-                  title="Maximum Brake Temperatures"
-                  data={derivedData.maxBrakeTemps}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#ef4444"
-                  icon={Flame}
-                  tooltip="Maximum brake temperature recorded (°C)"
-                />
-                <ChartCard 
-                  title="Maximum Tyre Temperatures"
-                  data={derivedData.maxTyreTemps}
-                  dataKey="value"
-                  nameKey="name"
-                  color="#f97316"
-                  icon={ThermometerSun}
-                  tooltip="Maximum tyre temperature recorded (°C)"
+                  chartData={derivedData.tyreWear}
+                  chartTitle="Tyre Wear - All Drivers"
+                  formatValue={(val) => `${(val / 100).toFixed(1)}%`}
                 />
               </div>
             </TabsContent>
             
-            {/* Surfaces Tab */}
+            {/* Surfaces Tab - Keep the same as before since these work well */}
             <TabsContent value="surfaces" className="mt-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {Object.entries(surfaceGroups).map(([surfaceType, data], index) => (
