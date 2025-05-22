@@ -10,12 +10,9 @@ import GeneralStatsChart from './analysis/GeneralStatsChart';
 import TrackDominanceChart from './analysis/TrackDominanceChart';
 import F1Card from './F1Card';
 import { Trophy, Zap, Clock } from 'lucide-react';
-import FilterOptions from './FilterOptions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function DashboardContainer({ user = null }) {
-  const username = user?.name || 'Guest';
-
+export default function DashboardContainer() {
   const compoundColors = {
     'Soft': '#ff4444',
     'Medium': '#ffff00',

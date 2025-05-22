@@ -2,47 +2,43 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Users, Clock, Zap, TrendingUp, BarChart2, Map } from 'lucide-react';
-
-// Import track layouts from generated JSON file
+import { Clock, Zap, TrendingUp, BarChart2, Map } from 'lucide-react';
 import trackLayouts from '@/data/track-layouts.json';
 
-// Revised Track Visualization Component with color accessibility
+// revised Track Visualization Component with color accessibility
 const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver, driverColorMap, driverTeams }) => {
   const trackRef = useRef(null);
   const [trackSegments, setTrackSegments] = useState([]);
   
-  // Get track path from our track layouts
+  // get track path from the FastF1 track layouts already pulled and stored
   const trackPath = trackSlug && trackLayouts[trackSlug] ? trackLayouts[trackSlug] : null;
   
-  // Generate track segments once track path is available
+  // generate track segments once track path is available
   useEffect(() => {
     if (!trackPath || !trackRef.current) return;
     
     try {
-      // Create a temporary SVG element to work with the path
+      // create a temporary SVG element to work with the path
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svg.style.visibility = "hidden";
       svg.style.position = "absolute";
       document.body.appendChild(svg);
       
-      // Create a path element with our track path
+      // create a path element with track path
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", trackPath);
       svg.appendChild(path);
       
-      // Get total length of path
+      // get total length of path
       const pathLength = path.getTotalLength();
       
-      // Use fewer segments (20-25) like Fastlytics recommends
+      // preset 25 segments following on from fastlytics analysis
       const numSegments = Math.min(25, sectorDeltas?.length || 25);
       const segments = [];
       
-      // Create segment data with proper path extraction
+      // create segment data with proper path extraction
       for (let i = 0; i < numSegments; i++) {
         const startPercent = i / numSegments;
         const endPercent = (i + 1) / numSegments;
@@ -50,7 +46,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         const startDistance = startPercent * pathLength;
         const endDistance = endPercent * pathLength;
         
-        // Get more points within each segment to maintain curve shape
+        // get more points within each segment to maintain pwetty curve shape
         const numPointsPerSegment = 10;
         const segmentPoints = [];
         
@@ -60,7 +56,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
           segmentPoints.push({ x: point.x, y: point.y });
         }
         
-        // Generate a proper path string for this segment that follows the track curve
+        // generate a proper path string for this segment that follows the track curve
         let segmentPath = `M ${segmentPoints[0].x} ${segmentPoints[0].y}`;
         for (let j = 1; j <= numPointsPerSegment; j++) {
           segmentPath += ` L ${segmentPoints[j].x} ${segmentPoints[j].y}`;
@@ -78,10 +74,10 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         });
       }
       
-      // Clean up
+      // clean up
       document.body.removeChild(svg);
       
-      // Set the track segments
+      // set the track segments
       setTrackSegments(segments);
     } catch (error) {
       // DEBUG: console.error("Error generating track segments:", error);
@@ -89,7 +85,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
     }
   }, [trackPath, sectorDeltas]);
   
-  // Default track if no path is found
+  // default track fallback
   if (!trackPath) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -101,11 +97,11 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
     );
   }
   
-  // Default viewBox size
+  // default viewBox size
   const viewBoxWidth = 400;
   const viewBoxHeight = 400;
   
-  // Check for same team or similar-colored teams
+  // check for same team or similar-colored teams
   const needsAlternateColor = () => {
     if (!driverTeams || !selectedDriver || !comparisonDriver) return false;
     
@@ -114,15 +110,15 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
     
     if (!selectedTeam || !comparisonTeam) return false;
     
-    // Same team case
+    // same team case
     if (selectedTeam === comparisonTeam) return true;
     
-    // Handle teams with similar blue colors that are hard to distinguish
+    // handle teams with similar blue colors that are hard to distinguish (i'm colourblind don't hate)
     const blueTeams = ['Alpine', 'Williams', 'Racing Bulls'];
     const selectedIsBlue = blueTeams.some(team => selectedTeam.includes(team));
     const comparisonIsBlue = blueTeams.some(team => comparisonTeam.includes(team));
     
-    // If both drivers are from blue teams, use alternate colors
+    // if both drivers are from blue teams, use alternate colors
     if (selectedIsBlue && comparisonIsBlue) return true;
     
     return false;
@@ -130,7 +126,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
   
   const needsAlternateColorValue = needsAlternateColor();
   
-  // Get reason for alternate color
+  // get the reason for using an alternative color
   const getColorChangeReason = () => {
     if (!driverTeams || !selectedDriver || !comparisonDriver) return '';
     
@@ -139,7 +135,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
     
     if (selectedTeam === comparisonTeam) return 'same team';
     
-    // Check if both are blue teams
+    // check if both are blue teams
     const blueTeams = ['Alpine', 'Williams', 'Racing Bulls'];
     const selectedIsBlue = blueTeams.some(team => selectedTeam.includes(team));
     const comparisonIsBlue = blueTeams.some(team => comparisonTeam.includes(team));
@@ -151,20 +147,18 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
     return '';
   };
   
-  // Get driver colors with special handling for same-team or similar colored teams
-  const primaryColor = driverColorMap[selectedDriver] || '#3B82F6'; // Blue fallback
-  const comparisonColor = needsAlternateColorValue ? 
-                       '#FFFFFF' : // Pure white for same team or similar-colored teams
-                       (driverColorMap[comparisonDriver] || '#EF4444'); // Normal team color or red fallback
+  // get driver colors with special handling for same-team or similar colored teams
+  const primaryColor = driverColorMap[selectedDriver] || '#3B82F6'; // blue fallback
+  const comparisonColor = needsAlternateColorValue ? '#FFFFFF' : // pure white for same team or similar-colored teams
+    (driverColorMap[comparisonDriver] || '#EF4444'); // normal team color or red fallback
   
-  const neutralColor = '#F59E0B'; // Yellow for neutral/equal sections
-  const defaultTrackColor = '#4B5563'; // Default track color when no comparison
+  const neutralColor = '#F59E0B'; // yellow for neutral/equal sections
+  const defaultTrackColor = '#4B5563'; // default track color when no comparison
   
-  // Small threshold for considering performance "equal"
-  const equalThreshold = 0.005; // Very small threshold to minimize yellow segments
+  const equalThreshold = 0.005; // very small threshold to minimize yellow segments, will only show if within 0.005s of each other
   
-  // Fixed track width - CONSISTENT ACROSS ALL ELEMENTS
-  const trackWidth = 5; // Set to 5 as requested
+  // fixed track width - thin boi
+  const trackWidth = 5; 
   
   return (
     <svg 
@@ -182,7 +176,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         </filter>
       </defs>
       
-      {/* Track base outline - shadow */}
+      {/* track base outline - shadow */}
       <path
         d={trackPath}
         fill="none"
@@ -192,7 +186,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         strokeLinejoin="round"
       />
       
-      {/* Track base - FULL TRACK PATH */}
+      {/* track base - full path */}
       <path
         d={trackPath}
         fill="none"
@@ -202,7 +196,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         strokeLinejoin="round"
       />
       
-      {/* Track surface - SINGLE PATH for entire track */}
+      {/* track surface - single path */}
       <path
         d={trackPath}
         fill="none"
@@ -213,7 +207,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         className={comparisonDriver !== 'none' ? "opacity-30" : "opacity-100"}
       />
       
-      {/* Colored segment overlays - Separate path for each segment */}
+      {/* colored mini sector overlays - uses a separate path for each mini sector */}
       {comparisonDriver !== 'none' && trackSegments.length > 0 && sectorDeltas && sectorDeltas.length > 0 && (
         trackSegments.map((segment, index) => {
           if (index >= sectorDeltas.length) return null;
@@ -221,11 +215,11 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
           const sectorData = sectorDeltas[index];
           if (!sectorData) return null;
           
-          // Determine segment color based on which driver is faster
+          // determine segment color based on which driver is faster
           let segmentColor;
           
           if (Math.abs(sectorData.advantage) < equalThreshold) {
-            // If advantage is minimal, consider it neutral/equal
+            // if advantage is minimal, consider it neutral/equal
             segmentColor = neutralColor;
           } else if (sectorData.faster === 'driver1') {
             segmentColor = primaryColor;
@@ -240,7 +234,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
               fill="none"
               stroke={segmentColor}
               strokeWidth={trackWidth}
-              strokeLinecap="round" // Use round for smooth segment connections
+              strokeLinecap="round" // smooth the segment connections out
               strokeLinejoin="round"
               opacity="0.9"
             />
@@ -248,7 +242,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         })
       )}
       
-      {/* Start/Finish line marker */}
+      {/* start finish marker */}
       {trackSegments.length > 0 && (
         <g>
           <circle
@@ -283,7 +277,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
   );
 };
 
-// Calculate sector deltas using telemetry speed data
+// calculate mini sector deltas using telemetry speed data
 const calculateSpeedSectorDeltas = (driver1Data, driver2Data, numSectors = 25) => {
   if (!driver1Data || !driver2Data || driver1Data.length === 0 || driver2Data.length === 0) {
     return [];
@@ -303,26 +297,27 @@ const calculateSpeedSectorDeltas = (driver1Data, driver2Data, numSectors = 25) =
     const sectorStart = i * sectorSize;
     const sectorEnd = (i + 1) * sectorSize;
     
-    // Find points in this sector for each driver
+    // find the points in said mini sector for each driver
     const driver1Points = driver1Data.filter(p => p.distance >= sectorStart && p.distance < sectorEnd);
     const driver2Points = driver2Data.filter(p => p.distance >= sectorStart && p.distance < sectorEnd);
     
     if (driver1Points.length > 0 && driver2Points.length > 0) {
-      // Calculate average speed through this sector
+      // calculate their average speed through this mini sector
       const driver1AvgSpeed = driver1Points.reduce((sum, p) => sum + (p.speed || 0), 0) / driver1Points.length;
       const driver2AvgSpeed = driver2Points.reduce((sum, p) => sum + (p.speed || 0), 0) / driver2Points.length;
       
-      // Calculate time delta using distance/speed formula (t = d/v)
-      // For the same distance, time is inversely proportional to speed
+      // calculate the time delta using distance/speed formula (t = d/v)
+
+      // for the same distance, time is inversely proportional to speed
       const sectorDistance = sectorEnd - sectorStart;
       const driver1Time = driver1AvgSpeed > 0 ? sectorDistance / driver1AvgSpeed : 0;
       const driver2Time = driver2AvgSpeed > 0 ? sectorDistance / driver2AvgSpeed : 0;
       
-      // Time delta in seconds (negative means driver1 is faster)
+      // time delta in seconds/ms (postive means driver1 is faster)
       const timeDelta = driver1Time > 0 && driver2Time > 0 ? driver1Time - driver2Time : 0;
       
-      // Magnify the delta to make differences more visible
-      // Multiply by 10 to convert fractions of a second to a more visible scale
+      // magnify the delta to make differences more visible
+      // multiply by 10 to convert fractions of a second to a more visible scale
       const scaledAdvantage = Math.abs(timeDelta) * 10;
       
       sectors.push({
@@ -333,7 +328,7 @@ const calculateSpeedSectorDeltas = (driver1Data, driver2Data, numSectors = 25) =
         driver2Speed: driver2AvgSpeed,
         driver1Time,
         driver2Time,
-        timeDelta, // This is crucial for the chart
+        timeDelta, // this is crucial for the chart, don't be stupid and forget it again
         speedDelta: driver1AvgSpeed - driver2AvgSpeed,
         faster: timeDelta < 0 ? 'driver1' : 'driver2',
         advantage: scaledAdvantage
@@ -341,7 +336,7 @@ const calculateSpeedSectorDeltas = (driver1Data, driver2Data, numSectors = 25) =
     }
   }
   
-  // Log some stats about the calculated sectors
+  // DEBUG: log sector stats
   if (sectors.length > 0) {
     const driver1Faster = sectors.filter(s => s.faster === 'driver1').length;
     const driver2Faster = sectors.filter(s => s.faster === 'driver2').length;
@@ -352,17 +347,17 @@ const calculateSpeedSectorDeltas = (driver1Data, driver2Data, numSectors = 25) =
   return sectors;
 };
 
-// Calculate sector deltas using track data from API
+// calculate mini sector deltas using track data from API
 const calculateTrackSectorDeltas = (sectorData, primaryDriver, comparisonDriver, drivers) => {
   if (!sectorData || !primaryDriver || comparisonDriver === 'none') return [];
   
-  // Map of car indices (lookup by driver name)
+  // map of car indices (lookup by driver name)
   const carIndices = {};
   drivers.forEach((driver, index) => {
     carIndices[driver] = index;
   });
   
-  // Get car indices for primary and comparison drivers
+  // get the car indices for primary and comparison drivers
   const primaryCarIndex = `Car ${carIndices[primaryDriver] || 0}`;
   const comparisonCarIndex = `Car ${carIndices[comparisonDriver] || 1}`;
   
@@ -370,38 +365,38 @@ const calculateTrackSectorDeltas = (sectorData, primaryDriver, comparisonDriver,
   
   const sectors = [];
   
-  // Process each sector with data for both drivers
+  // process each sector with data for both selected drivers
   for (const sectorNum in sectorData) {
     const sector = parseInt(sectorNum);
     const sectorInfo = sectorData[sector];
     
-    // Skip sectors without data for both drivers
+    // skip sectors without data for both drivers (shouldn't happen)
     if (!sectorInfo[primaryCarIndex] || !sectorInfo[comparisonCarIndex]) {
       // DEBUG: console.log(`Missing data for sector ${sector} for one or both drivers`);
       continue;
     }
     
-    // Get position data
+    // get positional data
     const car1Data = sectorInfo[primaryCarIndex];
     const car2Data = sectorInfo[comparisonCarIndex];
     
-    // Check for timing data first - preferred metric
+    // check for timing data first - preferred metric
     if (car1Data.sectorTime && car2Data.sectorTime) {
-      // Use actual sector times if available
+      // use actual mini sector times if available
       const car1Time = car1Data.sectorTime;
       const car2Time = car2Data.sectorTime;
       
-      // Calculate time delta (negative means car1 is faster)
+      // calculate time delta between drivers (negative means car1 is faster)
       const timeDelta = car1Time - car2Time;
       
-      // Magnify the delta to make differences more visible
-      // Multiply by 10 to convert fractions of a second to a more visible scale
+      // magnify the delta to make differences more visible
+      // multiply by 10 to convert fractions of a second to a more visible scale
       let scaledAdvantage = Math.abs(timeDelta) * 10;
       
-      // Handle the case where the advantage is 0 but we know which driver is faster
-      // This handles API data that indicates a driver is faster but doesn't provide meaningful advantage values
+      // handle the case where the advantage is 0 but we know which driver is faster
+      // this handles API data that indicates a driver is faster but doesn't provide meaningful advantage values
       if (scaledAdvantage === 0 && timeDelta !== 0) {
-        // Add a small non-zero advantage (1.0) to ensure the correct color is used
+        // add a small non-zero advantage (1.0) to ensure the correct color is used
         scaledAdvantage = 1.0;
       }
       
@@ -410,27 +405,27 @@ const calculateTrackSectorDeltas = (sectorData, primaryDriver, comparisonDriver,
         car1Time,
         car2Time,
         timeDelta,
-        speedDelta: -timeDelta, // Invert to match our convention (positive = driver1 faster)
+        speedDelta: -timeDelta, // invert to match our convention (positive = driver1 faster)
         faster: timeDelta < 0 ? 'driver1' : 'driver2',
         advantage: scaledAdvantage,
         car1Pos: { x: car1Data.worldPosX, y: car1Data.worldPosY },
         car2Pos: { x: car2Data.worldPosX, y: car2Data.worldPosY }
       });
     } else {
-      // Fall back to position count if timing data not available
+      // fall back to position count if timing data not available
       const car1Metric = car1Data.positionCount || 1;
       const car2Metric = car2Data.positionCount || 1;
       
-      // More positions in the same sector suggests slower progress
-      // So higher positionCount = slower time
+      // more positions in the same mini sector suggests slower progress
+      // so higher positionCount = slower time
       const metricDelta = car1Metric - car2Metric;
       
-      // Scale up the advantage to make it more visible
+      // scale up the advantage to make it more visible
       let scaledAdvantage = Math.abs(metricDelta) * 2;
       
-      // Critical fix: For zero advantages with known faster driver, add a small non-zero advantage
+      // critical fix: For zero advantages with known faster driver, add a small non-zero advantage
       if (scaledAdvantage === 0 && metricDelta !== 0) {
-        // If we know one driver is faster but have zero advantage, set a small advantage
+        // if we know one driver is faster but have zero advantage, set a small advantage
         scaledAdvantage = 1.0;
       }
       
@@ -439,8 +434,8 @@ const calculateTrackSectorDeltas = (sectorData, primaryDriver, comparisonDriver,
         car1Metric,
         car2Metric,
         metricDelta,
-        timeDelta: metricDelta * 0.01, // Convert to time (rough approximation)
-        speedDelta: -metricDelta, // Invert to match our convention (positive = driver1 faster)
+        timeDelta: metricDelta * 0.01, // convert to time (rough approximation)
+        speedDelta: -metricDelta, // invert to match our convention (positive = driver1 faster)
         faster: metricDelta > 0 ? 'driver2' : 'driver1',
         advantage: scaledAdvantage,
         car1Pos: { x: car1Data.worldPosX, y: car1Data.worldPosY },
@@ -449,11 +444,11 @@ const calculateTrackSectorDeltas = (sectorData, primaryDriver, comparisonDriver,
     }
   }
   
-  // Sort by sector number
+  // sort by sector number
   const sortedSectors = sectors.sort((a, b) => a.sector - b.sector);
   
-  // Special case handling: If ALL sectors have zero advantage but same faster driver
-  // This likely means the API is reporting a driver as faster but not providing meaningful advantage values
+  // special case handling: If ALL sectors have zero advantage but same faster driver
+  // this likely means the API is reporting a driver as faster but not providing meaningful advantage values
   if (sortedSectors.length > 0) {
     const allSameDriver = sortedSectors.every(s => s.faster === sortedSectors[0].faster);
     const allZeroAdvantage = sortedSectors.every(s => s.advantage === 0);
@@ -461,16 +456,16 @@ const calculateTrackSectorDeltas = (sectorData, primaryDriver, comparisonDriver,
     if (allSameDriver && allZeroAdvantage) {
       // DEBUG: console.log("Detected all zero advantages with same faster driver - applying synthetic advantages");
       
-      // Apply varying synthetic advantages to make visualization interesting
+      // apply varying synthetic advantages to make visualization interesting
       sortedSectors.forEach((sector, index) => {
-        // Create a wave pattern of advantages (1.0 to 3.0)
+        // create a wave pattern of advantages (1.0 to 3.0)
         const wavePattern = 1.0 + Math.sin(index / sortedSectors.length * Math.PI * 2) * 1.0;
         sector.advantage = wavePattern;
       });
     }
   }
   
-  // Log some stats about the calculated sectors
+  // log some stats about the calculated sectors
   if (sortedSectors.length > 0) {
     const driver1Faster = sortedSectors.filter(s => s.faster === 'driver1').length;
     const driver2Faster = sortedSectors.filter(s => s.faster === 'driver2').length;
@@ -483,7 +478,7 @@ const calculateTrackSectorDeltas = (sectorData, primaryDriver, comparisonDriver,
 
 export default function TrackDominanceChart({
   isLoading,
-  isTelemetryLoading = false, // Add this prop
+  isTelemetryLoading = false,
   selectedDriver,
   selectedLap,
   maxLapNumber,
@@ -501,7 +496,7 @@ export default function TrackDominanceChart({
   selectedSeason,
   selectedRace,
   selectedSessionType,
-  lapData = [] // Add lapData prop to find fastest laps
+  lapData = []
 }) {
   // State for comparison driver
   const [comparisonDriver, setComparisonDriver] = useState('none');

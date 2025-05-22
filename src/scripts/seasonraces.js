@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const seasons = require('./data.js').seasons;
+const seasons = require('../lib/data.js').seasons;
 
 const pool = new Pool({
     user: 'postgres',

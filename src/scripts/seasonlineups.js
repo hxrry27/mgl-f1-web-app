@@ -1,6 +1,6 @@
 // src/lib/seasonlineups.js
 const { Pool } = require('pg');
-const { seasons } = require('./data');
+const { seasons } = require('../lib/data');
 
 const pool = new Pool({
   user: 'postgres',

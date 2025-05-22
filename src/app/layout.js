@@ -1,30 +1,55 @@
 'use client';
 
 import "./globals.css";
+import React, { useState } from 'react';
 import { ThemeProvider } from "@/components/theme-provider";
 import Header from '@/components/Header';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
+const createQueryClient = () => new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes default
+      retry: 2,
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches when user switches tabs
+      refetchOnReconnect: true, // Refetch when internet reconnects
+    },
+  },
+});
 
 export default function RootLayout({ children }) {
+  // Create query client instance (only once per app)
+  const [queryClient] = useState(() => createQueryClient());
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {/* Fixed Header */}
-          <Header />
-          
-          {/* Main Content */}
-          <div className="flex min-h-screen flex-col">
-            {/* Content starts below the header */}
-            <div className="flex-1"> 
-              {children}
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {/* Fixed Header */}
+            <Header />
+           
+            {/* Main Content */}
+            <div className="flex min-h-screen flex-col">
+              {/* Content starts below the header */}
+              <div className="flex-1">
+                {children}
+              </div>
             </div>
-          </div>
-        </ThemeProvider>
+          </ThemeProvider>
+          
+          {/* React Query DevTools - only shows in development */}
+          <ReactQueryDevtools 
+            initialIsOpen={false} 
+            position="bottom-right"
+          />
+        </QueryClientProvider>
       </body>
     </html>
   );
