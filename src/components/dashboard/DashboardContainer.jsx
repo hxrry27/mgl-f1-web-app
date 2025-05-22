@@ -7,9 +7,11 @@ import DamageChart from './analysis/DamageChart';
 import TyreWearChart from './analysis/TyreWearChart';
 import IndividualLapChart from './analysis/IndividualLapChart';
 import GeneralStatsChart from './analysis/GeneralStatsChart';
+import TrackDominanceChart from './analysis/TrackDominanceChart';
 import F1Card from './F1Card';
 import { Trophy, Zap, Clock } from 'lucide-react';
 import FilterOptions from './FilterOptions';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DashboardContainer({ user = null }) {
   const username = user?.name || 'Guest';
@@ -46,8 +48,11 @@ export default function DashboardContainer({ user = null }) {
     10: '#005AFF', // Williams
   };
 
-  // ALL STATE CONSTANTS
-  const [isLoading, setIsLoading] = useState(true);
+  // SEPARATE LOADING STATES - This fixes F1Cards reloading issue
+  const [isInitialLoading, setIsInitialLoading] = useState(true); // For F1Cards and initial data
+  const [isTelemetryLoading, setIsTelemetryLoading] = useState(false); // For telemetry data only
+  const [isRaceDataLoading, setIsRaceDataLoading] = useState(false); // For race/season changes
+  
   const [seasons, setSeasons] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState('');
   const [races, setRaces] = useState([]);
@@ -62,8 +67,8 @@ export default function DashboardContainer({ user = null }) {
   const [selectedSessionType, setSelectedSessionType] = useState('race');
   const [maxLapNumber, setMaxLapNumber] = useState(0);
 
-  // Analysis type toggle - defaulting to general-stats
-  const [analysisType, setAnalysisType] = useState('general-stats');
+  // Analysis type toggle - updated to include track-dominance and lap-analysis
+  const [analysisType, setAnalysisType] = useState('lap-analysis');
 
   // Data correction options
   const [correctPitTransitions, setCorrectPitTransitions] = useState(true);
@@ -86,8 +91,9 @@ export default function DashboardContainer({ user = null }) {
   const [tyreWearData, setTyreWearData] = useState([]);
   const [damageData, setDamageData] = useState([]);
   const [telemetryData, setTelemetryData] = useState([]);
-  const [selectedLap, setSelectedLap] = useState(1);
+  const [selectedLap, setSelectedLap] = useState('fastest'); // Default to fastest lap
   const [lapTelemetryData, setLapTelemetryData] = useState([]);
+  const [previousLapTelemetryData, setPreviousLapTelemetryData] = useState([]); // Keep previous data while loading
   
   const [trackData, setTrackData] = useState(null);
   const [driversWithDamage, setDriversWithDamage] = useState([]);
@@ -95,12 +101,17 @@ export default function DashboardContainer({ user = null }) {
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [selectedStat, setSelectedStat] = useState('overview');
 
-  // Race information
+  // New state for track dominance data
+  const [dominanceData, setDominanceData] = useState([]);
+  const [isLoadingDominance, setIsLoadingDominance] = useState(false);
+
+  // Race information - separate from other loading states
   const [raceInfo, setRaceInfo] = useState({
     winner: { name: 'Loading...', team: 'default' },
     poleSitter: { name: 'Loading...', time: '', team: 'default' },
     fastestLap: { name: 'Loading...', time: '', team: 'default' }
   });
+  const [isRaceInfoLoading, setIsRaceInfoLoading] = useState(false);
 
   // USE EFFECT HOOKS
   // Fetch available seasons
@@ -116,7 +127,7 @@ export default function DashboardContainer({ user = null }) {
           }
         }
       } catch (error) {
-        console.error('Error fetching seasons:', error);
+        // DEBUG: console.error('Error fetching seasons:', error);
       }
     };
     
@@ -128,7 +139,7 @@ export default function DashboardContainer({ user = null }) {
     if (!selectedSeason) return;
     
     const fetchRaces = async () => {
-      setIsLoading(true);
+      setIsRaceDataLoading(true);
       try {
         const response = await fetch(`/api/season-races?season=${selectedSeason}`, { credentials: 'include' });
         if (response.ok) {
@@ -139,22 +150,22 @@ export default function DashboardContainer({ user = null }) {
           }
         }
       } catch (error) {
-        console.error('Error fetching races:', error);
+        // DEBUG: console.error('Error fetching races:', error);
       } finally {
-        setIsLoading(false);
+        setIsRaceDataLoading(false);
       }
     };
     
     fetchRaces();
   }, [selectedSeason]);
 
-  // Fetch race information (winner, pole, fastest lap)
+  // Fetch race information (winner, pole, fastest lap) - SEPARATE LOADING STATE
   useEffect(() => {
     if (!selectedSeason || !selectedRace) return;
     
     const fetchRaceInfo = async () => {
+      setIsRaceInfoLoading(true); // Use separate loading state
       try {
-        // This is a hypothetical API endpoint - adjust to your actual API
         const response = await fetch(
           `/api/race-info?season=${selectedSeason}&raceSlug=${selectedRace}`, 
           { credentials: 'include' }
@@ -180,19 +191,21 @@ export default function DashboardContainer({ user = null }) {
           });
         }
       } catch (error) {
-        console.error('Error fetching race info:', error);
+        // DEBUG: console.error('Error fetching race info:', error);
+      } finally {
+        setIsRaceInfoLoading(false);
       }
     };
     
     fetchRaceInfo();
-  }, [selectedSeason, selectedRace]);
+  }, [selectedSeason, selectedRace]); // Only depends on season and race, NOT lap
 
   // Fetch lap data when race changes
   useEffect(() => {
     if (!selectedSeason || !selectedRace) return;
     
     const fetchLapData = async () => {
-      setIsLoading(true);
+      setIsInitialLoading(true);
       try {
         const response = await fetch(
           `/api/lap-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}`, 
@@ -200,7 +213,7 @@ export default function DashboardContainer({ user = null }) {
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("API Response:", data);
+          // DEBUG: console.log("API Response:", data);
   
           // Store available sessions if any
           if (data.available_sessions && data.available_sessions.length > 0) {
@@ -230,7 +243,7 @@ export default function DashboardContainer({ user = null }) {
           // Store stint data if available
           if (data.stintData) {
             setStintData(data.stintData);
-            console.log("Stint data loaded:", data.stintData);
+            // DEBUG: console.log("Stint data loaded:", data.stintData);
           } else {
             setStintData({});
           }
@@ -243,13 +256,40 @@ export default function DashboardContainer({ user = null }) {
           setSelectedDrivers(initialSelectedState);
         }
       } catch (error) {
-        console.error('Error fetching lap data:', error);
+        // DEBUG: console.error('Error fetching lap data:', error);
       } finally {
-        setIsLoading(false);
+        setIsInitialLoading(false);
       }
     };
     
     fetchLapData();
+  }, [selectedSeason, selectedRace, selectedSessionType]);
+
+  // Fetch track dominance data when race changes
+  useEffect(() => {
+    if (!selectedSeason || !selectedRace || !selectedSessionType) return;
+    
+    const fetchDominanceData = async () => {
+      setIsLoadingDominance(true);
+      try {
+        const response = await fetch(
+          `/api/track-dominance?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}`, 
+          { credentials: 'include' }
+        );
+        if (response.ok) {
+          const data = await response.json();
+          // DEBUG: console.log("Track dominance API Response:", data);
+          setDominanceData(data.dominanceData || []);
+        }
+      } catch (error) {
+        // DEBUG: console.error('Error fetching track dominance data:', error);
+        setDominanceData([]);
+      } finally {
+        setIsLoadingDominance(false);
+      }
+    };
+    
+    fetchDominanceData();
   }, [selectedSeason, selectedRace, selectedSessionType]);
 
   // Fetch tyre wear data when race changes
@@ -257,7 +297,7 @@ export default function DashboardContainer({ user = null }) {
     if (!selectedSeason || !selectedRace || !selectedSessionType) return;
     
     const fetchTyreWearData = async () => {
-      setIsLoading(true);
+      setIsRaceDataLoading(true);
       try {
         const response = await fetch(
           `/api/tyre-wear-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}`, 
@@ -265,13 +305,13 @@ export default function DashboardContainer({ user = null }) {
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("Tyre Wear API Response:", data);
+          // DEBUG: console.log("Tyre Wear API Response:", data);
           setTyreWearData(data.tyreWearData || []);
         }
       } catch (error) {
-        console.error('Error fetching tyre wear data:', error);
+        // DEBUG: console.error('Error fetching tyre wear data:', error);
       } finally {
-        setIsLoading(false);
+        setIsRaceDataLoading(false);
       }
     };
     
@@ -283,7 +323,7 @@ export default function DashboardContainer({ user = null }) {
     if (!selectedSeason || !selectedRace || !selectedSessionType) return;
     
     const fetchDamageData = async () => {
-      setIsLoading(true);
+      setIsRaceDataLoading(true);
       try {
         const response = await fetch(
           `/api/damage-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}`, 
@@ -291,87 +331,88 @@ export default function DashboardContainer({ user = null }) {
         );
         if (response.ok) {
           const data = await response.json();
-          console.log("Damage API Response:", data);
+          // DEBUG: console.log("Damage API Response:", data);
           setDamageData(data.damageData || []);
           
           // Store the list of drivers who have damage
           if (data.driversWithDamage && Array.isArray(data.driversWithDamage)) {
-            console.log(`Found ${data.driversWithDamage.length} drivers with damage`);
+            // DEBUG: console.log(`Found ${data.driversWithDamage.length} drivers with damage`);
             setDriversWithDamage(data.driversWithDamage.map(d => d.name));
           }
         }
       } catch (error) {
-        console.error('Error fetching damage data:', error);
+        // DEBUG: console.error('Error fetching damage data:', error);
       } finally {
-        setIsLoading(false);
+        setIsRaceDataLoading(false);
       }
     };
     
     fetchDamageData();
   }, [selectedSeason, selectedRace, selectedSessionType]);
 
-  // Fetch telemetry data for individual lap analysis
+  // Fetch telemetry data for individual lap analysis - SEPARATE LOADING STATE
   useEffect(() => {
     if (!selectedSeason || !selectedRace || !selectedSessionType) return;
     
     const fetchTelemetryData = async () => {
-      setIsLoading(true);
+      setIsTelemetryLoading(true); // Use separate loading state
+      // Keep previous data visible while loading
+      setPreviousLapTelemetryData(lapTelemetryData);
+      
       try {
-        console.log(`Fetching telemetry data for lap ${selectedLap}, driver: ${selectedDriver || 'default'}`);
+        // Get actual lap number for API call
+        const actualLap = getActualLapNumber(selectedLap, selectedDriver);
         
-        // Use the telemetry-lap-data endpoint
+        // DEBUG: console.log(`Fetching telemetry data for lap ${selectedLap} (actual: ${actualLap}), driver: ${selectedDriver || 'default'}`);
+        
         const response = await fetch(
-          `/api/telemetry-lap-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}&lap=${selectedLap}&driver=${selectedDriver || ''}`, 
+          `/api/telemetry-lap-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}&lap=${actualLap}&driver=${selectedDriver || ''}`, 
           { credentials: 'include' }
         );
         
         if (response.ok) {
           const data = await response.json();
           
-          // Log the entire API response to see what we're getting
-          console.log("FULL API RESPONSE:", data);
+          // DEBUG: console.log("FULL API RESPONSE:", data);
           
-          // Check if we have lapTelemetry in the response
           if (data && data.lapTelemetry && Array.isArray(data.lapTelemetry)) {
-            console.log(`✅ Successfully received ${data.lapTelemetry.length} telemetry points`);
+            // DEBUG: console.log(`✅ Successfully received ${data.lapTelemetry.length} telemetry points`);
             
-            // Log some sample data to see the structure
             if (data.lapTelemetry.length > 0) {
-              console.log("Sample data point:", data.lapTelemetry[0]);
+              // DEBUG: console.log("Sample data point:", data.lapTelemetry[0]);
               
-              // Check if the data has the expected fields
               const requiredFields = ['speed', 'throttle', 'brake', 'distance'];
               const missingFields = requiredFields.filter(field => 
                 data.lapTelemetry[0][field] === undefined
               );
               
               if (missingFields.length > 0) {
-                console.warn(`⚠️ Missing required fields: ${missingFields.join(', ')}`);
+                // DEBUG: console.warn(`⚠️ Missing required fields: ${missingFields.join(', ')}`);
               } else {
-                console.log("✅ All required fields present");
+                // DEBUG: console.log("✅ All required fields present");
               }
             }
             
-            // Store the data in state
             setLapTelemetryData(data.lapTelemetry);
+            setPreviousLapTelemetryData([]); // Clear previous data once new data is loaded
           } else {
-            console.warn("❌ No lapTelemetry array found in API response");
+            // DEBUG: console.warn("❌ No lapTelemetry array found in API response");
             setLapTelemetryData([]);
           }
         } else {
-          console.error(`❌ API returned error: ${response.status}`);
+          // DEBUG: console.error(`❌ API returned error: ${response.status}`);
           setLapTelemetryData([]);
         }
       } catch (error) {
-        console.error('❌ Error fetching telemetry data:', error);
+        // DEBUG: console.error('❌ Error fetching telemetry data:', error);
         setLapTelemetryData([]);
       } finally {
-        setIsLoading(false);
+        setIsTelemetryLoading(false);
       }
     };
     
     fetchTelemetryData();
-  }, [selectedSeason, selectedRace, selectedSessionType, selectedLap, selectedDriver]);
+  }, [selectedSeason, selectedRace, selectedSessionType, selectedLap, selectedDriver, lapData]); // Add lapData dependency
 
   // Fetch track details when a race is selected
   useEffect(() => {
@@ -386,14 +427,14 @@ export default function DashboardContainer({ user = null }) {
         
         if (response.ok) {
           const data = await response.json();
-          console.log("Track data:", data);
+          // DEBUG: console.log("Track data:", data);
           setTrackData(data.track || null);
         } else {
-          console.error("Error fetching track data:", await response.text());
+          // DEBUG: console.error("Error fetching track data:", await response.text());
           setTrackData(null);
         }
       } catch (error) {
-        console.error('Error fetching track data:', error);
+        // DEBUG: console.error('Error fetching track data:', error);
         setTrackData(null);
       }
     };
@@ -402,11 +443,10 @@ export default function DashboardContainer({ user = null }) {
   }, [selectedSeason, selectedRace]);
 
   useEffect(() => {
-    console.log(`🔄 lapTelemetryData updated: ${lapTelemetryData?.length || 0} points`);
+    // DEBUG: console.log(`🔄 lapTelemetryData updated: ${lapTelemetryData?.length || 0} points`);
     
-    // Log sample data if available
     if (lapTelemetryData && lapTelemetryData.length > 0) {
-      console.log("Sample point from state:", lapTelemetryData[0]);
+      // DEBUG: console.log("Sample point from state:", lapTelemetryData[0]);
     }
   }, [lapTelemetryData]);
 
@@ -430,7 +470,7 @@ export default function DashboardContainer({ user = null }) {
           setGeneralStats(data);
         }
       } catch (error) {
-        console.error('Error fetching general stats:', error);
+        // DEBUG: console.error('Error fetching general stats:', error);
       } finally {
         setIsLoadingStats(false);
       }
@@ -439,7 +479,35 @@ export default function DashboardContainer({ user = null }) {
     fetchGeneralStats();
   }, [selectedSeason, selectedRace, selectedSessionType]);
 
-  // ALL THE DATA PROCESSING FUNCTIONS / CONSTS
+  // Function to find fastest lap for a driver
+  const getFastestLapForDriver = (driver) => {
+    if (!lapData || lapData.length === 0) return 1;
+    
+    // Filter laps for the specific driver and find the fastest valid lap time
+    const driverLaps = lapData.filter(lap => 
+      lap.driver === driver && 
+      lap.lap_time_int > 0 && // Valid lap time
+      lap.lap_time_int < 200000 // Reasonable lap time (under 200 seconds)
+    );
+    
+    if (driverLaps.length === 0) return 1;
+    
+    // Find the lap with the minimum lap time
+    const fastestLap = driverLaps.reduce((fastest, current) => 
+      current.lap_time_int < fastest.lap_time_int ? current : fastest
+    );
+    
+    // Return the normalized lap number (adding 1 to account for zero-indexing)
+    return (fastestLap.lap_number || 0) + 1;
+  };
+
+  // Get actual lap number for API calls
+  const getActualLapNumber = (lapSelection, driver) => {
+    if (lapSelection === 'fastest') {
+      return getFastestLapForDriver(driver);
+    }
+    return parseInt(lapSelection) || 1;
+  };
   
   // Process lap data into a format Recharts can use
   const { chartData, lineConfigs, yDomain, driverColorMap } = useMemo(() => {
@@ -447,7 +515,7 @@ export default function DashboardContainer({ user = null }) {
       return { chartData: [], lineConfigs: [], yDomain: [0, 0], driverColorMap: {} };
     }
     
-    console.log("Processing lap data with session history information");
+    // DEBUG: console.log("Processing lap data with session history information");
     
     // Create driver color mapping based on team_id or team_color
     const driverColorMap = {};
@@ -490,7 +558,7 @@ export default function DashboardContainer({ user = null }) {
     
     // Calculate the normalized max lap (adding 1 to account for zero-indexing)
     const normalizedMaxLap = maxLapNumberInData + 1;
-    console.log(`Lap range in data: ${minLapNumberInData}-${maxLapNumberInData}, normalized to ${minLapNumberInData+1}-${normalizedMaxLap}`);
+    // DEBUG: console.log(`Lap range in data: ${minLapNumberInData}-${maxLapNumberInData}, normalized to ${minLapNumberInData+1}-${normalizedMaxLap}`);
     
     // Initialize the map with entries for all laps (using normalized numbers)
     for (let i = 1; i <= normalizedMaxLap; i++) {
@@ -525,7 +593,7 @@ export default function DashboardContainer({ user = null }) {
       
       // Skip processing if we have too many laps to prevent performance issues
       if (laps.length > 10000) {
-        console.warn(`Skipping detailed stint processing for ${driver} - too many laps (${laps.length})`);
+        // DEBUG: console.warn(`Skipping detailed stint processing for ${driver} - too many laps (${laps.length})`);
         return;
       }
       
@@ -623,7 +691,7 @@ export default function DashboardContainer({ user = null }) {
     
     // Create array from lap map and sort by normalized lap number
     const chartData = Object.values(lapMap).sort((a, b) => a.lap - b.lap);
-    console.log("Chart data prepared:", chartData.length, "data points");
+    // DEBUG: console.log("Chart data prepared:", chartData.length, "data points");
     
     // Generate line configurations
     const lineConfigs = [];
@@ -670,13 +738,13 @@ export default function DashboardContainer({ user = null }) {
       return [];
     }
     
-    console.log("Processing damage data, total points:", damageData.length);
+    // DEBUG: console.log("Processing damage data, total points:", damageData.length);
     
     // Filter for the selected driver
     const driverData = damageData.filter(dp => dp.driver === selectedDriver);
     
     if (driverData.length === 0) {
-      console.log(`No damage data for driver: ${selectedDriver}`);
+      // DEBUG: console.log(`No damage data for driver: ${selectedDriver}`);
       return [];
     }
     
@@ -687,14 +755,14 @@ export default function DashboardContainer({ user = null }) {
     const sampleSize = Math.max(1, Math.floor(driverData.length / 2000));
     const sampledData = driverData.filter((_, i) => i % sampleSize === 0);
     
-    console.log(`Sampled damage data from ${driverData.length} to ${sampledData.length} points`);
+    // DEBUG: console.log(`Sampled damage data from ${driverData.length} to ${sampledData.length} points`);
     
     // Calculate approximate lap time from the data
     const totalTime = driverData[driverData.length-1].session_time - driverData[0].session_time;
     const estimatedLapTime = Math.floor(totalTime / (maxLapNumber || 50)); // Use maxLapNumber as fallback
     const pointsPerLap = Math.max(1, Math.floor(sampledData.length / (maxLapNumber || 50)));
     
-    console.log(`Estimated lap time: ${estimatedLapTime}s, points per lap: ${pointsPerLap}`);
+    // DEBUG: console.log(`Estimated lap time: ${estimatedLapTime}s, points per lap: ${pointsPerLap}`);
     
     // Assign lap numbers more evenly
     const processedData = sampledData.map((dataPoint, index) => {
@@ -747,7 +815,7 @@ export default function DashboardContainer({ user = null }) {
       }))
       .sort((a, b) => a.lap - b.lap); // Ensure laps are in order
     
-    console.log(`Processed damage data into ${finalData.length} laps`);
+    // DEBUG: console.log(`Processed damage data into ${finalData.length} laps`);
     return finalData;
   }, [damageData, selectedDriver, maxLapNumber]);
 
@@ -769,7 +837,7 @@ export default function DashboardContainer({ user = null }) {
     // Sort by session time
     sampledData.sort((a, b) => a.session_time - b.session_time);
     
-    // Transform the data to the chart format - (no longer multiplying by 100 to convert to percentage)
+    // Transform the data to the chart format
     return sampledData.map(point => ({
       session_time: point.session_time,
       front_left: point.tyre_wear_fl,
@@ -781,7 +849,7 @@ export default function DashboardContainer({ user = null }) {
     }));
   }, [tyreWearData, selectedDriver]);
 
-  // Calculate y-axis range for tyre wear chart - this goes at component level
+  // Calculate y-axis range for tyre wear chart
   const tyreWearYRange = useMemo(() => {
     if (!processedTyreWearData || processedTyreWearData.length === 0) return [0, 1];
     
@@ -810,23 +878,22 @@ export default function DashboardContainer({ user = null }) {
   // Process telemetry data for individual lap analysis
   const processedTelemetryData = useMemo(() => {
     if (!telemetryData || !telemetryData.length) {
-      console.log("No telemetry data available");
+      // DEBUG: console.log("No telemetry data available");
       return [];
     }
     
-    console.log(`Processing telemetry data for driver: "${selectedDriver}", lap: ${selectedLap}`);
+    // DEBUG: console.log(`Processing telemetry data for driver: "${selectedDriver}", lap: ${selectedLap}`);
     
     // Extract the main telemetry data and lap data from the API response
-    // The API returns { telemetryData: [...], lapData: [...] }
     const telemetryPoints = telemetryData.telemetryData || telemetryData;
     const lapDataPoints = telemetryData.lapData || [];
     
     if (telemetryPoints.length === 0) {
-      console.log("No telemetry points found");
+      // DEBUG: console.log("No telemetry points found");
       return [];
     }
     
-    console.log(`Found ${telemetryPoints.length} telemetry points and ${lapDataPoints.length} lap data points`);
+    // DEBUG: console.log(`Found ${telemetryPoints.length} telemetry points and ${lapDataPoints.length} lap data points`);
     
     // Step 1: Sort both datasets by created_at timestamp
     const sortedTelemetry = [...telemetryPoints].sort((a, b) => 
@@ -839,7 +906,7 @@ export default function DashboardContainer({ user = null }) {
     
     // Step 2: Create lap boundaries based on timestamps in lap_data
     if (sortedLapData.length === 0) {
-      console.log("No lap data available, showing all telemetry");
+      // DEBUG: console.log("No lap data available, showing all telemetry");
       return processAllTelemetry(sortedTelemetry);
     }
     
@@ -848,18 +915,16 @@ export default function DashboardContainer({ user = null }) {
     const targetLap = sortedLapData.find(lap => lap.lap_number === targetLapNumber);
     
     if (!targetLap) {
-      console.log(`Lap ${selectedLap} not found in lap data, defaulting to first lap`);
-      // If requested lap not found, use the first available lap
+      // DEBUG: console.log(`Lap ${selectedLap} not found in lap data, defaulting to first lap`);
       return filterTelemetryByLap(sortedTelemetry, sortedLapData[0].lap_number, sortedLapData);
     }
     
-    console.log(`Found lap ${targetLapNumber} in lap data:`, targetLap);
+    // DEBUG: console.log(`Found lap ${targetLapNumber} in lap data:`, targetLap);
     return filterTelemetryByLap(sortedTelemetry, targetLapNumber, sortedLapData);
     
     // Helper function to process all telemetry if no lap data is available
     function processAllTelemetry(telemetry) {
-      // Simply normalize all telemetry data for visualization
-      console.log("Processing all telemetry data (no lap segmentation)");
+      // DEBUG: console.log("Processing all telemetry data (no lap segmentation)");
       
       // Calculate distance based on time progression
       const startTime = telemetry[0].session_time || new Date(telemetry[0].created_at).getTime();
@@ -890,76 +955,63 @@ export default function DashboardContainer({ user = null }) {
     }
     
     function filterTelemetryByLap(telemetry, lapNumber, lapData) {
-      console.log(`Filtering telemetry data for lap ${lapNumber}`);
+      // DEBUG: console.log(`Filtering telemetry data for lap ${lapNumber}`);
       
-      // Find the target lap and adjacent laps
       const lapIndex = lapData.findIndex(lap => lap.lap_number === lapNumber);
       const currentLap = lapData[lapIndex];
       const previousLap = lapIndex > 0 ? lapData[lapIndex - 1] : null;
       const nextLap = lapIndex < lapData.length - 1 ? lapData[lapIndex + 1] : null;
       
       if (!currentLap) {
-        console.log(`Could not find lap ${lapNumber} data`);
+        // DEBUG: console.log(`Could not find lap ${lapNumber} data`);
         return [];
       }
       
-      // IMPROVED: Correct the lap boundaries with additional validation
       const currentLapCreatedAt = new Date(currentLap.created_at || currentLap.session_time).getTime();
       const currentLapTime = currentLap.current_lap_time_ms || currentLap.lap_time_ms || 90000;
       
-      // Calculate start time using more robust logic
       let lapStartTime;
       
-      // Special handling for Lap 2 since it's clearly wrong in API response
       if (lapNumber === 2 && previousLap) {
-        // Force Lap 2 to start at Lap 1's end time
         lapStartTime = new Date(previousLap.created_at || previousLap.session_time).getTime() + 
                        (previousLap.current_lap_time_ms || previousLap.lap_time_ms || 90000);
         
-        console.log(`Special fix for Lap 2: Using Lap 1 end time: ${new Date(lapStartTime).toISOString()}`);
+        // DEBUG: console.log(`Special fix for Lap 2: Using Lap 1 end time: ${new Date(lapStartTime).toISOString()}`);
       } 
       else if (previousLap) {
-        // For Lap 3+ use the end time of previous lap
         const previousLapTimestamp = new Date(previousLap.created_at || previousLap.session_time).getTime();
         const previousLapTime = previousLap.current_lap_time_ms || previousLap.lap_time_ms || 90000;
         lapStartTime = previousLapTimestamp + previousLapTime;
         
-        console.log(`Using previous lap (${previousLap.lap_number}) end time for start: ${new Date(lapStartTime).toISOString()}`);
+        // DEBUG: console.log(`Using previous lap (${previousLap.lap_number}) end time for start: ${new Date(lapStartTime).toISOString()}`);
       } 
       else {
-        // First lap - use estimated start time
         lapStartTime = currentLapCreatedAt - currentLapTime;
-        console.log(`First lap: Estimated start time: ${new Date(lapStartTime).toISOString()}`);
+        // DEBUG: console.log(`First lap: Estimated start time: ${new Date(lapStartTime).toISOString()}`);
       }
       
-      // Calculate end time
       let lapEndTime;
       if (nextLap) {
-        // Use next lap's start as this lap's end
         lapEndTime = new Date(nextLap.created_at || nextLap.session_time).getTime();
       } else {
-        // Last lap - estimate end time
         lapEndTime = currentLapCreatedAt + currentLapTime;
       }
       
-      console.log(`Final Lap ${lapNumber} boundaries: ${new Date(lapStartTime).toISOString()} to ${new Date(lapEndTime).toISOString()}`);
+      // DEBUG: console.log(`Final Lap ${lapNumber} boundaries: ${new Date(lapStartTime).toISOString()} to ${new Date(lapEndTime).toISOString()}`);
       
-      // Filter telemetry within boundaries
       const lapTelemetry = telemetry.filter(point => {
         const pointTime = point.session_time || new Date(point.created_at).getTime();
         return pointTime >= lapStartTime && pointTime <= lapEndTime;
       });
       
-      console.log(`Found ${lapTelemetry.length} telemetry points for lap ${lapNumber}`);
+      // DEBUG: console.log(`Found ${lapTelemetry.length} telemetry points for lap ${lapNumber}`);
       
       if (lapTelemetry.length === 0) {
         return [];
       }
       
-      // IMPROVED: More robust distance calculation
       const actualTrackLength = trackData?.length_meters || 5000;
       
-      // Process points with initial distance estimates
       const processedPoints = lapTelemetry.map((point, index, array) => {
         const pointTime = point.session_time || new Date(point.created_at).getTime();
         const elapsedLapTime = pointTime - lapStartTime;
@@ -968,7 +1020,7 @@ export default function DashboardContainer({ user = null }) {
         
         return {
           position: index / array.length * 100,
-          distance: percentage * actualTrackLength, // Use actual track length directly
+          distance: percentage * actualTrackLength,
           speed: point.speed,
           throttle: point.throttle * 100,
           brake: point.brake * 100,
@@ -982,15 +1034,13 @@ export default function DashboardContainer({ user = null }) {
         };
       });
       
-      // IMPROVED: Force the last point to be exactly at track end
       const finalPoints = [...processedPoints];
       
-      // If we have points, ensure the last one reaches track end
       if (finalPoints.length > 0) {
         finalPoints[finalPoints.length - 1].distance = actualTrackLength;
         
-        console.log(`Forced last telemetry point to track end (${actualTrackLength}m)`);
-        console.log(`Point distances: first=${finalPoints[0].distance.toFixed(1)}m, last=${finalPoints[finalPoints.length-1].distance.toFixed(1)}m`);
+        // DEBUG: console.log(`Forced last telemetry point to track end (${actualTrackLength}m)`);
+        // DEBUG: console.log(`Point distances: first=${finalPoints[0].distance.toFixed(1)}m, last=${finalPoints[finalPoints.length-1].distance.toFixed(1)}m`);
       }
       
       return finalPoints;
@@ -998,12 +1048,10 @@ export default function DashboardContainer({ user = null }) {
   }, [telemetryData, selectedDriver, selectedLap, trackData]);
 
   const fetchDriverTelemetry = async (driver, lap) => {
-    // Ensure lap is a number
     const lapValue = typeof lap === 'string' ? parseInt(lap, 10) || 1 : lap;
     
-    // Log what we're fetching
-    console.log(`Fetching telemetry for driver: ${driver}, lap: ${lapValue}`);
-    setIsLoading(true);
+    // DEBUG: console.log(`Fetching telemetry for driver: ${driver}, lap: ${lapValue}`);
+    setIsTelemetryLoading(true);
     
     try {
       const response = await fetch(
@@ -1015,41 +1063,39 @@ export default function DashboardContainer({ user = null }) {
         const data = await response.json();
         
         if (data && data.lapTelemetry && Array.isArray(data.lapTelemetry)) {
-          console.log(`✅ Fetched ${data.lapTelemetry.length} telemetry points for ${driver}`);
+          // DEBUG: console.log(`✅ Fetched ${data.lapTelemetry.length} telemetry points for ${driver}`);
           
-          // Add to additionalDriversData state
           setAdditionalDriversData(prev => ({
             ...prev,
             [driver]: {
               driver,
-              lap: lapValue,  // Use the numeric lap value
+              lap: lapValue,
               telemetryData: data.lapTelemetry
             }
           }));
           
           return data.lapTelemetry;
         } else {
-          console.warn(`❌ No telemetry data found for ${driver}, lap ${lapValue}`);
+          // DEBUG: console.warn(`❌ No telemetry data found for ${driver}, lap ${lapValue}`);
           return [];
         }
       } else {
-        console.error(`❌ API returned error: ${response.status}`);
+        // DEBUG: console.error(`❌ API returned error: ${response.status}`);
         return [];
       }
     } catch (error) {
-      console.error(`❌ Error fetching telemetry for ${driver}, lap ${lapValue}:`, error);
+      // DEBUG: console.error(`❌ Error fetching telemetry for ${driver}, lap ${lapValue}:`, error);
       return [];
     } finally {
-      setIsLoading(false);
+      setIsTelemetryLoading(false);
     }
   };
 
   const fetchDriverTyreWearData = async (driver) => {
-    console.log(`Fetching tyre wear data for driver: ${driver}`);
-    setIsLoading(true);
+    // DEBUG: console.log(`Fetching tyre wear data for driver: ${driver}`);
+    setIsRaceDataLoading(true);
     
     try {
-      // If your API supports driver parameter:
       const response = await fetch(
         `/api/tyre-wear-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}&driver=${driver}`, 
         { credentials: 'include' }
@@ -1058,17 +1104,13 @@ export default function DashboardContainer({ user = null }) {
       if (response.ok) {
         const data = await response.json();
         
-        // Filter for specific driver if using client-side filtering
         const driverData = data.tyreWearData.filter(item => item.driver === driver);
         
-        // Sample the data to avoid performance issues
         const sampleRate = Math.max(1, Math.floor(driverData.length / 5000));
         const sampledData = driverData.filter((_, index) => index % sampleRate === 0);
         
-        // Sort by session time
         sampledData.sort((a, b) => a.session_time - b.session_time);
         
-        // Add driver prefix to keys for the chart
         return sampledData.map(point => ({
           session_time: point.session_time,
           [`${driver}_front_left`]: point.tyre_wear_fl,
@@ -1079,23 +1121,22 @@ export default function DashboardContainer({ user = null }) {
           team: point.team
         }));
       } else {
-        console.error(`API returned error: ${response.status}`);
+        // DEBUG: console.error(`API returned error: ${response.status}`);
         return [];
       }
     } catch (error) {
-      console.error(`Error fetching tyre wear data for ${driver}:`, error);
+      // DEBUG: console.error(`Error fetching tyre wear data for ${driver}:`, error);
       return [];
     } finally {
-      setIsLoading(false);
+      setIsRaceDataLoading(false);
     }
   };
 
   const fetchDriverDamageData = async (driver) => {
-    console.log(`Fetching damage data for driver: ${driver}`);
-    setIsLoading(true);
+    // DEBUG: console.log(`Fetching damage data for driver: ${driver}`);
+    setIsRaceDataLoading(true);
     
     try {
-      // Use API endpoint with driver parameter
       const response = await fetch(
         `/api/damage-data?season=${selectedSeason}&raceSlug=${selectedRace}&sessionType=${selectedSessionType}&driver=${driver}`, 
         { credentials: 'include' }
@@ -1105,37 +1146,31 @@ export default function DashboardContainer({ user = null }) {
         const data = await response.json();
         
         if (!data.damageData || data.damageData.length === 0) {
-          console.warn(`No damage data found for ${driver}`);
+          // DEBUG: console.warn(`No damage data found for ${driver}`);
           return [];
         }
         
-        console.log(`Received ${data.damageData.length} damage data points for ${driver}`);
+        // DEBUG: console.log(`Received ${data.damageData.length} damage data points for ${driver}`);
         
-        // Filter for the selected driver (should already be filtered by API, but double-check)
         const driverData = data.damageData.filter(dp => dp.driver === driver);
         
         if (driverData.length === 0) {
-          console.log(`No damage data for driver: ${driver}`);
+          // DEBUG: console.log(`No damage data for driver: ${driver}`);
           return [];
         }
         
-        // Sort by session_time
         driverData.sort((a, b) => a.session_time - b.session_time);
         
-        // Sample the data to reduce points (take every Nth point)
         const sampleSize = Math.max(1, Math.floor(driverData.length / 2000));
         const sampledData = driverData.filter((_, i) => i % sampleSize === 0);
         
-        console.log(`Sampled damage data from ${driverData.length} to ${sampledData.length} points`);
+        // DEBUG: console.log(`Sampled damage data from ${driverData.length} to ${sampledData.length} points`);
         
-        // Calculate approximate lap time from the data
         const totalTime = driverData[driverData.length-1].session_time - driverData[0].session_time;
-        const estimatedLapTime = Math.floor(totalTime / (maxLapNumber || 50)); // Use maxLapNumber as fallback
+        const estimatedLapTime = Math.floor(totalTime / (maxLapNumber || 50));
         const pointsPerLap = Math.max(1, Math.floor(sampledData.length / (maxLapNumber || 50)));
         
-        // Assign lap numbers more evenly
         const processedData = sampledData.map((dataPoint, index) => {
-          // Calculate lap number based on index in the array
           const lap = Math.floor(index / pointsPerLap) + 1;
           
           return {
@@ -1149,7 +1184,6 @@ export default function DashboardContainer({ user = null }) {
           };
         });
         
-        // Group by lap and calculate average values
         const lapMap = {};
         processedData.forEach(dataPoint => {
           if (!lapMap[dataPoint.lap]) {
@@ -1172,7 +1206,6 @@ export default function DashboardContainer({ user = null }) {
           lapMap[dataPoint.lap].count++;
         });
         
-        // Calculate averages
         const finalData = Object.values(lapMap)
           .map(lap => ({
             lap: lap.lap,
@@ -1182,50 +1215,46 @@ export default function DashboardContainer({ user = null }) {
             floor: lap.floor / lap.count,
             sidepod: lap.sidepod / lap.count
           }))
-          .sort((a, b) => a.lap - b.lap); // Ensure laps are in order
+          .sort((a, b) => a.lap - b.lap);
         
-        console.log(`Processed damage data into ${finalData.length} laps`);
+        // DEBUG: console.log(`Processed damage data into ${finalData.length} laps`);
         return finalData;
       } else {
-        console.error(`API returned error: ${response.status}`);
+        // DEBUG: console.error(`API returned error: ${response.status}`);
         return [];
       }
     } catch (error) {
-      console.error(`Error fetching damage data for ${driver}:`, error);
+      // DEBUG: console.error(`Error fetching damage data for ${driver}:`, error);
       return [];
     } finally {
-      setIsLoading(false);
+      setIsRaceDataLoading(false);
     }
   };
   
   // Function to add a driver to the comparison
-  const addDriverToComparison = async (driver, lap = 1) => {  // Changed default from 'fastest' to 1
-    // Don't add if it's the currently selected driver
+  const addDriverToComparison = async (driver, lap = 1) => {
     if (driver === selectedDriver) {
-      console.log(`${driver} is already the main selected driver`);
+      // DEBUG: console.log(`${driver} is already the main selected driver`);
       return;
     }
     
-    // Don't add if already in additionalDriversData
-    if (additionalDriversData[driver]) {
-      console.log(`${driver} is already in the comparison`);
-      return;
-    }
+    // DEBUG: console.log(`Adding/Updating ${driver} (lap ${lap}) to comparison`);
     
-    console.log(`Adding ${driver} (lap ${lap}) to comparison`);
-    
-    // Always use a numeric lap value
     const lapToUse = typeof lap === 'string' ? parseInt(lap, 10) || 1 : lap;
     
-    // Fetch the data with the numeric lap
+    if (additionalDriversData[driver]) {
+      // DEBUG: console.log(`Removing existing data for ${driver} before adding lap ${lapToUse}`);
+      removeDriverFromComparison(driver);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     await fetchDriverTelemetry(driver, lapToUse);
   };
   
   // Function to remove a driver from the comparison
   const removeDriverFromComparison = (driver) => {
-    console.log(`Removing ${driver} from comparison`);
+    // DEBUG: console.log(`Removing ${driver} from comparison`);
     
-    // Remove from additionalDriversData
     setAdditionalDriversData(prev => {
       const newData = {...prev};
       delete newData[driver];
@@ -1254,7 +1283,6 @@ export default function DashboardContainer({ user = null }) {
     }));
   };
 
-  // Select 'All' drivers
   const handleSelectAll = () => {
     const newState = {};
     drivers.forEach(driver => {
@@ -1263,7 +1291,6 @@ export default function DashboardContainer({ user = null }) {
     setSelectedDrivers(newState);
   };
 
-  // Select 'None' drivers
   const handleDeselectAll = () => {
     const newState = {};
     drivers.forEach(driver => {
@@ -1272,7 +1299,6 @@ export default function DashboardContainer({ user = null }) {
     setSelectedDrivers(newState);
   };
 
-  // Handle analysis type change
   const handleAnalysisTypeChange = (event, newType) => {
     if (newType !== null) {
       setAnalysisType(newType);
@@ -1280,11 +1306,9 @@ export default function DashboardContainer({ user = null }) {
   };
 
   const handleDamageDriverSelect = (driver) => {
-    console.log("Driver selected:", driver);
-    // Update both selectedDriver (for DamageChart) and selectedDrivers
+    // DEBUG: console.log("Driver selected:", driver);
     setSelectedDriver(driver);
     
-    // Also update selectedDrivers for consistency
     const newSelectedDrivers = {};
     drivers.forEach(d => {
       newSelectedDrivers[d] = d === driver;
@@ -1293,11 +1317,9 @@ export default function DashboardContainer({ user = null }) {
   };
 
   const handleTyreWearDriverSelect = (driver) => {
-    console.log("Tyre wear driver selected:", driver);
-    // Update both selectedDriver (for TyreWearChart) and selectedDrivers
+    // DEBUG: console.log("Tyre wear driver selected:", driver);
     setSelectedDriver(driver);
     
-    // Also update selectedDrivers for consistency
     const newSelectedDrivers = {};
     drivers.forEach(d => {
       newSelectedDrivers[d] = d === driver;
@@ -1306,11 +1328,9 @@ export default function DashboardContainer({ user = null }) {
   };
 
   const handleIndividualLapDriverSelect = (driver) => {
-    console.log("Individual lap driver selected:", driver);
-    // Update both selectedDriver and selectedDrivers
+    // DEBUG: console.log("Individual lap driver selected:", driver);
     setSelectedDriver(driver);
     
-    // Also update selectedDrivers for consistency
     const newSelectedDrivers = {};
     drivers.forEach(d => {
       newSelectedDrivers[d] = d === driver;
@@ -1319,9 +1339,14 @@ export default function DashboardContainer({ user = null }) {
   };
   
   const handleLapSelect = (lap) => {
-    console.log("Lap selected:", lap);
+    // DEBUG: console.log("Lap selected:", lap);
     setSelectedLap(lap);
   };
+
+  // Use the current lap telemetry data or fall back to previous data while loading
+  const displayTelemetryData = isTelemetryLoading && previousLapTelemetryData.length > 0 
+    ? previousLapTelemetryData 
+    : lapTelemetryData;
 
   return (
     <div className="flex flex-col space-y-6">
@@ -1337,14 +1362,14 @@ export default function DashboardContainer({ user = null }) {
         handleAnalysisTypeChange={handleAnalysisTypeChange}
       />
 
-      {/* Race Information Cards */}
+      {/* Race Information Cards - USE SEPARATE LOADING STATE */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <F1Card
           title="Race Winner"
           value={raceInfo.winner.name}
           team={raceInfo.winner.team}
           icon={<Trophy size={20} />}
-          loading={isLoading}
+          loading={isRaceInfoLoading} // Use separate loading state
         />
         <F1Card
           title="Pole Position"
@@ -1352,7 +1377,7 @@ export default function DashboardContainer({ user = null }) {
           subValue={raceInfo.poleSitter.time}
           team={raceInfo.poleSitter.team}
           icon={<Zap size={20} />}
-          loading={isLoading}
+          loading={isRaceInfoLoading} // Use separate loading state
         />
         <F1Card
           title="Fastest Lap"
@@ -1360,16 +1385,27 @@ export default function DashboardContainer({ user = null }) {
           subValue={raceInfo.fastestLap.time}
           team={raceInfo.fastestLap.team}
           icon={<Clock size={20} />}
-          loading={isLoading}
+          loading={isRaceInfoLoading} // Use separate loading state
         />
       </div>
       
       {/* Main Content Area */}
       <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-4 sm:p-6">
         {/* Render the appropriate analysis component based on selected type */}
-        {analysisType === 'race-time' && (
+        {analysisType === 'lap-analysis' && (
+          <Tabs defaultValue="race-time" className="w-full">
+            <TabsList className="bg-gray-800/60 border border-gray-700/60 mb-4">
+              <TabsTrigger value="race-time" className="data-[state=active]:bg-gray-700">
+                Race Time Analysis
+              </TabsTrigger>
+              <TabsTrigger value="individual-lap" className="data-[state=active]:bg-gray-700">
+                Individual Lap Analysis
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="race-time" className="mt-0">
               <RaceTimeChart 
-                isLoading={isLoading}
+                isLoading={isInitialLoading || isRaceDataLoading}
                 filterOutlaps={filterOutlaps}
                 filterInlaps={filterInlaps}
                 setFilterInlaps={setFilterInlaps}
@@ -1392,11 +1428,61 @@ export default function DashboardContainer({ user = null }) {
                 handleDeselectAll={handleDeselectAll}
                 handleDisplayModeToggle={handleDisplayModeToggle}
               />
+            </TabsContent>
+            
+            <TabsContent value="individual-lap" className="mt-0">
+              <IndividualLapChart 
+                isLoading={isTelemetryLoading}
+                lapTelemetry={displayTelemetryData} // Use display data that doesn't clear while loading
+                lapTelemetryData={displayTelemetryData}
+                selectedDriver={selectedDriver}
+                selectedLap={selectedLap}
+                maxLapNumber={maxLapNumber}
+                drivers={drivers}
+                driverTeams={driverTeams}
+                driverColorMap={driverColorMap}
+                onDriverSelect={handleIndividualLapDriverSelect}
+                onLapSelect={handleLapSelect}
+                showRawLapData={showRawLapData}
+                setShowRawLapData={setShowRawLapData}
+                trackData={trackData}
+                additionalDriversData={additionalDriversData}
+                fetchDriverTelemetry={fetchDriverTelemetry}
+                addDriverToComparison={addDriverToComparison}
+                removeDriverFromComparison={removeDriverFromComparison}
+              />
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {analysisType === 'track-dominance' && (
+          <TrackDominanceChart 
+            isLoading={isLoadingDominance} // Only pass dominance loading, not telemetry loading
+            isTelemetryLoading={isTelemetryLoading} // Pass telemetry loading separately
+            selectedDriver={selectedDriver}
+            selectedLap={selectedLap}
+            maxLapNumber={maxLapNumber}
+            drivers={drivers}
+            driverTeams={driverTeams}
+            driverColorMap={driverColorMap}
+            onDriverSelect={handleIndividualLapDriverSelect}
+            onLapSelect={handleLapSelect}
+            trackData={trackData}
+            additionalDriversData={additionalDriversData}
+            fetchDriverTelemetry={fetchDriverTelemetry}
+            addDriverToComparison={addDriverToComparison}
+            removeDriverFromComparison={removeDriverFromComparison}
+            lapTelemetryData={displayTelemetryData} // Use display data
+            selectedSeason={selectedSeason}
+            selectedRace={selectedRace}
+            selectedSessionType={selectedSessionType}
+            lapData={lapData} // Pass lapData for fastest lap detection
+          />
         )}
 
         {analysisType === 'damage' && (
           <DamageChart 
-            isLoading={isLoading}
+            isLoading={isInitialLoading || isRaceDataLoading}
             processedDamageData={processedDamageData}
             selectedDriver={selectedDriver}
             maxLapNumber={maxLapNumber}
@@ -1411,7 +1497,7 @@ export default function DashboardContainer({ user = null }) {
 
         {analysisType === 'tyre-wear' && (
           <TyreWearChart 
-            isLoading={isLoading}
+            isLoading={isInitialLoading || isRaceDataLoading}
             processedTyreWearData={processedTyreWearData}
             tyreWearYRange={tyreWearYRange}
             selectedDriver={selectedDriver}
@@ -1422,29 +1508,6 @@ export default function DashboardContainer({ user = null }) {
             showRawLapData={showRawLapData}
             setShowRawLapData={setShowRawLapData}
             fetchDriverTyreWearData={fetchDriverTyreWearData}
-          />
-        )}
-
-        {analysisType === 'individual-lap' && (
-          <IndividualLapChart 
-            isLoading={isLoading}
-            lapTelemetry={lapTelemetryData}
-            lapTelemetryData={lapTelemetryData}
-            selectedDriver={selectedDriver}
-            selectedLap={selectedLap}
-            maxLapNumber={maxLapNumber}
-            drivers={drivers}
-            driverTeams={driverTeams}
-            driverColorMap={driverColorMap}
-            onDriverSelect={handleIndividualLapDriverSelect}
-            onLapSelect={handleLapSelect}
-            showRawLapData={showRawLapData}
-            setShowRawLapData={setShowRawLapData}
-            trackData={trackData}
-            additionalDriversData={additionalDriversData}
-            fetchDriverTelemetry={fetchDriverTelemetry}
-            addDriverToComparison={addDriverToComparison}
-            removeDriverFromComparison={removeDriverFromComparison}
           />
         )}
 
