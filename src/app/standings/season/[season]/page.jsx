@@ -1,6 +1,7 @@
 import StandingsTabs from './StandingsTabs';
 import pool from '@/lib/db';
 import { teamColors, lightTeams } from '@/lib/data';
+import { calculateChampionshipPossibilities, getRemainingRaces, calculateFormBasedOdds } from '@/lib/championshipCalculator';
 
 const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
@@ -92,6 +93,7 @@ export default async function SeasonStandingsPage({ params }) {
   const seasonNum = isOverall ? null : parseInt(season);
 
   let drivers = [], constructors = [], error;
+  let remainingRaces = 0;
 
   try {
     if (seasonNum && seasonNum <= 7) {
@@ -124,6 +126,9 @@ export default async function SeasonStandingsPage({ params }) {
         constructor: row.constructor,
         points: row.points,
       }));
+
+      // Calculate remaining races for championship possibilities
+      remainingRaces = await getRemainingRaces(season, pool);
     } else if (!isOverall) {
       const racesRes = await pool.query(
         'SELECT id FROM races WHERE season_id = (SELECT id FROM seasons WHERE season = $1)',
@@ -135,6 +140,9 @@ export default async function SeasonStandingsPage({ params }) {
         const { driverStandings, constructorStandings } = await processRaceResults(raceIds);
         drivers = driverStandings;
         constructors = constructorStandings;
+        
+        // Calculate remaining races for championship possibilities
+        remainingRaces = await getRemainingRaces(season, pool);
       }
     } else {
       // Overall: Seasons 1-7 from standings, 8-10 from race_results
@@ -216,7 +224,25 @@ export default async function SeasonStandingsPage({ params }) {
           constructor: entry.constructor,
           points: Math.round(entry.points),
         }));
+
+      // Overall standings don't need championship possibilities
+      remainingRaces = 0;
     }
+
+    // Calculate championship possibilities for current season standings
+    if (!isOverall && drivers.length > 0 && remainingRaces > 0) {
+      try {
+        // Basic mathematical possibilities
+        drivers = calculateChampionshipPossibilities(drivers, remainingRaces);
+        
+        // Enhanced form-based odds (optional - can be enabled/disabled)
+        // drivers = await calculateFormBasedOdds(drivers, remainingRaces, pool, season);
+      } catch (champError) {
+        console.error('Error calculating championship possibilities:', champError);
+        // Continue without championship data rather than failing entirely
+      }
+    }
+
     error = null;
   } catch (err) {
     console.error('Error fetching standings:', err);
@@ -232,6 +258,8 @@ export default async function SeasonStandingsPage({ params }) {
       error={error}
       teamColors={teamColors}
       lightTeams={lightTeams}
+      remainingRaces={remainingRaces}
+      showChampionshipData={!isOverall && remainingRaces > 0}
     />
   );
 }

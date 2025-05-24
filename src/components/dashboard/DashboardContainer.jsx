@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardHeader from './DashboardHeader';
+import TeamPaceRankingChart from './analysis/TeamPaceRankingChart';
+import LapDistributionViolinChart from './analysis/LapDistributionViolinChart';
 import RaceTimeChart from './analysis/RaceTimeChart';
 import DamageChart from './analysis/DamageChart';
 import TyreWearChart from './analysis/TyreWearChart';
@@ -1393,10 +1395,16 @@ export default function DashboardContainer() {
           <Tabs defaultValue="race-time" className="w-full">
             <TabsList className="bg-gray-800/60 border border-gray-700/60 mb-4">
               <TabsTrigger value="race-time" className="data-[state=active]:bg-gray-700">
-                Race Time Analysis
+                Total Race View
               </TabsTrigger>
               <TabsTrigger value="individual-lap" className="data-[state=active]:bg-gray-700">
                 Individual Lap Analysis
+              </TabsTrigger>
+              <TabsTrigger value="team-pace" className="data-[state=active]:bg-gray-700">
+                Team Pace Ranking
+              </TabsTrigger>
+              <TabsTrigger value="lap-distro" className="data-[state=active]:bg-gray-700">
+                Lap Distribution
               </TabsTrigger>
             </TabsList>
             
@@ -1449,6 +1457,35 @@ export default function DashboardContainer() {
                 removeDriverFromComparison={removeDriverFromComparison}
               />
             </TabsContent>
+
+            <TabsContent value="team-pace" className="mt-0">
+              <TeamPaceRankingChart 
+                isLoading={isInitialLoading || isRaceDataLoading}
+                filterOutlaps={filterOutlaps}
+                filterInlaps={filterInlaps}
+                setFilterInlaps={setFilterInlaps}
+                setFilterOutlaps={setFilterOutlaps}
+                maxLapNumber={maxLapNumber}
+                chartData={chartData}
+                lineConfigs={lineConfigs}
+                driverColorMap={driverColorMap}
+                drivers={drivers}
+                driverTeams={driverTeams}
+                selectedDrivers={selectedDrivers}
+              />
+            </TabsContent>
+
+            <TabsContent value="lap-distro" className="mt-0">
+              <LapDistributionViolinChart
+                //isLoading={isLoading}
+                lapData={lapData}
+                drivers={drivers}
+                selectedSeason={selectedSeason}
+                selectedRace={selectedRace}
+                selectedSessionType={selectedSessionType}
+              />
+            </TabsContent>
+
           </Tabs>
         )}
 
