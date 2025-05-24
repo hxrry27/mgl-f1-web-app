@@ -1461,10 +1461,6 @@ export default function DashboardContainer() {
             <TabsContent value="team-pace" className="mt-0">
               <TeamPaceRankingChart 
                 isLoading={isInitialLoading || isRaceDataLoading}
-                filterOutlaps={filterOutlaps}
-                filterInlaps={filterInlaps}
-                setFilterInlaps={setFilterInlaps}
-                setFilterOutlaps={setFilterOutlaps}
                 maxLapNumber={maxLapNumber}
                 chartData={chartData}
                 lineConfigs={lineConfigs}
