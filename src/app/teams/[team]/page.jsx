@@ -37,17 +37,54 @@ export default async function TeamPage({ params }) {
   }
   const { id: teamId, name: teamNameFormatted } = teamData;
 
-  // Season-by-season stats (S6+)
+  // Season-by-season stats (S6 - S10)
   const seasonStatsRes = await pool.query(
     'SELECT s.season, STRING_AGG(d.name, \', \') AS drivers, st.points ' +
     'FROM seasons s ' +
     'LEFT JOIN lineups l ON l.season_id = s.id AND l.team_id = $1 ' +
     'LEFT JOIN drivers d ON l.driver_id = d.id ' +
     'LEFT JOIN standings st ON st.season_id = s.id AND st.team_id = $1 AND st.type = $2 ' +
-    'WHERE CAST(s.season AS INTEGER) >= 6 ' +
+    'WHERE CAST(s.season AS INTEGER) >= 6 AND CAST(s.season AS INTEGER) <= 10 ' + // Added upper limit
     'GROUP BY s.season, st.points ' +
     'ORDER BY s.season DESC',
     [teamId, 'constructors']
+  );
+
+  //New query for season 11 onwards to help with the retirement of the seasons standings table
+  const calculatedPointsRes = await pool.query(
+    `SELECT 
+      s.season,
+      STRING_AGG(DISTINCT d.name, ', ') AS drivers, 
+      SUM(
+        CASE 
+          WHEN COALESCE(rr.adjusted_position, rr.position) <= 10 
+            AND rr.status != 'DSQ' AND rr.status != 'DNS'
+          THEN 
+            (ARRAY[25, 18, 15, 12, 10, 8, 6, 4, 2, 1])[COALESCE(rr.adjusted_position, rr.position)]
+          ELSE 0
+        END + 
+        CASE 
+          WHEN rr.fastest_lap_time_int > 0 
+            AND rr.fastest_lap_time_int = (
+              SELECT MIN(rr2.fastest_lap_time_int) 
+              FROM race_results rr2 
+              WHERE rr2.race_id = rr.race_id AND rr2.fastest_lap_time_int > 0
+            ) 
+            AND COALESCE(rr.adjusted_position, rr.position) <= 10
+            AND rr.status != 'DSQ' AND rr.status != 'DNS'
+          THEN 1 
+          ELSE 0 
+        END
+      ) AS points
+    FROM race_results rr
+    JOIN races r ON rr.race_id = r.id
+    JOIN seasons s ON r.season_id = s.id
+    JOIN drivers d ON rr.driver_id = d.id
+    WHERE CAST(s.season AS INTEGER) >= 11
+    AND rr.team_id = $1
+    GROUP BY s.season
+    ORDER BY s.season DESC`,
+    [teamId]
   );
 
   const teamStats = {
@@ -55,12 +92,22 @@ export default async function TeamPage({ params }) {
     career: { races: 0, wins: 0, podiums: 0, poles: 0, fastestLaps: 0, points: 0 },
   };
 
+  // Data from seasons 6 through 10
   seasonStatsRes.rows.forEach((row) => {
     teamStats.seasons[row.season] = {
       drivers: row.drivers || "No Drivers",
       points: row.points !== null ? row.points : 'Unavailable',
     };
     if (row.points !== null) teamStats.career.points += parseInt(row.points, 10) || 0;
+  });
+
+  // Data from seasons 11 onwards
+  calculatedPointsRes.rows.forEach((row) => {
+    teamStats.seasons[row.season] = {
+      drivers: row.drivers || "No Drivers",
+      points: row.points || 0,
+    };
+    teamStats.career.points += parseInt(row.points, 10) || 0;
   });
 
   // Fetch unique races where the team participated

@@ -23,3 +23,32 @@ export const teamColors = {
     'Racing Bulls': '#6692FF',
     'Kick Sauber': '#52E252'
 };
+
+export const trackSlugToName = {
+  'bahrain': 'Bahrain International Circuit',
+  'jeddah': 'Jeddah Corniche Circuit',
+  'yas-marina': 'Yas Marina Circuit',
+  'melbourne': 'Albert Park Circuit',
+  'suzuka': 'Suzuka',
+  'shanghai': 'Shanghai International Circuit',
+  'baku': 'Baku City Circuit',
+  'miami': 'Miami International Autodrome',
+  'monaco': 'Circuit de Monaco',
+  'montreal': 'Circuit Gilles Villeneuve',
+  'catalunya': 'Circuit de Barcelona-Catalunya',
+  'red-bull-ring': 'Red Bull Ring',
+  'silverstone': 'Silverstone',
+  'hungaroring': 'Hungaroring',
+  'spa': 'Circuit de Spa-Francorchamps',
+  'zandvoort': 'Circuit Zandvoort',
+  'monza': 'Monza',
+  'marina-bay': 'Marina Bay Street Circuit',
+  'austin': 'Circuit of the Americas',
+  'mexico': 'Autódromo Hermanos Rodríguez',
+  'interlagos': 'Interlagos',
+  'las-vegas': 'Las Vegas Street Circuit',
+  'lusail': 'Lusail International Circuit',
+  'imola': 'Imola',
+  'portimao': 'Algarve International Circuit',
+  'paul-ricard': 'Paul Ricard'
+};

@@ -93,14 +93,14 @@ export default function DashboardHeader({
               <span className="inline md:hidden">Stats</span>
             </TabsTrigger>
             <TabsTrigger 
-              value="race-time" 
+              value="lap-analysis" 
               className={cn(
                 "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
                 "hover:bg-gray-800 transition-colors"
               )}
             >
               <Clock className="h-4 w-4" />
-              <span className="hidden md:inline">Race Time</span>
+              <span className="hidden md:inline">Lap Analysis</span>
               <span className="inline md:hidden">Time</span>
             </TabsTrigger>
             <TabsTrigger 
@@ -125,14 +125,14 @@ export default function DashboardHeader({
               <span>Damage</span>
             </TabsTrigger>
             <TabsTrigger 
-              value="individual-lap" 
+              value="track-dominance" 
               className={cn(
                 "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
                 "hover:bg-gray-800 transition-colors"
               )}
             >
               <LineChart className="h-4 w-4" />
-              <span className="hidden md:inline">Individual Lap</span>
+              <span className="hidden md:inline">Track Dominance</span>
               <span className="inline md:hidden">Lap</span>
             </TabsTrigger>
           </TabsList>

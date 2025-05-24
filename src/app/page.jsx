@@ -1,10 +1,12 @@
-// src/app/page.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Box, Typography, Link } from '@mui/material';
-import { lighten } from '@mui/material/styles';
+import Link from 'next/link';
 import Image from 'next/image';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, ChevronRight, Trophy, Car, MapPin } from 'lucide-react';
 import { trackData } from '@/lib/data';
 
 function isBST(date) {
@@ -160,49 +162,105 @@ export default function HomePage() {
   }, []);
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#0a0e27', color: 'white' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '80%', maxWidth: '1200px', gap: 4 }}>
-        <Box sx={{ maxWidth: '50%' }}>
-          <Typography variant="h2" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>MGL F1</Typography>
-          <Typography variant="h5" gutterBottom>Speed, Performance, Trophies. Something none of us really see.</Typography>
-          <Typography variant="body1" paragraph>
+    <div className="min-h-screen bg-gray-900 bg-opacity-90 flex justify-center items-center px-4">
+      <div className="container flex flex-col md:flex-row justify-between items-center max-w-6xl gap-8 py-12">
+        {/* Left content */}
+        <div className="w-full md:w-1/2 space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-5xl font-bold text-white">
+              MGL<span className="text-blue-500">F1</span>
+            </h1>
+            <h2 className="text-xl text-gray-300">
+              Speed, Performance, Trophies. Something none of us really see.
+            </h2>
+          </div>
+          
+          <p className="text-gray-400">
             A work in progress site, to track all our stats, seasons, and shitbox performances over the last 4 years in the F1 series of games by C*demasters and EASp*rts
-          </Typography>
-          <Link href="/standings/season/11" style={{ textDecoration: 'none' }}>
-            <Box component="button" sx={{ mt: 2, px: 3, py: 1.5, borderRadius: 1, backgroundColor: '#1976d2', color: '#fff', border: 'none', cursor: 'pointer', fontSize: '1rem', '&:hover': { backgroundColor: lighten('#1976d2', 0.1) } }}>
-              Current Season
-            </Box>
-          </Link>
-        </Box>
-        <Link href={`/tracks/${nextRace.track}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-          <Box sx={{ minWidth: 500, alignContent: 'center', border: '1px solid #444', borderRadius: 2, p: 2, backgroundColor: '#0a0e27', transition: 'transform 0.2s ease', '&:hover': { transform: 'scale(1.05)', borderColor: '#00A0F0' } }}>
-            <Box sx={{ position: 'relative', height: { xs: 400, md: 350 }, width: '100%' }}>
+          </p>
+          
+          <div className="flex gap-4">
+            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+              <Link href="/standings/season/11">
+                <span className="flex items-center gap-2">
+                  Current Season <ChevronRight className="h-4 w-4" />
+                </span>
+              </Link>
+            </Button>
+            
+            <Button asChild variant="outline" className="border-gray-700 hover:bg-gray-800">
+              <Link href="/dashboard">
+                <span className="flex items-center gap-2">
+                  <Car className="h-4 w-4" /> Dashboard
+                </span>
+              </Link>
+            </Button>
+          </div>
+        </div>
+        
+        {/* Right content - Next Race Card */}
+        <Link 
+          href={`/tracks/${nextRace.track}`} 
+          className="w-full md:w-1/2 block no-underline"
+        >
+          <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden transform transition-transform hover:scale-[1.02] hover:border-blue-500/50">
+            <CardHeader className="pb-2 space-y-1">
+              <div className="flex justify-between items-start">
+                <Badge className="bg-blue-600 text-white mb-2">Next Race</Badge>
+                <Badge className="bg-gray-800 text-gray-300">Season {nextRace.season}</Badge>
+              </div>
+              <CardTitle className="flex items-center gap-2 text-xl text-white">
+                <MapPin className="h-5 w-5 text-blue-500" />
+                {nextRace.country} - {nextRace.trackName}
+              </CardTitle>
+              <div className="flex items-center text-gray-400 text-sm">
+                <Calendar className="h-4 w-4 mr-1" />
+                {nextRace.date}
+              </div>
+            </CardHeader>
+            
+            <div className="relative w-full h-64">
               <Image 
                 src={`/images/tracks/${nextRace.track}.png`} 
                 alt={`${nextRace.trackName} Track Map`} 
-                layout="fill" 
-                objectFit="contain" 
+                fill
+                style={{ objectFit: 'contain' }}
                 onError={(e) => {
                   console.log(`${nextRace.track} track map not found`);
                   e.target.src = "/images/tracks/default.png";
                 }} 
               />
-            </Box>
-            <Typography variant="h6" gutterBottom>{nextRace.country} - {nextRace.trackName}</Typography>
-            <Typography variant="body2" gutterBottom>Date: {nextRace.date}</Typography>
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>Last Season Podium (S{parseInt(nextRace.season) - 1}):</Typography>
-              {lastSeasonPodium.length > 0 ? (
-                lastSeasonPodium.map((driver, index) => (
-                  <Typography key={index} variant="body2">{index + 1}. {driver}</Typography>
-                ))
-              ) : (
-                <Typography variant="body2">No podium recorded for S{parseInt(nextRace.season) - 1}</Typography>
-              )}
-            </Box>
-          </Box>
+            </div>
+            
+            <CardContent className="pt-4">
+              <div className="space-y-2">
+                <h3 className="flex items-center text-sm font-medium text-gray-300">
+                  <Trophy className="h-4 w-4 mr-1 text-yellow-500" />
+                  Last Season Podium (S{parseInt(nextRace.season) - 1}):
+                </h3>
+                {lastSeasonPodium.length > 0 ? (
+                  <div className="space-y-1">
+                    {lastSeasonPodium.map((driver, index) => (
+                      <div key={index} className="flex items-center text-white">
+                        <Badge className={`mr-2 w-6 h-6 flex items-center justify-center rounded-full 
+                          ${index === 0 ? 'bg-yellow-500 text-black' : 
+                            index === 1 ? 'bg-gray-300 text-black' : 
+                              'bg-amber-700 text-white'}`}
+                        >
+                          {index + 1}
+                        </Badge>
+                        {driver}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-sm">No podium recorded for S{parseInt(nextRace.season) - 1}</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </Link>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }
