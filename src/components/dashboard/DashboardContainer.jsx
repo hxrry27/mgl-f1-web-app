@@ -1476,14 +1476,14 @@ export default function DashboardContainer() {
             </TabsContent>
 
             <TabsContent value="lap-distro" className="mt-0">
-              <LapDistributionViolinChart
+              {/* <LapDistributionViolinChart
                 //isLoading={isLoading}
                 lapData={lapData}
                 drivers={drivers}
                 selectedSeason={selectedSeason}
                 selectedRace={selectedRace}
                 selectedSessionType={selectedSessionType}
-              />
+              /> */}
             </TabsContent>
 
           </Tabs>
