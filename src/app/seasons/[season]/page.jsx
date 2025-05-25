@@ -3,7 +3,7 @@ import { Container, Typography } from '@mui/material';
 
 export default async function SeasonPage({ params }) {
   
-  const { season } = await params;
+  const { season } = params;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

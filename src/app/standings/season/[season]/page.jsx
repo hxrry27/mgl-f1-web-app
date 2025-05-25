@@ -88,7 +88,7 @@ async function processRaceResults(raceIds) {
 }
 
 export default async function SeasonStandingsPage({ params }) {
-  const { season } = await params;
+  const { season } = params;
   const isOverall = season.toLowerCase() === 'overall';
   const seasonNum = isOverall ? null : parseInt(season);
 

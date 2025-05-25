@@ -89,7 +89,7 @@ function mapStatus(status) {
 }
 
 export default async function RaceResultsPage({ params }) {
-  const { season, race } = await params;
+  const { season, race } = params;
 
   // Get full track name from slug
   const raceName = trackNames[race] || race.replace(/-/g, ' '); // Fallback to slug with spaces if not mapped
