@@ -5,6 +5,8 @@ const nextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: ['child_process'],
+    ppr: true, // Partial Prerendering
+    dynamicIO: true, // Dynamic IO
   },
 };
 export default nextConfig;
