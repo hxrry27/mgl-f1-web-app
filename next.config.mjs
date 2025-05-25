@@ -4,8 +4,7 @@ const nextConfig = {
     RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY,
   },
   experimental: {
-    serverComponentsExternalPackages: ['child_process'],
-    
+    serverExternalPackages: ['child_process'],
   },
 };
 export default nextConfig;
