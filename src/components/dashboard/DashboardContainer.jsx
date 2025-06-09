@@ -120,13 +120,16 @@ export default function DashboardContainer() {
         const response = await fetch('/api/available-seasons', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
+          console.log('📅 Available seasons:', data.seasons);
+
           if (data.seasons && data.seasons.length) {
             setSeasons(data.seasons);
+            console.log('🎯 Will select season:', data.seasons[0]);
             setSelectedSeason(data.seasons[0]); // Select most recent season
           }
         }
       } catch (error) {
-        // DEBUG: console.error('Error fetching seasons:', error);
+        console.error('Error fetching seasons:', error);
       }
     };
     
@@ -140,16 +143,22 @@ export default function DashboardContainer() {
     const fetchRaces = async () => {
       setIsRaceDataLoading(true);
       try {
+        console.log('🔍 Fetching races for season:', selectedSeason);
+
         const response = await fetch(`/api/season-races?season=${selectedSeason}`, { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
+
+          console.log('📊 API Response:', data); 
+          console.log('🏁 Races array:', data.races); 
+
           if (data.races && data.races.length) {
             setRaces(data.races);
             setSelectedRace(data.races[data.races.length - 1].slug); // Select most recent race
           }
         }
       } catch (error) {
-        // DEBUG: console.error('Error fetching races:', error);
+         console.error('Error fetching races:', error);
       } finally {
         setIsRaceDataLoading(false);
       }
@@ -477,6 +486,17 @@ export default function DashboardContainer() {
     
     fetchGeneralStats();
   }, [selectedSeason, selectedRace, selectedSessionType]);
+
+  // Function to force the cache reset (for sunday eve usage basically)
+  const forceRefresh = () => {
+  // Clear browser cache for your API endpoints
+  if ('caches' in window) {
+    caches.delete('api-cache');
+  }
+  
+  // Force reload
+  window.location.reload(true);
+  };
 
   // Function to find fastest lap for a driver
   const getFastestLapForDriver = (driver) => {

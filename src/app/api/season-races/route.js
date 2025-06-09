@@ -28,6 +28,14 @@ async function computeSeasonRacesFromDatabase(season) {
     ORDER BY
       r.race_number ASC
   `, [season]);
+
+  // ADD THIS LOGGING:
+  console.log(`🔍 Database query returned ${racesResult.rows.length} races:`);
+  console.log('Race details:', racesResult.rows.map(r => ({ 
+    race_number: r.race_number, 
+    name: r.name, 
+    slug: r.slug 
+  })));
  
   // If no races found with session mappings, return empty array with a message
   if (racesResult.rows.length === 0) {
@@ -48,6 +56,7 @@ async function computeSeasonRacesFromDatabase(season) {
 
 // Main API route with caching
 export async function GET(request) {
+  console.log('🚨🚨🚨 SEASON RACES API CALLED! 🚨🚨🚨');
   try {
     // Get search params from the URL
     const { searchParams } = new URL(request.url);
@@ -60,17 +69,20 @@ export async function GET(request) {
       );
     }
 
-    // Generate cache key
-    const cacheKey = getCacheKey.races(season);
+    const result = await computeSeasonRacesFromDatabase(season);
+    return NextResponse.json(result);
 
-    // Use cached API response wrapper
-    return cachedApiResponse(
-      cacheKey,
-      async () => {
-        return await computeSeasonRacesFromDatabase(season);
-      },
-      CACHE_DURATIONS.RACES // 24 hours cache
-    );
+    // // Generate cache key
+    // const cacheKey = getCacheKey.races(season);
+
+    // // Use cached API response wrapper
+    // return cachedApiResponse(
+    //   cacheKey,
+    //   async () => {
+    //     return await computeSeasonRacesFromDatabase(season);
+    //   },
+    //   CACHE_DURATIONS.RACES // 24 hours cache
+    // );
 
   } catch (error) {
     console.error('Error in season races API:', error);

@@ -156,6 +156,107 @@ export class CacheService {
       return { available: false, error: error.message };
     }
   }
+
+  static async delete(key) {
+    if (!redisAvailable || !redis) {
+      console.warn('Redis not available for cache deletion');
+      return false;
+    }
+
+    try {
+      const result = await redis.del(key);
+      console.log(`🗑️ Deleted cache key: ${key} (${result} keys deleted)`);
+      return result > 0;
+    } catch (error) {
+      console.error(`Redis DELETE error for key ${key}:`, error.message);
+      redisAvailable = false;
+      return false;
+    }
+  }
+
+  static async deletePattern(pattern) {
+    if (!redisAvailable || !redis) {
+      console.warn('Redis not available for pattern deletion');
+      return false;
+    }
+
+    try {
+      const keys = await redis.keys(pattern);
+      if (keys.length === 0) {
+        console.log(`🔍 No keys found matching pattern: ${pattern}`);
+        return true;
+      }
+      
+      const result = await redis.del(...keys);
+      console.log(`🗑️ Deleted ${result} keys matching pattern: ${pattern}`);
+      return true;
+    } catch (error) {
+      console.error(`Redis DELETE PATTERN error for pattern ${pattern}:`, error.message);
+      redisAvailable = false;
+      return false;
+    }
+  }
+
+  static async clear() {
+    if (!redisAvailable || !redis) {
+      console.warn('Redis not available for cache clearing');
+      return false;
+    }
+
+    try {
+      await redis.flushall();
+      console.log('🗑️ Cleared entire Redis cache');
+      return true;
+    } catch (error) {
+      console.error('Redis CLEAR error:', error.message);
+      redisAvailable = false;
+      return false;
+    }
+  }
+
+  static async getKeys(pattern = '*') {
+    if (!redisAvailable || !redis) {
+      console.warn('Redis not available for key listing');
+      return [];
+    }
+
+    try {
+      const keys = await redis.keys(pattern);
+      return keys;
+    } catch (error) {
+      console.error(`Redis GET KEYS error for pattern ${pattern}:`, error.message);
+      redisAvailable = false;
+      return [];
+    }
+  }
+
+  // Utility method to get cache info for debugging
+  static async getCacheInfo() {
+    if (!redisAvailable || !redis) {
+      return { available: false, message: 'Redis not connected' };
+    }
+
+    try {
+      const keys = await redis.keys('*');
+      const keysByType = {};
+      
+      keys.forEach(key => {
+        const type = key.split(':')[0];
+        keysByType[type] = (keysByType[type] || 0) + 1;
+      });
+
+      return {
+        available: true,
+        totalKeys: keys.length,
+        keysByType,
+        sampleKeys: keys.slice(0, 10) // Show first 10 keys as samples
+      };
+    } catch (error) {
+      console.error('Redis CACHE INFO error:', error.message);
+      return { available: false, error: error.message };
+    }
+  }
+
 }
 
 export default redis;

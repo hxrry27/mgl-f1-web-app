@@ -18,7 +18,8 @@ import {
   BarChart2,
   MapPin,
   Bell,
-  AlertCircle
+  AlertCircle,
+  RefreshCw // Add this import
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -208,12 +209,69 @@ function RaceNotification({ nextRace, onClose }) {
   );
 }
 
+// Cache Refresh Success Notification
+function CacheRefreshNotification({ show, onClose }) {
+  if (!show) return null;
+  
+  return (
+    <Toast className="bg-green-600 border-green-500 text-white">
+      <div className="flex items-center gap-2">
+        <RefreshCw className="h-5 w-5" />
+        <ToastTitle className="text-white">Cache Refreshed</ToastTitle>
+      </div>
+      <ToastDescription className="text-white">
+        Data has been refreshed successfully
+      </ToastDescription>
+      <ToastClose className="text-white hover:text-gray-200" />
+    </Toast>
+  );
+}
+
 export default function Header() {
   const [activeItem, setActiveItem] = useState(null);
   const [nextRace, setNextRace] = useState({ track: 'bahrain', date: null });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRefreshSuccess, setShowRefreshSuccess] = useState(false);
   const timeoutRef = React.useRef(null);
+
+  // Cache refresh function
+  const handleCacheRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch('/api/clear-cache', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'all' })
+      });
+      
+      if (response.ok) {
+        setShowRefreshSuccess(true);
+        
+        // Clear browser cache for API endpoints
+        if ('caches' in window) {
+          try {
+            const cacheNames = await caches.keys();
+            await Promise.all(
+              cacheNames.map(name => caches.delete(name))
+            );
+          } catch (error) {
+            console.log('Browser cache clear failed:', error);
+          }
+        }
+        
+        // Force reload after a short delay to show success message
+        setTimeout(() => {
+          window.location.reload(true);
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Failed to refresh cache:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Check if notification has been dismissed
   useEffect(() => {
@@ -337,75 +395,133 @@ export default function Header() {
               ))}
             </div>
 
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-                <DrawerTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                    <Menu className="h-6 w-6" />
-                    <span className="sr-only">Open menu</span>
-                  </Button>
-                </DrawerTrigger>
-                <DrawerContent className="h-[90vh] bg-gray-950 border-l-gray-800 text-white p-4 flex flex-col">
-                  <div className="flex items-center justify-between mb-6">
-                    <Link href="/dashboard" className="flex items-center gap-2 text-white hover:text-blue-500 transition-colors" onClick={() => setDrawerOpen(false)}>
-                      <Gauge className="h-6 w-6 text-blue-500" />
-                      <span className="font-bold text-xl">F1<span className="text-blue-500">Telemetry</span></span>
-                    </Link>
-                    <DrawerClose asChild>
-                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                        <X className="h-5 w-5" />
-                        <span className="sr-only">Close menu</span>
-                      </Button>
-                    </DrawerClose>
-                  </div>
+            {/* Right side buttons - Cache Refresh + Mobile Menu */}
+            <div className="flex items-center space-x-2">
+              {/* Cache Refresh Button - Desktop */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCacheRefresh}
+                disabled={isRefreshing}
+                className="hidden md:flex text-gray-300 hover:text-white hover:bg-gray-800"
+                title="Refresh cached data"
+              >
+                <RefreshCw 
+                  className={cn(
+                    "h-5 w-5",
+                    isRefreshing && "animate-spin"
+                  )} 
+                />
+                <span className="sr-only">Refresh cache</span>
+              </Button>
 
-                  <div className="flex-grow overflow-y-auto space-y-1">
-                    {NAV_ITEMS.map((item) => (
-                      <div key={item.label}>
-                        {item.hasDropdown ? (
-                          <div className="mb-3">
-                            <div className="flex items-center space-x-2 p-2 text-white font-medium border-b border-gray-800">
+              {/* Mobile Menu Button */}
+              <div className="md:hidden">
+                <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+                  <DrawerTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                      <Menu className="h-6 w-6" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DrawerTrigger>
+                  <DrawerContent className="h-[90vh] bg-gray-950 border-l-gray-800 text-white p-4 flex flex-col">
+                    <div className="flex items-center justify-between mb-6">
+                      <Link href="/dashboard" className="flex items-center gap-2 text-white hover:text-blue-500 transition-colors" onClick={() => setDrawerOpen(false)}>
+                        <Gauge className="h-6 w-6 text-blue-500" />
+                        <span className="font-bold text-xl">F1<span className="text-blue-500">Telemetry</span></span>
+                      </Link>
+                      <div className="flex items-center space-x-2">
+                        {/* Cache Refresh Button - Mobile */}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleCacheRefresh}
+                          disabled={isRefreshing}
+                          className="text-gray-300 hover:text-white"
+                          title="Refresh cached data"
+                        >
+                          <RefreshCw 
+                            className={cn(
+                              "h-5 w-5",
+                              isRefreshing && "animate-spin"
+                            )} 
+                          />
+                          <span className="sr-only">Refresh cache</span>
+                        </Button>
+                        <DrawerClose asChild>
+                          <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                            <X className="h-5 w-5" />
+                            <span className="sr-only">Close menu</span>
+                          </Button>
+                        </DrawerClose>
+                      </div>
+                    </div>
+
+                    <div className="flex-grow overflow-y-auto space-y-1">
+                      {/* Cache Refresh Option in Mobile Menu */}
+                      <div className="mb-4 p-3 bg-gray-800 rounded-md">
+                        <Button
+                          variant="ghost"
+                          onClick={handleCacheRefresh}
+                          disabled={isRefreshing}
+                          className="w-full flex items-center justify-center space-x-2 text-gray-300 hover:text-white"
+                        >
+                          <RefreshCw 
+                            className={cn(
+                              "h-5 w-5",
+                              isRefreshing && "animate-spin"
+                            )} 
+                          />
+                          <span>{isRefreshing ? 'Refreshing...' : 'Refresh Data Cache'}</span>
+                        </Button>
+                      </div>
+
+                      {NAV_ITEMS.map((item) => (
+                        <div key={item.label}>
+                          {item.hasDropdown ? (
+                            <div className="mb-3">
+                              <div className="flex items-center space-x-2 p-2 text-white font-medium border-b border-gray-800">
+                                {item.icon && <span>{item.icon}</span>}
+                                <span>{item.label}</span>
+                              </div>
+                              <div className="ml-4 mt-2 space-y-1">
+                                {getSubMenuContent(item.label).slice(0, 10).map((subItem) => (
+                                  <Link
+                                    key={subItem.label}
+                                    href={subItem.href}
+                                    className="block p-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-md"
+                                    onClick={() => setDrawerOpen(false)}
+                                  >
+                                    {subItem.label}
+                                  </Link>
+                                ))}
+                                {getSubMenuContent(item.label).length > 10 && (
+                                  <Link
+                                    href={item.href || '/'}
+                                    className="block p-2 text-sm text-blue-500 hover:text-blue-400"
+                                    onClick={() => setDrawerOpen(false)}
+                                  >
+                                    View all {item.label.toLowerCase()}...
+                                  </Link>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <Link
+                              href={item.href || '/'}
+                              className="flex items-center space-x-3 p-3 rounded-md text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
+                              onClick={() => setDrawerOpen(false)}
+                            >
                               {item.icon && <span>{item.icon}</span>}
                               <span>{item.label}</span>
-                            </div>
-                            <div className="ml-4 mt-2 space-y-1">
-                              {getSubMenuContent(item.label).slice(0, 10).map((subItem) => (
-                                <Link
-                                  key={subItem.label}
-                                  href={subItem.href}
-                                  className="block p-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-md"
-                                  onClick={() => setDrawerOpen(false)}
-                                >
-                                  {subItem.label}
-                                </Link>
-                              ))}
-                              {getSubMenuContent(item.label).length > 10 && (
-                                <Link
-                                  href={item.href || '/'}
-                                  className="block p-2 text-sm text-blue-500 hover:text-blue-400"
-                                  onClick={() => setDrawerOpen(false)}
-                                >
-                                  View all {item.label.toLowerCase()}...
-                                </Link>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <Link
-                            href={item.href || '/'}
-                            className="flex items-center space-x-3 p-3 rounded-md text-base font-medium text-gray-300 hover:bg-gray-800 hover:text-white"
-                            onClick={() => setDrawerOpen(false)}
-                          >
-                            {item.icon && <span>{item.icon}</span>}
-                            <span>{item.label}</span>
-                          </Link>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </DrawerContent>
-              </Drawer>
+                            </Link>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </DrawerContent>
+                </Drawer>
+              </div>
             </div>
           </div>
         </div>
@@ -417,6 +533,12 @@ export default function Header() {
             onClose={handleNotificationDismiss}
           />
         )}
+
+        {/* Cache Refresh Success Notification */}
+        <CacheRefreshNotification 
+          show={showRefreshSuccess}
+          onClose={() => setShowRefreshSuccess(false)}
+        />
 
         <ToastViewport className="fixed top-4 right-4 flex flex-col gap-2 w-96 max-w-[90vw]" />
       </ToastProvider>

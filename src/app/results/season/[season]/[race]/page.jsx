@@ -114,7 +114,9 @@ export default async function RaceResultsPage({ params }) {
         'FROM race_results rr ' +
         'JOIN drivers d ON rr.driver_id = d.id ' +
         'JOIN teams t ON rr.team_id = t.id ' +
-        'WHERE rr.race_id = $1',
+        'JOIN session_race_mapping srm ON rr.race_id = srm.race_id ' +
+        'WHERE rr.race_id = $1 ' +
+        'AND srm.session_uid = (SELECT session_uid FROM session_race_mapping WHERE race_id = $1 ORDER BY created_at DESC LIMIT 1)',
         [raceData.id]
       );
 
