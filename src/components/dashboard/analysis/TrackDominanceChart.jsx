@@ -7,8 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Clock, Zap, TrendingUp, BarChart2, Map } from 'lucide-react';
 import trackLayouts from '@/data/track-layouts.json';
 
-// revised Track Visualization Component with color accessibility
-const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver, driverColorMap, driverTeams }) => {
+// Enhanced Track Visualization Component with hover interactions
+const F1TrackViz = ({ 
+  trackSlug, 
+  sectorDeltas, 
+  selectedDriver, 
+  comparisonDriver, 
+  driverColorMap, 
+  driverTeams,
+  hoveredSector,
+  setHoveredSector 
+}) => {
   const trackRef = useRef(null);
   const [trackSegments, setTrackSegments] = useState([]);
   
@@ -64,6 +73,7 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         
         segments.push({
           id: i,
+          sector: i + 1, // Add 1-based sector number for easier matching
           startPoint: segmentPoints[0],
           endPoint: segmentPoints[numPointsPerSegment],
           segmentPath,
@@ -84,6 +94,15 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
       setTrackSegments([]);
     }
   }, [trackPath, sectorDeltas]);
+  
+  // Handle sector hover
+  const handleSectorHover = (sectorNumber) => {
+    setHoveredSector(sectorNumber);
+  };
+  
+  const handleSectorLeave = () => {
+    setHoveredSector(null);
+  };
   
   // default track fallback
   if (!trackPath) {
@@ -126,27 +145,6 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
   
   const needsAlternateColorValue = needsAlternateColor();
   
-  // get the reason for using an alternative color
-  const getColorChangeReason = () => {
-    if (!driverTeams || !selectedDriver || !comparisonDriver) return '';
-    
-    const selectedTeam = driverTeams[selectedDriver];
-    const comparisonTeam = driverTeams[comparisonDriver];
-    
-    if (selectedTeam === comparisonTeam) return 'same team';
-    
-    // check if both are blue teams
-    const blueTeams = ['Alpine', 'Williams', 'Racing Bulls'];
-    const selectedIsBlue = blueTeams.some(team => selectedTeam.includes(team));
-    const comparisonIsBlue = blueTeams.some(team => comparisonTeam.includes(team));
-    
-    if (selectedIsBlue && comparisonIsBlue) {
-      return 'teams with similar colours (blue teams)';
-    }
-    
-    return '';
-  };
-  
   // get driver colors with special handling for same-team or similar colored teams
   const primaryColor = driverColorMap[selectedDriver] || '#3B82F6'; // blue fallback
   const comparisonColor = needsAlternateColorValue ? '#FFFFFF' : // pure white for same team or similar-colored teams
@@ -173,6 +171,11 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
         <filter id="track-glow" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="2" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        {/* Enhanced shadow filter for hovered sectors - dark theme */}
+        <filter id="sector-hover-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#6B7280" floodOpacity="0.8"/>
+          <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#4B5563" floodOpacity="0.4"/>
         </filter>
       </defs>
       
@@ -215,6 +218,9 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
           const sectorData = sectorDeltas[index];
           if (!sectorData) return null;
           
+          // Check if this sector is hovered
+          const isHovered = hoveredSector === segment.sector;
+          
           // determine segment color based on which driver is faster
           let segmentColor;
           
@@ -233,10 +239,18 @@ const F1TrackViz = ({ trackSlug, sectorDeltas, selectedDriver, comparisonDriver,
               d={segment.segmentPath}
               fill="none"
               stroke={segmentColor}
-              strokeWidth={trackWidth}
-              strokeLinecap="round" // smooth the segment connections out
+              strokeWidth={isHovered ? trackWidth + 4 : trackWidth} // Increase width on hover like "font size"
+              strokeLinecap="round"
               strokeLinejoin="round"
-              opacity="0.9"
+              opacity={isHovered ? "1" : "0.9"}
+              filter={isHovered ? "url(#sector-hover-shadow)" : "none"} // Add shadow on hover
+              style={{
+                cursor: 'pointer',
+                transition: 'stroke-width 0.15s ease, opacity 0.15s ease'
+                // Removed transform scale to prevent movement
+              }}
+              onMouseEnter={() => handleSectorHover(segment.sector)}
+              onMouseLeave={handleSectorLeave}
             />
           );
         })
@@ -506,6 +520,9 @@ export default function TrackDominanceChart({
   // State for track dominance data from API
   const [dominanceData, setDominanceData] = useState(null);
   const [isDominanceLoading, setIsDominanceLoading] = useState(false);
+  
+  // NEW: State for hover interactions
+  const [hoveredSector, setHoveredSector] = useState(null);
   
   // Function to find fastest lap for a driver
   const getFastestLapForDriver = (driver) => {
@@ -917,6 +934,12 @@ export default function TrackDominanceChart({
             )}
           </div>
           
+          {/* Hover instruction */}
+          {comparisonDriver !== 'none' && sectorDeltas.length > 0 && (
+            <div className="mt-3 text-xs text-gray-400">
+              💡 Hover over sectors on the track or bars in the chart to see which parts of the track they represent
+            </div>
+          )}
           
         </CardContent>
       </Card>
@@ -988,6 +1011,11 @@ export default function TrackDominanceChart({
             <CardTitle className="text-white text-lg flex items-center gap-2">
               <Map className="w-5 h-5" />
               Track Dominance Map
+              {hoveredSector && (
+                <span className="ml-2 text-sm text-blue-400">
+                  (Sector {hoveredSector})
+                </span>
+              )}
             </CardTitle>
             {dominanceData && comparisonDriver === 'none' && (
               <p className="text-sm text-gray-400">Select a comparison driver to see track dominance</p>
@@ -1013,6 +1041,8 @@ export default function TrackDominanceChart({
                   comparisonDriver={comparisonDriver}
                   driverColorMap={driverColorMap}
                   driverTeams={driverTeams}
+                  hoveredSector={hoveredSector}
+                  setHoveredSector={setHoveredSector}
                 />
               )}
             </div>
@@ -1049,62 +1079,80 @@ export default function TrackDominanceChart({
             <CardTitle className="text-white text-lg flex items-center gap-2">
               <BarChart2 className="w-5 h-5" />
               Mini Sector Time Deltas
+              {hoveredSector && (
+                <span className="ml-2 text-sm text-blue-400">
+                  (Sector {hoveredSector})
+                </span>
+              )}
             </CardTitle>
             {comparisonDriver === 'none' && (
               <p className="text-sm text-gray-400">Select a comparison driver to see sector analysis</p>
             )}
           </CardHeader>
           <CardContent>
-            <div className="h-80">
+            <div className="h-80 relative">
               {sectorDeltas && sectorDeltas.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sectorDeltas} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis 
-                      dataKey="sector" 
-                      tick={{ fill: '#9CA3AF', fontSize: 10 }}
-                      label={{ value: 'Sector Number', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
-                      interval={Math.max(0, Math.floor(sectorDeltas.length / 20))}
-                    />
-                    <YAxis 
-                      tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                      label={{ value: 'Time Delta (s)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
-                      domain={['dataMin', 'dataMax']}
-                      tickFormatter={(value) => `${value.toFixed(3)}s`}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', borderRadius: '8px' }}
-                      labelStyle={{ color: '#FFFFFF' }}
-                      itemStyle={{ color: '#FFFFFF' }}
-                      formatter={(value, name) => {
-                        const delta = Math.abs(value).toFixed(3);
-                        // Fix the logic: negative values mean selectedDriver is faster, positive means comparisonDriver is faster
-                        const faster = value < 0 ? selectedDriver : comparisonDriver;
-                        return [`${faster} faster by ${delta}s`, ''];
-                      }}
-                      labelFormatter={(label) => `Sector ${label}`}
-                    />
-                    <Bar dataKey="timeDelta" name="Sector Advantage">
-                      {sectorDeltas.map((entry, index) => {
-                        // Set opacity based on advantage
-                        const opacity = Math.max(0.6, Math.min(entry.advantage / 5, 0.95));
-                        
-                        // Get the driver colors with same team handling
-                        const fillColor = entry.faster === 'driver1' 
-                          ? primaryColor 
-                          : comparisonColor;
-                        
-                        return (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={fillColor} 
-                            opacity={opacity}
-                          />
-                        );
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+                <>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={sectorDeltas} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis 
+                        dataKey="sector" 
+                        tick={{ fill: '#9CA3AF', fontSize: 10 }}
+                        label={{ value: 'Sector Number', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
+                        interval={Math.max(0, Math.floor(sectorDeltas.length / 20))}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                        label={{ value: 'Time Delta (s)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
+                        domain={['dataMin', 'dataMax']}
+                        tickFormatter={(value) => `${value.toFixed(3)}s`}
+                      />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', borderRadius: '8px' }}
+                        labelStyle={{ color: '#FFFFFF' }}
+                        itemStyle={{ color: '#FFFFFF' }}
+                        formatter={(value, name) => {
+                          const delta = Math.abs(value).toFixed(3);
+                          // Fix the logic: negative values mean selectedDriver is faster, positive means comparisonDriver is faster
+                          const faster = value < 0 ? selectedDriver : comparisonDriver;
+                          return [`${faster} faster by ${delta}s`, ''];
+                        }}
+                        labelFormatter={(label) => `Sector ${label}`}
+                      />
+                      <Bar dataKey="timeDelta" name="Sector Advantage">
+                        {sectorDeltas.map((entry, index) => {
+                          const isHovered = hoveredSector === entry.sector;
+                          
+                          // Set opacity based on advantage and hover state
+                          const baseOpacity = Math.max(0.6, Math.min(entry.advantage / 5, 0.95));
+                          const opacity = isHovered ? 1.0 : baseOpacity;
+                          
+                          // Get the driver colors with same team handling
+                          const fillColor = entry.faster === 'driver1' 
+                            ? primaryColor 
+                            : comparisonColor;
+                          
+                          return (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={fillColor} 
+                              opacity={opacity}
+                              stroke={isHovered ? '#6B7280' : 'none'} // Dark theme stroke
+                              strokeWidth={isHovered ? 2 : 0}
+                              style={{
+                                cursor: 'pointer',
+                                transition: 'opacity 0.15s ease, stroke-width 0.15s ease'
+                              }}
+                              onMouseEnter={() => setHoveredSector(entry.sector)}
+                              onMouseLeave={() => setHoveredSector(null)}
+                            />
+                          );
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray-400">
                   <div className="text-center">
@@ -1192,6 +1240,9 @@ export default function TrackDominanceChart({
               {comparisonDriver !== 'none' ? ` ${comparisonDriver}'s ` : ' comparison driver\'s '} 
               {needsAlternateColorValue ? 'alternate color (white)' : 'team color'} where they had the advantage.
               {needsAlternateColorValue && ` White color is used for better visibility when drivers are from ${getColorChangeReason()}.`}
+            </p>
+            <p>
+              <strong>💡 Interactive:</strong> Hover over any sector on the track map or bar in the chart to highlight the corresponding location on both visualizations.
             </p>
           </div>
         </CardContent>
