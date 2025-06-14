@@ -147,7 +147,7 @@ async function getSeasonOverview(season) {
 }
 
 export default async function SeasonsPage({ params }) {
-  const { season } = params;
+  const { season } = await params;
   const isOverall = season?.toLowerCase() === 'overall';
   const seasonNum = isOverall ? null : parseInt(season);
 

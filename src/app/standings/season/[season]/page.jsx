@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-export default function SeasonStandingsRedirect({ params }) {
-  const { season } = params;
+export default async function SeasonStandingsRedirect({ params }) {
+  const { season } = await params;
   redirect(`/seasons/${season}`);
 }

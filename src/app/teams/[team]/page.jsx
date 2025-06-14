@@ -38,7 +38,7 @@ const normalizeTeamName = (name) => {
 };
 
 export default async function TeamPage({ params }) {
-  const { team } = params;
+  const { team } = await params;
   const teamGamertag = team.trim();
 
   let teamData, teamName, teamId;

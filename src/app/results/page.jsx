@@ -16,13 +16,27 @@ const RECENT_RACES = {
 
 async function findMostRecentRace() {
   try {
-    // Try to fetch the most recent race from the API
-    const response = await fetch('/api/seasons', { cache: 'no-store' });
-    if (response.ok) {
-      const data = await response.json();
-      // If we get data, use the most recent season and a default race
-      if (data.length > 0) {
-        const mostRecentSeason = Math.max(...data.map(s => parseInt(s.season))).toString();
+    // Try to fetch the most recent season from the API
+    const seasonsResponse = await fetch('/api/seasons', { cache: 'no-store' });
+    if (seasonsResponse.ok) {
+      const seasonsData = await seasonsResponse.json();
+      // If we get data, find the most recent season
+      if (seasonsData.length > 0) {
+        const mostRecentSeason = Math.max(...seasonsData.map(s => parseInt(s))).toString();
+        
+        // Now fetch races for that season to find the most recent race
+        const racesResponse = await fetch(`/api/season-races?season=${mostRecentSeason}`, { cache: 'no-store' });
+        if (racesResponse.ok) {
+          const racesData = await racesResponse.json();
+          if (racesData.races && racesData.races.length > 0) {
+            // Get the last race (highest race_number) as the most recent
+            const sortedRaces = racesData.races.sort((a, b) => b.race_number - a.race_number);
+            const mostRecentRace = sortedRaces[0];
+            return { season: mostRecentSeason, race: mostRecentRace.slug };
+          }
+        }
+        
+        // If no races found, use fallback race for that season
         const recentRaces = RECENT_RACES[mostRecentSeason] || ['bahrain'];
         return { season: mostRecentSeason, race: recentRaces[0] };
       }

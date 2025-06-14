@@ -38,7 +38,7 @@ const normalizeDriverName = (name) => {
 };
 
 export default async function DriverPage({ params }) {
-  const { driver } = params;
+  const { driver } = await params;
   const driverGamertag = driver.trim();
 
   let driverData, driverName, driverId;
