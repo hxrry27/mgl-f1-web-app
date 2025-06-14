@@ -264,7 +264,6 @@ async function calculateSeasonStats(season) {
 
       return {
         isOverall: true,
-        gameVersion: 'Multiple',
         totalRaces: parseInt(totalRacesRes.rows[0]?.total || 0),
         totalDrivers: parseInt(totalDriversRes.rows[0]?.total || 0),
         totalTeams: parseInt(totalTeamsRes.rows[0]?.total || 0),
@@ -290,8 +289,7 @@ async function calculateSeasonStats(season) {
             SELECT 
               COUNT(DISTINCT r.id) as total_races,
               COUNT(DISTINCT l.driver_id) as total_drivers,
-              COUNT(DISTINCT l.team_id) as total_teams,
-              MAX(s.game) as game_version
+              COUNT(DISTINCT l.team_id) as total_teams
             FROM races r
             JOIN seasons s ON r.season_id = s.id
             LEFT JOIN lineups l ON s.id = l.season_id
@@ -350,7 +348,6 @@ async function calculateSeasonStats(season) {
         return {
           isOverall: false,
           season: season,
-          gameVersion: seasonInfoRes.rows[0]?.game_version || 'Unknown',
           totalRaces: parseInt(seasonInfoRes.rows[0]?.total_races || 0),
           totalDrivers: parseInt(seasonInfoRes.rows[0]?.total_drivers || 0),
           totalTeams: parseInt(seasonInfoRes.rows[0]?.total_teams || 0),
@@ -373,8 +370,7 @@ async function calculateSeasonStats(season) {
             SELECT 
               COUNT(DISTINCT r.id) as total_races,
               COUNT(DISTINCT rr.driver_id) as total_drivers,
-              COUNT(DISTINCT rr.team_id) as total_teams,
-              MAX(s.game) as game_version
+              COUNT(DISTINCT rr.team_id) as total_teams
             FROM races r
             JOIN seasons s ON r.season_id = s.id
             LEFT JOIN race_results rr ON r.id = rr.race_id
@@ -691,7 +687,6 @@ async function calculateSeasonStats(season) {
         return {
           isOverall: false,
           season: season,
-          gameVersion: seasonInfoRes.rows[0]?.game_version || 'Unknown',
           totalRaces: parseInt(seasonInfoRes.rows[0]?.total_races || 0),
           totalDrivers: parseInt(seasonInfoRes.rows[0]?.total_drivers || 0),
           totalTeams: parseInt(seasonInfoRes.rows[0]?.total_teams || 0),
