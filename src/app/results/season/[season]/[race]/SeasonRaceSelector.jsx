@@ -97,10 +97,46 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
     if (newSeason === currentSeason) return;
     
     setIsChanging(true);
-    const seasonRaces = SEASON_RACES[newSeason] || [];
-    const firstRace = seasonRaces[0] || 'bahrain';
-    const newPath = `/results/season/${newSeason}/${firstRace}`;
-    router.push(newPath);
+    
+    try {
+      // Fetch races for the new season to find the most recent one with results
+      const response = await fetch(`/api/season-races?season=${newSeason}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.races && data.races.length > 0) {
+          // Find the most recent race with results (latest race_number that has results)
+          const racesWithResults = data.races
+            .filter(race => race.has_results)
+            .sort((a, b) => b.race_number - a.race_number); // Sort by race_number descending
+          
+          const targetRace = racesWithResults.length > 0 
+            ? racesWithResults[0].slug  // Most recent race with results
+            : data.races[0].slug;       // Fallback to first race if none have results
+          
+          const newPath = `/results/season/${newSeason}/${targetRace}`;
+          router.push(newPath);
+        } else {
+          // Fallback to hardcoded if API returns no races
+          const seasonRaces = SEASON_RACES[newSeason] || [];
+          const firstRace = seasonRaces[0] || 'bahrain';
+          const newPath = `/results/season/${newSeason}/${firstRace}`;
+          router.push(newPath);
+        }
+      } else {
+        // Fallback to hardcoded if API fails
+        const seasonRaces = SEASON_RACES[newSeason] || [];
+        const firstRace = seasonRaces[0] || 'bahrain';
+        const newPath = `/results/season/${newSeason}/${firstRace}`;
+        router.push(newPath);
+      }
+    } catch (error) {
+      console.error('Error fetching races for season change:', error);
+      // Fallback to hardcoded
+      const seasonRaces = SEASON_RACES[newSeason] || [];
+      const firstRace = seasonRaces[0] || 'bahrain';
+      const newPath = `/results/season/${newSeason}/${firstRace}`;
+      router.push(newPath);
+    }
     
     setTimeout(() => setIsChanging(false), 300);
   };

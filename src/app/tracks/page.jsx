@@ -180,6 +180,31 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
           fill: am5.color("#fbbf24")
         });
 
+        // Add click handler to the circle
+        circle.on("click", function(e) {
+          const dataItem = e.target.dataItem;
+          if (dataItem) {
+            const trackSlug = dataItem.dataContext.slug;
+            onTrackClick(trackSlug);
+          }
+        });
+
+        // Add hover handlers to the circle
+        circle.on("pointerover", function(e) {
+          const dataItem = e.target.dataItem;
+          if (dataItem) {
+            setHoveredTrack({
+              slug: dataItem.dataContext.slug,
+              name: dataItem.dataContext.fullName,
+              country: dataItem.dataContext.name
+            });
+          }
+        });
+
+        circle.on("pointerout", function() {
+          setHoveredTrack(null);
+        });
+
         return am5.Bullet.new(root, {
           sprite: circle
         });
@@ -220,31 +245,6 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
       }));
 
       pointSeries.data.setAll(trackData);
-
-      // Add click and hover handlers to point series
-      pointSeries.mapPoints.template.on("click", function(e) {
-        const dataItem = e.target.dataItem;
-        if (dataItem) {
-          const trackSlug = dataItem.dataContext.slug;
-          onTrackClick(trackSlug);
-        }
-      });
-
-      // Add hover handlers
-      pointSeries.mapPoints.template.on("pointerover", function(e) {
-        const dataItem = e.target.dataItem;
-        if (dataItem) {
-          setHoveredTrack({
-            slug: dataItem.dataContext.slug,
-            name: dataItem.dataContext.fullName,
-            country: dataItem.dataContext.name
-          });
-        }
-      });
-
-      pointSeries.mapPoints.template.on("pointerout", function() {
-        setHoveredTrack(null);
-      });
 
       // Cleanup function
       return () => {

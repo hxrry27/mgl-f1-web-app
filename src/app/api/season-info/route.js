@@ -24,7 +24,7 @@ export async function GET(request) {
 
     // Get season info from database
     const seasonInfoRes = await pool.query(
-      'SELECT season, game, start_date, end_date FROM seasons WHERE season = $1',
+      'SELECT season, game, dates FROM seasons WHERE season = $1',
       [season]
     );
 
@@ -52,8 +52,7 @@ export async function GET(request) {
       season: seasonData.season,
       gameVersion: seasonData.game || 'Unknown',
       status: status,
-      startDate: seasonData.start_date,
-      endDate: seasonData.end_date,
+      dates: seasonData.dates,
       isOverall: false
     });
 
