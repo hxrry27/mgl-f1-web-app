@@ -256,7 +256,7 @@ async function calculateSeasonStats(season) {
               SUM(CASE WHEN rr.penalty_secs_ingame > 0 THEN 1 ELSE 0 END) as penalties,
               SUM(CASE WHEN rr.status = 'Dsq' THEN 1 ELSE 0 END) as dsqs,
               (COUNT(*) - SUM(CASE WHEN rr.status = 'Dnf' THEN 1 ELSE 0 END))::float / COUNT(*) * 100 as finish_rate,
-              AVG(rr.grid_position - COALESCE(rr.adjusted_position, rr.position)) as places_gained
+              AVG(COALESCE(rr.grid_position, 0) - COALESCE(COALESCE(rr.adjusted_position, rr.position), 0)) as places_gained
             FROM race_results rr
             JOIN races r ON rr.race_id = r.id
             JOIN seasons s ON r.season_id = s.id
@@ -353,7 +353,13 @@ async function calculateSeasonStats(season) {
           poles: polesMap.get(driver.driver) || 0,
           finish_streak: 0, // Would need complex calculation
           points_streak: 0, // Would need complex calculation
-          overtakes: 0 // Would need telemetry data
+          overtakes: 0, // Would need telemetry data
+          // Ensure numeric fields are proper numbers
+          avg_position: typeof driver.avg_position === 'number' ? driver.avg_position : null,
+          avg_grid_position: typeof driver.avg_grid_position === 'number' ? driver.avg_grid_position : null,
+          avg_points: typeof driver.avg_points === 'number' ? driver.avg_points : null,
+          places_gained: typeof driver.places_gained === 'number' ? driver.places_gained : null,
+          finish_rate: typeof driver.finish_rate === 'number' ? driver.finish_rate : null
         }));
 
         return {

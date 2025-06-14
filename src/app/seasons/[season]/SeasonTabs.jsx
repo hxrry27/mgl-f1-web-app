@@ -119,10 +119,12 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
           value = driver.fastest_laps || 0; 
           break;
         case 'avgGrid': 
-          value = driver.avg_grid_position ? parseFloat(driver.avg_grid_position).toFixed(1) : 'N/A'; 
+          value = driver.avg_grid_position && typeof driver.avg_grid_position === 'number' ? 
+            parseFloat(driver.avg_grid_position).toFixed(1) : 'N/A'; 
           break;
         case 'avgFinish': 
-          value = driver.avg_position ? parseFloat(driver.avg_position).toFixed(1) : 'N/A'; 
+          value = driver.avg_position && typeof driver.avg_position === 'number' ? 
+            parseFloat(driver.avg_position).toFixed(1) : 'N/A'; 
           break;
         case 'dnfs': 
           value = driver.dnfs || 0; 
@@ -134,18 +136,20 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
           value = driver.dsqs || 0; 
           break;
         case 'avgPoints': 
-          value = driver.avg_points ? parseFloat(driver.avg_points).toFixed(1) : '0.0'; 
+          value = driver.avg_points && typeof driver.avg_points === 'number' ? 
+            parseFloat(driver.avg_points).toFixed(1) : '0.0'; 
           break;
         case 'placesGained': 
-          value = driver.places_gained ? 
+          value = driver.places_gained && typeof driver.places_gained === 'number' ? 
             (driver.places_gained >= 0 ? `+${driver.places_gained.toFixed(1)}` : driver.places_gained.toFixed(1)) : 
             '0.0'; 
           break;
         case 'overtakes': 
-          value = driver.overtakes ? driver.overtakes.toFixed(1) : '0.0'; 
+          value = driver.overtakes && typeof driver.overtakes === 'number' ? driver.overtakes.toFixed(1) : '0.0'; 
           break;
         case 'finishRate': 
-          value = driver.finish_rate ? `${Math.round(driver.finish_rate)}%` : '0%'; 
+          value = driver.finish_rate && typeof driver.finish_rate === 'number' ? 
+            `${Math.round(driver.finish_rate)}%` : '0%'; 
           break;
         case 'finishStreak': 
           value = driver.finish_streak || 0; 
