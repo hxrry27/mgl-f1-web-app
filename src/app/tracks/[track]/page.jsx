@@ -631,9 +631,7 @@ export default async function TrackPage({ params }) {
               <div className="space-y-2">
                 {topDrivers.map((driver, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                    </span>
+                    <span className="text-blue-500 font-bold w-4">#{index + 1}</span>
                     <span className="text-white font-medium">{driver.driver}</span>
                     <span className="text-gray-400">({driver.points} pts)</span>
                   </div>
@@ -657,9 +655,7 @@ export default async function TrackPage({ params }) {
               <div className="space-y-2">
                 {topTeams.map((team, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                    </span>
+                    <span className="text-red-500 font-bold w-4">#{index + 1}</span>
                     <span className="text-white font-medium">{team.team}</span>
                     <span className="text-gray-400">({team.points} pts)</span>
                   </div>
@@ -683,9 +679,7 @@ export default async function TrackPage({ params }) {
               <div className="space-y-2">
                 {topPoleDrivers.map((driver, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                    </span>
+                    <span className="text-purple-500 font-bold w-4">#{index + 1}</span>
                     <span className="text-white font-medium">{driver.driver}</span>
                     <span className="text-gray-400">({driver.poles} poles)</span>
                   </div>
@@ -709,9 +703,7 @@ export default async function TrackPage({ params }) {
               <div className="space-y-2">
                 {topPodiumDrivers.map((driver, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                    </span>
+                    <span className="text-amber-500 font-bold w-4">#{index + 1}</span>
                     <span className="text-white font-medium">{driver.driver}</span>
                     <span className="text-gray-400">({driver.podiums} podiums)</span>
                   </div>
@@ -773,9 +765,7 @@ export default async function TrackPage({ params }) {
               <div className="space-y-2">
                 {topPitDrivers.map((driver, index) => (
                   <div key={index} className="flex items-center gap-2">
-                    <span className="text-lg">
-                      {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                    </span>
+                    <span className="text-cyan-500 font-bold w-4">#{index + 1}</span>
                     <span className="text-white font-medium">{driver.driver}</span>
                     <span className="text-gray-400">({driver.pits} pit stops)</span>
                   </div>
