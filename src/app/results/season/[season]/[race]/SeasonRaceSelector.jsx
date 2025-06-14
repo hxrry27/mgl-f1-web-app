@@ -52,10 +52,45 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isChanging, setIsChanging] = useState(false);
-  const [availableRaces, setAvailableRaces] = useState(SEASON_RACES[currentSeason] || []);
+  const [availableRaces, setAvailableRaces] = useState([]);
+  const [raceData, setRaceData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setAvailableRaces(SEASON_RACES[currentSeason] || []);
+    const fetchRaces = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`/api/season-races?season=${currentSeason}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.races && data.races.length > 0) {
+            // Sort races by race_number to ensure correct order
+            const sortedRaces = data.races.sort((a, b) => a.race_number - b.race_number);
+            setRaceData(sortedRaces);
+            setAvailableRaces(sortedRaces.map(race => race.slug));
+          } else {
+            // Fallback to hardcoded races if no API data
+            setAvailableRaces(SEASON_RACES[currentSeason] || []);
+            setRaceData([]);
+          }
+        } else {
+          // Fallback to hardcoded races
+          setAvailableRaces(SEASON_RACES[currentSeason] || []);
+          setRaceData([]);
+        }
+      } catch (error) {
+        console.error('Error fetching races:', error);
+        // Fallback to hardcoded races
+        setAvailableRaces(SEASON_RACES[currentSeason] || []);
+        setRaceData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentSeason) {
+      fetchRaces();
+    }
   }, [currentSeason]);
 
   const handleSeasonChange = async (newSeason) => {
@@ -73,6 +108,12 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
   const handleRaceChange = async (newRace) => {
     if (newRace === currentRace) return;
     
+    // Check if race has results before allowing navigation
+    const raceInfo = raceData.find(race => race.slug === newRace);
+    if (raceInfo && !raceInfo.has_results) {
+      return; // Don't navigate to upcoming races
+    }
+    
     setIsChanging(true);
     const newPath = `/results/season/${currentSeason}/${newRace}`;
     router.push(newPath);
@@ -81,22 +122,26 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
   };
 
   const navigateRace = (direction) => {
-    const currentRaceIndex = availableRaces.indexOf(currentRace);
+    // Only navigate to races that have results
+    const racesWithResults = raceData.filter(race => race.has_results).map(race => race.slug);
+    const currentRaceIndex = racesWithResults.indexOf(currentRace);
     let newIndex;
     
     if (direction === 'next') {
-      newIndex = Math.min(currentRaceIndex + 1, availableRaces.length - 1);
+      newIndex = Math.min(currentRaceIndex + 1, racesWithResults.length - 1);
     } else {
       newIndex = Math.max(currentRaceIndex - 1, 0);
     }
     
-    if (newIndex !== currentRaceIndex) {
-      handleRaceChange(availableRaces[newIndex]);
+    if (newIndex !== currentRaceIndex && newIndex >= 0 && newIndex < racesWithResults.length) {
+      handleRaceChange(racesWithResults[newIndex]);
     }
   };
 
-  const canGoBack = availableRaces.indexOf(currentRace) > 0;
-  const canGoForward = availableRaces.indexOf(currentRace) < availableRaces.length - 1;
+  // Only consider races with results for navigation
+  const racesWithResults = raceData.filter(race => race.has_results).map(race => race.slug);
+  const canGoBack = racesWithResults.indexOf(currentRace) > 0;
+  const canGoForward = racesWithResults.indexOf(currentRace) < racesWithResults.length - 1;
 
   return (
     <div className="flex items-center gap-4 p-4 bg-gray-900/50 border border-gray-700/60 rounded-lg backdrop-blur-sm">
@@ -162,11 +207,26 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-gray-800 border-gray-600">
-              {availableRaces.map((race) => (
-                <SelectItem key={race} value={race} className="text-white">
-                  {trackNames[race] || race}
-                </SelectItem>
-              ))}
+              {availableRaces.map((race) => {
+                const raceInfo = raceData.find(r => r.slug === race);
+                const hasResults = raceInfo?.has_results !== false; // Default to true for fallback data
+                
+                return (
+                  <SelectItem 
+                    key={race} 
+                    value={race} 
+                    className={cn(
+                      "transition-colors",
+                      hasResults 
+                        ? "text-white hover:bg-gray-700" 
+                        : "text-gray-500 cursor-not-allowed opacity-60"
+                    )}
+                    disabled={!hasResults}
+                  >
+                    {trackNames[race] || race}{!hasResults && ' (Upcoming)'}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
 

@@ -221,17 +221,8 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
 
       pointSeries.data.setAll(trackData);
 
-      // Add click handlers
-      pointSeries.mapPointImages.template.onPrivate("maskRectangle", function() {
-        this.animate({
-          key: "rotation",
-          to: 360,
-          duration: 1000,
-          easing: am5.ease.out(am5.ease.cubic)
-        });
-      });
-
-      pointSeries.mapPointImages.template.on("click", function(e) {
+      // Add click and hover handlers to point series
+      pointSeries.mapPoints.template.on("click", function(e) {
         const dataItem = e.target.dataItem;
         if (dataItem) {
           const trackSlug = dataItem.dataContext.slug;
@@ -240,7 +231,7 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
       });
 
       // Add hover handlers
-      pointSeries.mapPointImages.template.on("pointerover", function(e) {
+      pointSeries.mapPoints.template.on("pointerover", function(e) {
         const dataItem = e.target.dataItem;
         if (dataItem) {
           setHoveredTrack({
@@ -251,7 +242,7 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
         }
       });
 
-      pointSeries.mapPointImages.template.on("pointerout", function() {
+      pointSeries.mapPoints.template.on("pointerout", function() {
         setHoveredTrack(null);
       });
 

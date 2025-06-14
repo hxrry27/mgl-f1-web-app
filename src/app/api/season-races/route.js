@@ -9,45 +9,67 @@ const pool = require('../../../lib/db');
 async function computeSeasonRacesFromDatabase(season) {
   console.log(`Computing races for season ${season}`);
  
-  // Modified query to ONLY find races that have data in session_race_mapping
+  // Get season ID first
+  const seasonResult = await pool.query(
+    'SELECT id FROM seasons WHERE season = $1',
+    [season]
+  );
+  
+  if (seasonResult.rows.length === 0) {
+    return {
+      races: [],
+      message: "Season not found"
+    };
+  }
+  
+  const seasonId = seasonResult.rows[0].id;
+  
+  // Get ALL races for the season, with information about whether they have results
   const racesResult = await pool.query(`
-    SELECT DISTINCT
+    SELECT 
       r.id,
       t.name,
       t.slug,
       r.date,
-      r.race_number
+      r.race_number,
+      CASE 
+        WHEN srm.race_id IS NOT NULL THEN true
+        WHEN rr.race_id IS NOT NULL THEN true
+        ELSE false
+      END as has_results
     FROM
       races r
     JOIN
       tracks t ON r.track_id = t.id
-    JOIN
+    LEFT JOIN
       session_race_mapping srm ON srm.race_id = r.id
+    LEFT JOIN
+      race_results rr ON rr.race_id = r.id
     WHERE
       r.season_id = $1
+    GROUP BY r.id, t.name, t.slug, r.date, r.race_number, srm.race_id
     ORDER BY
       r.race_number ASC
-  `, [season]);
+  `, [seasonId]);
 
-  // ADD THIS LOGGING:
   console.log(`🔍 Database query returned ${racesResult.rows.length} races:`);
   console.log('Race details:', racesResult.rows.map(r => ({ 
     race_number: r.race_number, 
     name: r.name, 
-    slug: r.slug 
+    slug: r.slug,
+    has_results: r.has_results
   })));
  
-  // If no races found with session mappings, return empty array with a message
   if (racesResult.rows.length === 0) {
-    console.log(`No races with telemetry data found for season ${season}`);
+    console.log(`No races found for season ${season}`);
    
     return {
       races: [],
-      message: "No races with telemetry data found for this season"
+      message: "No races found for this season"
     };
   }
  
-  console.log(`Found ${racesResult.rows.length} races with telemetry data for season ${season}`);
+  console.log(`Found ${racesResult.rows.length} races for season ${season}`);
  
   return {
     races: racesResult.rows
