@@ -116,15 +116,14 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
   const chartRef = useRef(null);
   const rootRef = useRef(null);
   const chartInstanceRef = useRef(null);
-  const router = useRouter();
 
-  // Define zoom bounds for each region
+  // Define camera positions for each region (flat map coordinates)
   const regionBounds = {
-    'All': { longitude: 0, latitude: 20, zoomLevel: 1.2 },
-    'Europe': { longitude: 10, latitude: 54, zoomLevel: 4 },
-    'Middle East': { longitude: 45, latitude: 25, zoomLevel: 5 },
-    'Asia Pacific': { longitude: 120, latitude: 10, zoomLevel: 3 },
-    'Americas': { longitude: -90, latitude: 20, zoomLevel: 3 }
+    'All': { centerX: 0, centerY: 0, zoomLevel: 1 },
+    'Europe': { centerX: -50, centerY: 150, zoomLevel: 3.5 },
+    'Middle East': { centerX: -200, centerY: 50, zoomLevel: 4 },
+    'Asia Pacific': { centerX: -400, centerY: -50, zoomLevel: 2.5 },
+    'Americas': { centerX: 200, centerY: 0, zoomLevel: 2.8 }
   };
 
   useEffect(() => {
@@ -139,14 +138,16 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
         am5themes_Dark.new(root)
       ]);
 
-      // Create the map chart
+      // Create the map chart with flat projection
       const chart = root.container.children.push(
         am5map.MapChart.new(root, {
-          panX: "rotateX",
+          panX: "translateX",
           panY: "translateY",
-          projection: am5map.geoMercator(),
-          homeZoomLevel: 1.2,
-          homeGeoPoint: { longitude: 0, latitude: 20 }
+          projection: am5map.geoEquirectangular(),
+          wheelable: false,
+          zoomLevel: 1,
+          translateX: 0,
+          translateY: 0
         })
       );
       
@@ -197,6 +198,7 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
           const dataItem = e.target.dataItem;
           if (dataItem) {
             const trackSlug = dataItem.dataContext.slug;
+            console.log('Track clicked:', trackSlug);
             onTrackClick(trackSlug);
           }
         });
@@ -272,15 +274,17 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
   useEffect(() => {
     if (chartInstanceRef.current && regionBounds[selectedRegion]) {
       const bounds = regionBounds[selectedRegion];
+      
+      // Animate to new position
       chartInstanceRef.current.animate({
-        key: "rotationX",
-        to: -bounds.longitude,
+        key: "translateX",
+        to: bounds.centerX,
         duration: 1000,
         easing: am5.ease.out(am5.ease.cubic)
       });
       chartInstanceRef.current.animate({
-        key: "rotationY", 
-        to: -bounds.latitude,
+        key: "translateY",
+        to: bounds.centerY,
         duration: 1000,
         easing: am5.ease.out(am5.ease.cubic)
       });
