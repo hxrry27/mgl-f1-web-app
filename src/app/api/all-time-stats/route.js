@@ -157,15 +157,16 @@ export async function GET() {
 
       raceResults.forEach(row => {
         const effectivePosition = row.adjusted_position !== null ? row.adjusted_position : row.position;
+        const statusUpper = row.status ? row.status.toUpperCase() : '';
         
         // Count finished races and positions for average
-        if (row.status !== 'DNF' && row.status !== 'DSQ' && row.status !== 'DNS') {
+        if (!['DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED', 'DNS'].includes(statusUpper)) {
           finishedRaces++;
           totalPositions += effectivePosition;
         }
 
-        // Count DNFs
-        if (row.status === 'DNF') {
+        // Count DNFs using case-insensitive matching
+        if (['DNF', 'DID NOT FINISH', 'RETIRED'].includes(statusUpper)) {
           careerDNFs++;
         }
         
