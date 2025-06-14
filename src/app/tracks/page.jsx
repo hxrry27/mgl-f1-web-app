@@ -112,19 +112,9 @@ const trackCountries = {
 // F1 Car SVG path for animation
 const f1CarPath = "M12,2C13.1,2 14,2.9 14,4C14,5.1 13.1,6 12,6C10.9,6 10,5.1 10,4C10,2.9 10.9,2 12,2M21,9V7L15,5.5C14.8,4.1 13.8,3 12.5,3C11.2,3 10.2,4.1 10,5.5L4,7V9H1V11H4L6,19H8L10,11H14L16,19H18L20,11H23V9H21Z";
 
-function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRegion }) {
+function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
   const chartRef = useRef(null);
   const rootRef = useRef(null);
-  const chartInstanceRef = useRef(null);
-
-  // Define camera positions for each region (flat map coordinates)
-  const regionBounds = {
-    'All': { centerX: 0, centerY: 0, zoomLevel: 1 },
-    'Europe': { centerX: -50, centerY: 150, zoomLevel: 3.5 },
-    'Middle East': { centerX: -200, centerY: 50, zoomLevel: 4 },
-    'Asia Pacific': { centerX: -400, centerY: -50, zoomLevel: 2.5 },
-    'Americas': { centerX: 200, centerY: 0, zoomLevel: 2.8 }
-  };
 
   useEffect(() => {
     if (chartRef.current && !rootRef.current) {
@@ -138,21 +128,15 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
         am5themes_Dark.new(root)
       ]);
 
-      // Create the map chart with flat projection
+      // Create the map chart with simple flat projection
       const chart = root.container.children.push(
         am5map.MapChart.new(root, {
           panX: "translateX",
           panY: "translateY",
           projection: am5map.geoEquirectangular(),
-          wheelable: false,
-          zoomLevel: 1,
-          translateX: 0,
-          translateY: 0
+          panBehavior: "move"
         })
       );
-      
-      // Store chart instance for later use
-      chartInstanceRef.current = chart;
 
       // Create main polygon series for countries
       const polygonSeries = chart.series.push(
@@ -175,38 +159,49 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
         am5map.MapPointSeries.new(root, {})
       );
 
-      // Style the track markers
+      // Style the track markers with a more modern icon
       pointSeries.bullets.push(function() {
-        const circle = am5.Circle.new(root, {
-          radius: 8,
-          fill: am5.color("#3b82f6"),
+        // Create a rounded rectangle pin-style marker
+        const pin = am5.RoundedRectangle.new(root, {
+          width: 20,
+          height: 20,
+          cornerRadiusTL: 10,
+          cornerRadiusTR: 10,
+          cornerRadiusBL: 10,
+          cornerRadiusBR: 0, // Sharp bottom point like a map pin
+          fill: am5.color("#ef4444"),
           stroke: am5.color("#ffffff"),
           strokeWidth: 2,
           cursorOverStyle: "pointer",
-          tooltipText: "{name}",
-          scale: 1
+          tooltipText: "{fullName}",
+          centerX: am5.p50,
+          centerY: am5.p100
         });
 
         // Add hover effects
-        circle.states.create("hover", {
-          scale: 1.3,
+        pin.states.create("hover", {
+          scale: 1.2,
           fill: am5.color("#fbbf24")
         });
 
-        // Add click handler to the circle
-        circle.on("click", function(e) {
+        // Add click handler directly to the bullet
+        const bullet = am5.Bullet.new(root, {
+          sprite: pin
+        });
+
+        bullet.on("click", function(e) {
           const dataItem = e.target.dataItem;
-          if (dataItem) {
+          if (dataItem && dataItem.dataContext) {
             const trackSlug = dataItem.dataContext.slug;
             console.log('Track clicked:', trackSlug);
             onTrackClick(trackSlug);
           }
         });
 
-        // Add hover handlers to the circle
-        circle.on("pointerover", function(e) {
+        // Add hover handlers to the bullet
+        bullet.on("pointerover", function(e) {
           const dataItem = e.target.dataItem;
-          if (dataItem) {
+          if (dataItem && dataItem.dataContext) {
             setHoveredTrack({
               slug: dataItem.dataContext.slug,
               name: dataItem.dataContext.fullName,
@@ -215,42 +210,15 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
           }
         });
 
-        circle.on("pointerout", function() {
+        bullet.on("pointerout", function() {
           setHoveredTrack(null);
         });
 
-        return am5.Bullet.new(root, {
-          sprite: circle
-        });
+        return bullet;
       });
 
-      // Add F1 car bullet for animation
-      const f1CarBullet = pointSeries.bullets.push(function() {
-        const f1Car = am5.Graphics.new(root, {
-          svgPath: f1CarPath,
-          fill: am5.color("#ef4444"),
-          stroke: am5.color("#ffffff"),
-          strokeWidth: 1,
-          scale: 0.8,
-          centerX: am5.p50,
-          centerY: am5.p50,
-          visible: false
-        });
-
-        return am5.Bullet.new(root, {
-          sprite: f1Car
-        });
-      });
-
-      // Filter tracks based on selected region
-      const filteredTracks = selectedRegion === 'All' 
-        ? trackLocations 
-        : Object.fromEntries(
-            Object.entries(trackLocations).filter(([, data]) => data.region === selectedRegion)
-          );
-
-      // Add track data points
-      const trackData = Object.entries(filteredTracks).map(([slug, location]) => ({
+      // Add all track data points
+      const trackData = Object.entries(trackLocations).map(([slug, location]) => ({
         geometry: { type: "Point", coordinates: [location.lng, location.lat] },
         name: trackCountries[slug],
         fullName: trackNames[slug],
@@ -268,34 +236,7 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
         }
       };
     }
-  }, [selectedRegion, onTrackClick, setHoveredTrack]);
-
-  // Handle region zoom changes
-  useEffect(() => {
-    if (chartInstanceRef.current && regionBounds[selectedRegion]) {
-      const bounds = regionBounds[selectedRegion];
-      
-      // Animate to new position
-      chartInstanceRef.current.animate({
-        key: "translateX",
-        to: bounds.centerX,
-        duration: 1000,
-        easing: am5.ease.out(am5.ease.cubic)
-      });
-      chartInstanceRef.current.animate({
-        key: "translateY",
-        to: bounds.centerY,
-        duration: 1000,
-        easing: am5.ease.out(am5.ease.cubic)
-      });
-      chartInstanceRef.current.animate({
-        key: "zoomLevel",
-        to: bounds.zoomLevel,
-        duration: 1000,
-        easing: am5.ease.out(am5.ease.cubic)
-      });
-    }
-  }, [selectedRegion]);
+  }, [onTrackClick, setHoveredTrack]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -313,24 +254,13 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
 export default function TracksPage() {
   const router = useRouter();
   const [hoveredTrack, setHoveredTrack] = useState(null);
-  const [selectedRegion, setSelectedRegion] = useState('All');
 
   const handleTrackClick = (trackSlug) => {
+    console.log('handleTrackClick called with:', trackSlug);
     router.push(`/tracks/${trackSlug}`);
   };
 
-  const regions = ['All', 'Europe', 'Middle East', 'Asia Pacific', 'Americas'];
-  
-  const getTracksByRegion = (region) => {
-    return Object.entries(trackLocations)
-      .filter(([, data]) => data.region === region)
-      .map(([slug]) => slug);
-  };
-
   const totalTracks = Object.keys(trackLocations).length;
-  const europeTracks = getTracksByRegion('Europe').length;
-  const americasTracks = getTracksByRegion('Americas').length;
-  const asiaPacificTracks = getTracksByRegion('Asia Pacific').length + getTracksByRegion('Middle East').length;
 
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-900/30 min-h-screen">
@@ -343,27 +273,9 @@ export default function TracksPage() {
         <p className="text-gray-400 text-lg">
           Click on any track location to explore detailed statistics and information
         </p>
-      </div>
-
-      {/* Region Filter */}
-      <div className="flex justify-center mb-8">
-        <div className="flex gap-2 p-2 bg-gray-900/50 border border-gray-700/60 rounded-lg backdrop-blur-sm">
-          {regions.map((region) => (
-            <Button
-              key={region}
-              onClick={() => setSelectedRegion(region)}
-              variant={selectedRegion === region ? "default" : "ghost"}
-              size="sm"
-              className={`${
-                selectedRegion === region
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              {region}
-            </Button>
-          ))}
-        </div>
+        <p className="text-gray-500 text-sm mt-2">
+          {totalTracks} circuits worldwide
+        </p>
       </div>
 
       {/* Interactive World Map */}
@@ -374,7 +286,6 @@ export default function TracksPage() {
               onTrackClick={handleTrackClick}
               hoveredTrack={hoveredTrack}
               setHoveredTrack={setHoveredTrack}
-              selectedRegion={selectedRegion}
             />
           </CardContent>
         </Card>
@@ -396,79 +307,24 @@ export default function TracksPage() {
         )}
       </div>
 
-      {/* Quick Stats Bar */}
+      {/* Quick Stats */}
       <div className="mb-8">
         <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
           <CardContent className="p-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Trophy className="w-5 h-5 text-yellow-500" />
-                  <div className="text-2xl font-bold text-white">{totalTracks}</div>
-                </div>
-                <div className="text-gray-400 text-sm">Total Circuits</div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Trophy className="w-6 h-6 text-yellow-500" />
+                <div className="text-3xl font-bold text-white">{totalTracks}</div>
               </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Flag className="w-5 h-5 text-blue-500" />
-                  <div className="text-2xl font-bold text-white">{europeTracks}</div>
-                </div>
-                <div className="text-gray-400 text-sm">European Tracks</div>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <Calendar className="w-5 h-5 text-green-500" />
-                  <div className="text-2xl font-bold text-white">{americasTracks}</div>
-                </div>
-                <div className="text-gray-400 text-sm">American Tracks</div>
-              </div>
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <MapPin className="w-5 h-5 text-purple-500" />
-                  <div className="text-2xl font-bold text-white">{asiaPacificTracks}</div>
-                </div>
-                <div className="text-gray-400 text-sm">Asia-Pacific & Middle East</div>
-              </div>
+              <div className="text-gray-400">Formula 1 Circuits Worldwide</div>
+              <p className="text-gray-500 text-sm mt-2">
+                From Monaco's tight streets to Monza's high speeds
+              </p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Regional Track Lists - Compact Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {regions.slice(1).map((region) => (
-          <Card key={region} className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg text-white">
-                <MapPin className="h-4 w-4 text-blue-500" />
-                {region}
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {getTracksByRegion(region).length}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-1 max-h-64 overflow-y-auto">
-              {getTracksByRegion(region).map((trackSlug) => (
-                <Button
-                  key={trackSlug}
-                  variant="ghost"
-                  onClick={() => handleTrackClick(trackSlug)}
-                  className="w-full justify-start text-left p-2 h-auto hover:bg-gray-800/50 transition-colors group"
-                >
-                  <div className="flex flex-col items-start gap-1">
-                    <div className="text-white text-sm font-medium group-hover:text-blue-400 transition-colors">
-                      {trackCountries[trackSlug]}
-                    </div>
-                    <div className="text-gray-400 text-xs truncate w-full">
-                      {trackNames[trackSlug]}
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
     </div>
   );
 }
