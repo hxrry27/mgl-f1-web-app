@@ -201,6 +201,7 @@ export async function GET() {
 
     return NextResponse.json({
       isOverall: true,
+      gameVersion: 'Multiple',
       driverStats: driverStatsWithStreaks,
       totalDrivers: driverStatsWithStreaks.length
     }, {

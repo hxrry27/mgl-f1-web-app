@@ -73,6 +73,12 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   };
 
   const getGameVersion = () => {
+    // Use game version from API if available, otherwise fallback to hardcoded logic
+    if (seasonStats?.gameVersion) {
+      return seasonStats.gameVersion;
+    }
+    
+    // Fallback logic for when API data isn't loaded yet
     if (isOverall) return 'Multiple';
     const seasonNum = parseInt(season);
     if (seasonNum <= 8) return 'F1 23';
