@@ -230,16 +230,39 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
 
       pointSeries.data.setAll(trackData);
 
-      // Alternative approach: Add a series-level click handler as backup
-      pointSeries.mapPoints.template.set("interactive", true);
-      pointSeries.mapPoints.template.on("click", function(e) {
-        console.log("MapPoint template clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem && dataItem.dataContext) {
-          const trackSlug = dataItem.dataContext.slug;
-          console.log('Track clicked via template:', trackSlug);
-          onTrackClick(trackSlug);
-        }
+      // Wait for series to be ready, then add click handlers to each data item
+      pointSeries.onPrivate("maskRectangle", function() {
+        pointSeries.dataItems.forEach(function(dataItem) {
+          const bullet = dataItem.bullets[0];
+          if (bullet && bullet.get("sprite")) {
+            const sprite = bullet.get("sprite");
+            sprite.set("interactive", true);
+            sprite.set("cursorOverStyle", "pointer");
+            
+            sprite.on("click", function(e) {
+              console.log("Sprite clicked directly!", e);
+              if (dataItem.dataContext) {
+                const trackSlug = dataItem.dataContext.slug;
+                console.log('Track clicked via sprite:', trackSlug);
+                onTrackClick(trackSlug);
+              }
+            });
+
+            sprite.on("pointerover", function(e) {
+              if (dataItem.dataContext) {
+                setHoveredTrack({
+                  slug: dataItem.dataContext.slug,
+                  name: dataItem.dataContext.fullName,
+                  country: dataItem.dataContext.name
+                });
+              }
+            });
+
+            sprite.on("pointerout", function() {
+              setHoveredTrack(null);
+            });
+          }
+        });
       });
 
       // Cleanup function
