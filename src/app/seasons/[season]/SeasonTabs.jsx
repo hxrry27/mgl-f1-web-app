@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -63,7 +63,7 @@ function StatCard({ title, winner, allData, season, isUpcoming }) {
 }
 
 // Season Overview Tab Component
-function SeasonOverview({ overviewStats, season, isOverall }) {
+function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   const getSeasonStatus = () => {
     if (isOverall) return 'All-Time';
     const seasonNum = parseInt(season);
@@ -86,46 +86,87 @@ function SeasonOverview({ overviewStats, season, isOverall }) {
   };
 
   const isUpcoming = getSeasonStatus() === 'Upcoming';
+  
+  // Get season winner/leader from real data
+  const getSeasonWinner = () => {
+    if (isOverall) return 'Multiple';
+    if (isUpcoming) return 'TBD';
+    if (seasonStats?.driverStats?.length > 0) {
+      return seasonStats.driverStats[0].driver;
+    }
+    return 'Unknown';
+  };
 
-  // Mock data for the stat cards - this would come from the new season stats API
-  const generateMockStatData = (statName) => {
-    if (isUpcoming) return [];
+  // Generate stat data from real season statistics
+  const generateStatData = (statName, seasonStats) => {
+    if (isUpcoming || !seasonStats?.driverStats) return [];
     
-    const drivers = [
-      { name: 'Harry Davies', team: 'McLaren' },
-      { name: 'Max Wilson', team: 'Red Bull' },
-      { name: 'Jake Thompson', team: 'Ferrari' },
-      { name: 'Sarah Miller', team: 'Mercedes' },
-      { name: 'Tom Wilson', team: 'Aston Martin' },
-      { name: 'Mike Johnson', team: 'Alpine' },
-      { name: 'Alex Brown', team: 'Williams' },
-      { name: 'Chris Davis', team: 'Haas' },
-      { name: 'Emma Clark', team: 'Sauber' },
-      { name: 'Ryan Taylor', team: 'RB' }
-    ];
-
-    // Generate realistic values based on stat type
-    return drivers.map((driver, index) => {
+    const driverStats = seasonStats.driverStats;
+    
+    return driverStats.map(driver => {
       let value;
       switch (statName) {
-        case 'wins': value = Math.max(0, 5 - index); break;
-        case 'podiums': value = Math.max(0, 8 - index); break;
-        case 'poles': value = Math.max(0, 6 - index); break;
-        case 'fastestLaps': value = Math.max(0, 4 - Math.floor(index/2)); break;
-        case 'avgGrid': value = (3.2 + index * 1.1).toFixed(1); break;
-        case 'avgFinish': value = (4.1 + index * 1.3).toFixed(1); break;
-        case 'dnfs': value = Math.min(5, Math.floor(index/2)); break;
-        case 'penalties': value = Math.min(10, index + 2); break;
-        case 'dsqs': value = Math.min(3, Math.floor(index/3)); break;
-        case 'avgPoints': value = (25 - index * 2.5).toFixed(1); break;
-        case 'placesGained': value = `+${(2.8 - index * 0.3).toFixed(1)}`; break;
-        case 'overtakes': value = (4.2 - index * 0.4).toFixed(1); break;
-        case 'finishRate': value = `${Math.max(60, 92 - index * 3)}%`; break;
-        case 'finishStreak': value = Math.max(1, 8 - index); break;
-        case 'pointsStreak': value = Math.max(1, 7 - index); break;
-        default: value = index + 1;
+        case 'wins': 
+          value = driver.wins || 0; 
+          break;
+        case 'podiums': 
+          value = driver.podiums || 0; 
+          break;
+        case 'poles': 
+          value = driver.poles || 0; 
+          break;
+        case 'fastestLaps': 
+          value = driver.fastest_laps || 0; 
+          break;
+        case 'avgGrid': 
+          value = driver.avg_grid_position ? parseFloat(driver.avg_grid_position).toFixed(1) : 'N/A'; 
+          break;
+        case 'avgFinish': 
+          value = driver.avg_position ? parseFloat(driver.avg_position).toFixed(1) : 'N/A'; 
+          break;
+        case 'dnfs': 
+          value = driver.dnfs || 0; 
+          break;
+        case 'penalties': 
+          value = driver.penalties || 0; 
+          break;
+        case 'dsqs': 
+          value = driver.dsqs || 0; 
+          break;
+        case 'avgPoints': 
+          value = driver.avg_points ? parseFloat(driver.avg_points).toFixed(1) : '0.0'; 
+          break;
+        case 'placesGained': 
+          value = driver.places_gained ? 
+            (driver.places_gained >= 0 ? `+${driver.places_gained.toFixed(1)}` : driver.places_gained.toFixed(1)) : 
+            '0.0'; 
+          break;
+        case 'overtakes': 
+          value = driver.overtakes ? driver.overtakes.toFixed(1) : '0.0'; 
+          break;
+        case 'finishRate': 
+          value = driver.finish_rate ? `${Math.round(driver.finish_rate)}%` : '0%'; 
+          break;
+        case 'finishStreak': 
+          value = driver.finish_streak || 0; 
+          break;
+        case 'pointsStreak': 
+          value = driver.points_streak || 0; 
+          break;
+        default: 
+          value = 0;
       }
-      return { ...driver, value };
+      return { 
+        name: driver.driver, 
+        team: driver.team, 
+        value 
+      };
+    }).sort((a, b) => {
+      // Sort appropriately based on stat type
+      if (['avgGrid', 'avgFinish', 'dnfs', 'penalties', 'dsqs'].includes(statName)) {
+        return parseFloat(a.value) - parseFloat(b.value); // Ascending for "bad" stats
+      }
+      return parseFloat(b.value) - parseFloat(a.value); // Descending for "good" stats
     });
   };
 
@@ -197,7 +238,7 @@ function SeasonOverview({ overviewStats, season, isOverall }) {
               </div>
             </div>
             <h3 className="text-2xl font-bold text-white mb-1">
-              {isOverall ? 'Multiple' : isUpcoming ? 'TBD' : 'Harry Davies'}
+              {getSeasonWinner()}
             </h3>
             <p className="text-gray-400 text-sm">{getCurrentLeaderLabel()}</p>
           </CardContent>
@@ -222,106 +263,151 @@ function SeasonOverview({ overviewStats, season, isOverall }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <StatCard 
                 title="Most Wins" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (5)"} 
-                allData={generateMockStatData('wins')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const winsData = generateStatData('wins', seasonStats);
+                  return winsData.length > 0 ? `${winsData[0].name} (${winsData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('wins', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most Podiums" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (8)"} 
-                allData={generateMockStatData('podiums')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const podiumsData = generateStatData('podiums', seasonStats);
+                  return podiumsData.length > 0 ? `${podiumsData[0].name} (${podiumsData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('podiums', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most Fastest Laps" 
-                winner={isUpcoming ? "N/A" : "Max Wilson (4)"} 
-                allData={generateMockStatData('fastestLaps')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const fastestLapsData = generateStatData('fastestLaps', seasonStats);
+                  return fastestLapsData.length > 0 ? `${fastestLapsData[0].name} (${fastestLapsData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('fastestLaps', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most Poles" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (6)"} 
-                allData={generateMockStatData('poles')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const polesData = generateStatData('poles', seasonStats);
+                  return polesData.length > 0 ? `${polesData[0].name} (${polesData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('poles', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Best Avg Grid Position" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (3.2)"} 
-                allData={generateMockStatData('avgGrid')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const avgGridData = generateStatData('avgGrid', seasonStats);
+                  return avgGridData.length > 0 ? `${avgGridData[0].name} (${avgGridData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('avgGrid', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Best Avg Finish Position" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (4.1)"} 
-                allData={generateMockStatData('avgFinish')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const avgFinishData = generateStatData('avgFinish', seasonStats);
+                  return avgFinishData.length > 0 ? `${avgFinishData[0].name} (${avgFinishData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('avgFinish', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most DNFs" 
-                winner={isUpcoming ? "N/A" : "Jake Thompson (3)"} 
-                allData={generateMockStatData('dnfs')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const dnfsData = generateStatData('dnfs', seasonStats);
+                  return dnfsData.length > 0 ? `${dnfsData[0].name} (${dnfsData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('dnfs', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most Penalties" 
-                winner={isUpcoming ? "N/A" : "Mike Johnson (7)"} 
-                allData={generateMockStatData('penalties')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const penaltiesData = generateStatData('penalties', seasonStats);
+                  return penaltiesData.length > 0 ? `${penaltiesData[0].name} (${penaltiesData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('penalties', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most DSQs" 
-                winner={isUpcoming ? "N/A" : "Alex Brown (2)"} 
-                allData={generateMockStatData('dsqs')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const dsqsData = generateStatData('dsqs', seasonStats);
+                  return dsqsData.length > 0 ? `${dsqsData[0].name} (${dsqsData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('dsqs', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Best Avg Points" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (12.4)"} 
-                allData={generateMockStatData('avgPoints')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const avgPointsData = generateStatData('avgPoints', seasonStats);
+                  return avgPointsData.length > 0 ? `${avgPointsData[0].name} (${avgPointsData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('avgPoints', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most Avg Places Gained" 
-                winner={isUpcoming ? "N/A" : "Sarah Miller (+2.8)"} 
-                allData={generateMockStatData('placesGained')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const placesGainedData = generateStatData('placesGained', seasonStats);
+                  return placesGainedData.length > 0 ? `${placesGainedData[0].name} (${placesGainedData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('placesGained', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Most Avg Overtakes" 
-                winner={isUpcoming ? "N/A" : "Tom Wilson (4.2)"} 
-                allData={generateMockStatData('overtakes')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const overtakesData = generateStatData('overtakes', seasonStats);
+                  return overtakesData.length > 0 ? `${overtakesData[0].name} (${overtakesData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('overtakes', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Best Finish Rate" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (92%)"} 
-                allData={generateMockStatData('finishRate')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const finishRateData = generateStatData('finishRate', seasonStats);
+                  return finishRateData.length > 0 ? `${finishRateData[0].name} (${finishRateData[0].value})` : "No Data";
+                })()} 
+                allData={generateStatData('finishRate', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Max Finish Streak" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (8 races)"} 
-                allData={generateMockStatData('finishStreak')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const finishStreakData = generateStatData('finishStreak', seasonStats);
+                  return finishStreakData.length > 0 ? `${finishStreakData[0].name} (${finishStreakData[0].value} races)` : "No Data";
+                })()} 
+                allData={generateStatData('finishStreak', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
               <StatCard 
                 title="Max Points Streak" 
-                winner={isUpcoming ? "N/A" : "Harry Davies (7 races)"} 
-                allData={generateMockStatData('pointsStreak')} 
+                winner={isUpcoming ? "N/A" : (() => {
+                  const pointsStreakData = generateStatData('pointsStreak', seasonStats);
+                  return pointsStreakData.length > 0 ? `${pointsStreakData[0].name} (${pointsStreakData[0].value} races)` : "No Data";
+                })()} 
+                allData={generateStatData('pointsStreak', seasonStats)} 
                 season={season} 
                 isUpcoming={isUpcoming} 
               />
@@ -464,6 +550,35 @@ export default function SeasonTabs({
   availableSeasons = []
 }) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [seasonStats, setSeasonStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsError, setStatsError] = useState(null);
+
+  // Fetch season statistics when component mounts or season changes
+  useEffect(() => {
+    const fetchSeasonStats = async () => {
+      setStatsLoading(true);
+      setStatsError(null);
+      
+      try {
+        const response = await fetch(`/api/season-stats?season=${season}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setSeasonStats(data);
+      } catch (err) {
+        console.error('Error fetching season stats:', err);
+        setStatsError(err.message);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    if (season) {
+      fetchSeasonStats();
+    }
+  }, [season]);
 
   // Provide fallback data when there's an error
   const fallbackData = {
@@ -571,6 +686,7 @@ export default function SeasonTabs({
               overviewStats={fallbackData.overviewStats}
               season={season}
               isOverall={isOverall}
+              seasonStats={seasonStats}
             />
           </TabsContent>
 
