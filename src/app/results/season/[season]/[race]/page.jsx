@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Clock } from 'lucide-react';
 import pool from '@/lib/db';
 import { teamColors, lightTeams } from '@/lib/data';
+import SeasonRaceSelector from './SeasonRaceSelector';
 
 const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
@@ -214,7 +215,12 @@ export default async function RaceResultsPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto px-4 max-w-6xl">
+    <div className="container mx-auto px-4 max-w-7xl">
+      {/* Season and Race Selector */}
+      <div className="flex justify-end mb-6">
+        <SeasonRaceSelector currentSeason={season} currentRace={race} />
+      </div>
+      
       <h1 className="text-3xl font-bold text-white text-center mb-6 flex items-center justify-center gap-2">
         <Trophy className="text-yellow-500 h-6 w-6" />
         {raceName} - Season {season}
