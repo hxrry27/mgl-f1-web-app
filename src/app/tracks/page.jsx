@@ -185,6 +185,21 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           fill: am5.color("#fbbf24")
         });
 
+        // Add click handler directly to the circle sprite
+        circle.on("click", function(e) {
+          console.log("Circle clicked!", e);
+          const dataItem = e.target.dataItem;
+          if (dataItem) {
+            const trackSlug = dataItem.get("id");
+            const url = dataItem.get("url");
+            console.log('Track clicked:', trackSlug, 'URL:', url);
+            
+            if (trackSlug) {
+              onTrackClick(trackSlug);
+            }
+          }
+        });
+
         return am5.Bullet.new(root, {
           sprite: circle
         });
@@ -207,27 +222,6 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
       }));
 
       pointSeries.data.setAll(trackData);
-
-      // Enable automatic URL handling by am5 (if this works, we don't need manual click handlers)
-      pointSeries.set("clickTarget", "url");
-      
-      // But also add manual click handler as backup
-      pointSeries.on("click", function(e) {
-        console.log("Point series clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem) {
-          // Try to get the URL from the data
-          const url = dataItem.get("url");
-          const trackSlug = dataItem.get("id") || dataItem.get("slug");
-          
-          console.log('Track clicked:', trackSlug, 'URL:', url);
-          
-          // Use Next.js router for SPA navigation instead of page reload
-          if (trackSlug) {
-            onTrackClick(trackSlug);
-          }
-        }
-      });
 
       // Add hover handlers with proper data access
       pointSeries.on("pointerover", function(e) {
