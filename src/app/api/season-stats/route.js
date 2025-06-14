@@ -23,10 +23,21 @@ async function calculateSeasonStats(season) {
         
         // Overall driver stats combining legacy and modern seasons
         pool.query(`
-          WITH legacy_stats AS (
+          WITH legacy_driver_teams AS (
             SELECT 
               d.name as driver,
-              t.name as team,
+              STRING_AGG(DISTINCT t.name, ', ' ORDER BY t.name) as teams
+            FROM standings s
+            JOIN drivers d ON s.driver_id = d.id
+            JOIN teams t ON s.team_id = t.id
+            JOIN seasons se ON s.season_id = se.id
+            WHERE s.type = 'drivers' AND se.season::int BETWEEN 1 AND 7
+            GROUP BY d.name
+          ),
+          legacy_stats AS (
+            SELECT 
+              d.name as driver,
+              ldt.teams as team,
               SUM(s.points) as total_points,
               COUNT(*) as race_count,
               SUM(CASE WHEN s.position = 1 THEN 1 ELSE 0 END) as wins,
@@ -34,15 +45,27 @@ async function calculateSeasonStats(season) {
               AVG(s.position) as avg_position
             FROM standings s
             JOIN drivers d ON s.driver_id = d.id
-            JOIN teams t ON s.team_id = t.id
+            JOIN legacy_driver_teams ldt ON d.name = ldt.driver
             JOIN seasons se ON s.season_id = se.id
             WHERE s.type = 'drivers' AND se.season::int BETWEEN 1 AND 7
-            GROUP BY d.name, t.name
+            GROUP BY d.name, ldt.teams
+          ),
+          modern_driver_teams AS (
+            SELECT 
+              d.name as driver,
+              STRING_AGG(DISTINCT t.name, ', ' ORDER BY t.name) as teams
+            FROM race_results rr
+            JOIN races r ON rr.race_id = r.id
+            JOIN seasons s ON r.season_id = s.id
+            JOIN drivers d ON rr.driver_id = d.id
+            JOIN teams t ON rr.team_id = t.id
+            WHERE s.season::int >= 8
+            GROUP BY d.name
           ),
           modern_stats AS (
             SELECT
               d.name as driver,
-              t.name as team,
+              mdt.teams as team,
               COUNT(*) as race_count,
               SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) = 1 THEN 1 ELSE 0 END) as wins,
               SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) <= 3 THEN 1 ELSE 0 END) as podiums,
@@ -54,9 +77,14 @@ async function calculateSeasonStats(season) {
             JOIN races r ON rr.race_id = r.id
             JOIN seasons s ON r.season_id = s.id
             JOIN drivers d ON rr.driver_id = d.id
-            JOIN teams t ON rr.team_id = t.id
+            JOIN modern_driver_teams mdt ON d.name = mdt.driver
             WHERE s.season::int >= 8
-            GROUP BY d.name, t.name
+            GROUP BY d.name, mdt.teams
+          ),
+          all_driver_teams AS (
+            SELECT driver, team FROM legacy_stats
+            UNION
+            SELECT driver, team FROM modern_stats
           )
           SELECT 
             COALESCE(l.driver, m.driver) as driver,
@@ -68,7 +96,7 @@ async function calculateSeasonStats(season) {
             (COALESCE(l.avg_position * l.race_count, 0) + COALESCE(m.avg_position * m.race_count, 0)) / 
             NULLIF(COALESCE(l.race_count, 0) + COALESCE(m.race_count, 0), 0) as avg_position
           FROM legacy_stats l
-          FULL OUTER JOIN modern_stats m ON l.driver = m.driver AND l.team = m.team
+          FULL OUTER JOIN modern_stats m ON l.driver = m.driver
           ORDER BY total_points DESC, wins DESC
         `),
         
@@ -232,9 +260,21 @@ async function calculateSeasonStats(season) {
           `, [season]),
           
           pool.query(`
+            WITH driver_team_info AS (
+              SELECT 
+                d.name as driver,
+                STRING_AGG(DISTINCT t.name, ', ' ORDER BY t.name) as teams
+              FROM race_results rr
+              JOIN races r ON rr.race_id = r.id
+              JOIN seasons s ON r.season_id = s.id
+              JOIN drivers d ON rr.driver_id = d.id
+              JOIN teams t ON rr.team_id = t.id
+              WHERE s.season = $1
+              GROUP BY d.name
+            )
             SELECT 
               d.name as driver,
-              t.name as team,
+              dti.teams as team,
               COUNT(*) as races_entered,
               SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) = 1 THEN 1 ELSE 0 END) as wins,
               SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) <= 3 THEN 1 ELSE 0 END) as podiums,
@@ -261,9 +301,9 @@ async function calculateSeasonStats(season) {
             JOIN races r ON rr.race_id = r.id
             JOIN seasons s ON r.season_id = s.id
             JOIN drivers d ON rr.driver_id = d.id
-            JOIN teams t ON rr.team_id = t.id
+            JOIN driver_team_info dti ON d.name = dti.driver
             WHERE s.season = $1
-            GROUP BY d.name, t.name
+            GROUP BY d.name, dti.teams
             ORDER BY points DESC, wins DESC
           `, [season]),
           
