@@ -37,7 +37,7 @@ export default async function TrackPage({ params }) {
   console.log(`Looking up track with slug: ${track}`);
 
   let trackInfo, rawResults, lapHistoryData;
-  let fastestLap, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
+  let previousWinners, fastestLap, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
   let topDrivers = [], topTeams = [], topPoleDrivers = [], topPodiumDrivers = [], topPitDrivers = [];
   let databaseError = false;
 
@@ -228,7 +228,7 @@ export default async function TrackPage({ params }) {
   );
 
   // Previous Winners
-  const previousWinners = significantResults
+  previousWinners = significantResults
     .filter(result => result.winner)
     .map(result => ({
       driver: result.winner,
