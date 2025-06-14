@@ -37,7 +37,7 @@ export default async function TrackPage({ params }) {
   console.log(`Looking up track with slug: ${track}`);
 
   let trackInfo, rawResults, lapHistoryData;
-  let previousWinners, fastestLap, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
+  let previousWinners, fastestLap, top3FastestLaps, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
   let topDrivers = [], topTeams = [], topPoleDrivers = [], topPodiumDrivers = [], topPitDrivers = [];
   let databaseError = false;
 
@@ -158,6 +158,7 @@ export default async function TrackPage({ params }) {
   // Process results into historical data
   const historicalResults = [];
   const seasonMap = new Map();
+  const allFastestLaps = []; // Collect all fastest laps across all seasons
 
   // First process the race_results data
   rawResults.forEach(row => {
@@ -178,6 +179,19 @@ export default async function TrackPage({ params }) {
     if (row.grid_position === 1) {
       seasonData.pole = row.driver;
     }
+    
+    // Collect ALL fastest lap times for later ranking
+    if (row.fastest_lap_time_int && row.fastest_lap_time_int > 0) {
+      allFastestLaps.push({
+        driver: row.driver,
+        time: row.fastest_lap_time_int,
+        season,
+        team: row.team,
+        source: 'race_results'
+      });
+    }
+
+    // Also keep the per-season fastest lap for historical results display
     if (row.fastest_lap_time_int && row.fastest_lap_time_int > 0 && (!seasonData.fastestLap || row.fastest_lap_time_int < seasonData.fastestLap.time)) {
       seasonData.fastestLap = {
         driver: row.driver,
@@ -197,7 +211,19 @@ export default async function TrackPage({ params }) {
     }
     const seasonData = seasonMap.get(season);
 
-    // Compare with existing fastest lap (if any)
+    // Collect ALL fastest lap times for later ranking
+    if (lap.fastest_lap_time > 0) {
+      allFastestLaps.push({
+        driver: lap.driver,
+        time: lap.fastest_lap_time,
+        season,
+        team: lap.team,
+        source: 'lap_history_bulk_data',
+        session_uid: lap.session_uid
+      });
+    }
+
+    // Compare with existing fastest lap (if any) for per-season display
     if (lap.fastest_lap_time > 0 && (!seasonData.fastestLap || lap.fastest_lap_time < seasonData.fastestLap.time)) {
       seasonData.fastestLap = {
         driver: lap.driver,
@@ -236,24 +262,21 @@ export default async function TrackPage({ params }) {
       season: `${result.season}`,
     }));
 
-  // Fastest Historical Race Lap
-  const fastestLap = significantResults
-    .filter(result => result.fastestLapData && result.fastestLapData.time > 0)
-    .reduce((fastest, result) => {
-      // Convert time to a number to ensure correct comparison
-      const time = Number(result.fastestLapData.time);
-      if (!fastest || time < fastest.rawTime) {
-        return {
-          driver: result.fastestLapData.driver,
-          time: formatTime(result.fastestLapData.time),
-          rawTime: time, // Store as number
-          season: result.fastestLapData.season,
-          team: result.fastestLapData.team,
-          source: result.fastestLapData.source || 'race_results'
-        };
-      }
-      return fastest;
-    }, null);
+  // Get top 3 fastest laps overall across all seasons
+  top3FastestLaps = allFastestLaps
+    .sort((a, b) => a.time - b.time) // Sort by time ascending (fastest first)
+    .slice(0, 3) // Take top 3
+    .map(lap => ({
+      driver: lap.driver,
+      time: formatTime(lap.time),
+      rawTime: lap.time,
+      season: lap.season,
+      team: lap.team,
+      source: lap.source
+    }));
+
+  // For backward compatibility, keep the fastest lap as the first one
+  const fastestLap = top3FastestLaps.length > 0 ? top3FastestLaps[0] : null;
 
   // Most Poles - Top 3
   const poleCounts = significantResults.reduce((acc, result) => {
@@ -379,6 +402,13 @@ export default async function TrackPage({ params }) {
       season: '2024',
       team: 'Red Bull Racing'
     };
+
+    // Test data for top 3 fastest laps
+    top3FastestLaps = [
+      { driver: 'Max Verstappen', time: '1:32.567', season: '2024', team: 'Red Bull Racing' },
+      { driver: 'Lewis Hamilton', time: '1:32.789', season: '2023', team: 'Mercedes' },
+      { driver: 'Charles Leclerc', time: '1:33.124', season: '2024', team: 'Ferrari' }
+    ];
     
     // Create test data objects for fallback
     topDrivers = [
@@ -660,27 +690,36 @@ export default async function TrackPage({ params }) {
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <Timer className="h-5 w-5 text-green-500" />
-              <CardTitle className="text-md font-semibold text-white">Fastest Race Lap</CardTitle>
+              <CardTitle className="text-md font-semibold text-white">Fastest Race Laps</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            {fastestLap ? (
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-white">{fastestLap.driver}</span>
-                <Badge 
-                  className="font-medium"
-                  style={{ 
-                    backgroundColor: teamColors[fastestLap.team] || '#444',
-                    color: lightTeams.includes(fastestLap.team) ? 'black' : 'white' 
-                  }}
-                >
-                  {fastestLap.team}
-                </Badge>
-                <span className="text-gray-300">{fastestLap.time}</span>
-                <span className="text-gray-500 text-sm">(S{fastestLap.season})</span>
+            {top3FastestLaps && top3FastestLaps.length > 0 ? (
+              <div className="space-y-2">
+                {top3FastestLaps.map((lap, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 font-bold w-4">#{index + 1}</span>
+                      <span className="font-medium text-white">{lap.driver}</span>
+                      <Badge 
+                        className="font-medium"
+                        style={{ 
+                          backgroundColor: teamColors[lap.team] || '#444',
+                          color: lightTeams.includes(lap.team) ? 'black' : 'white' 
+                        }}
+                      >
+                        {lap.team}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-300 font-mono">{lap.time}</span>
+                      <span className="text-gray-500 text-sm">(S{lap.season})</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              <p className="text-gray-400">No fastest lap recorded.</p>
+              <p className="text-gray-400">No fastest laps recorded.</p>
             )}
           </CardContent>
         </Card>
