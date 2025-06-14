@@ -119,11 +119,11 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
           value = driver.fastest_laps || 0; 
           break;
         case 'avgGrid': 
-          value = driver.avg_grid_position && typeof driver.avg_grid_position === 'number' ? 
+          value = driver.avg_grid_position != null && !isNaN(parseFloat(driver.avg_grid_position)) ? 
             parseFloat(driver.avg_grid_position).toFixed(1) : 'N/A'; 
           break;
         case 'avgFinish': 
-          value = driver.avg_position && typeof driver.avg_position === 'number' ? 
+          value = driver.avg_position != null && !isNaN(parseFloat(driver.avg_position)) ? 
             parseFloat(driver.avg_position).toFixed(1) : 'N/A'; 
           break;
         case 'dnfs': 

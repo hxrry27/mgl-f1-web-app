@@ -278,14 +278,14 @@ async function calculateSeasonStats(season) {
               COUNT(*) as races_entered,
               SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) = 1 THEN 1 ELSE 0 END) as wins,
               SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) <= 3 THEN 1 ELSE 0 END) as podiums,
-              SUM(CASE WHEN rr.status = 'Dnf' THEN 1 ELSE 0 END) as dnfs,
+              SUM(CASE WHEN UPPER(rr.status) IN ('DNF', 'DID NOT FINISH', 'RETIRED') THEN 1 ELSE 0 END) as dnfs,
               SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) <= 10 
                        THEN CASE COALESCE(rr.adjusted_position, rr.position)
                             WHEN 1 THEN 25 WHEN 2 THEN 18 WHEN 3 THEN 15 WHEN 4 THEN 12 WHEN 5 THEN 10
                             WHEN 6 THEN 8 WHEN 7 THEN 6 WHEN 8 THEN 4 WHEN 9 THEN 2 WHEN 10 THEN 1
                             ELSE 0 END
                        ELSE 0 END) as points,
-              AVG(CASE WHEN rr.status != 'Dnf' AND rr.status != 'Dsq' 
+              AVG(CASE WHEN UPPER(rr.status) NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
                        THEN COALESCE(rr.adjusted_position, rr.position)::float 
                        ELSE NULL END) as avg_position,
               AVG(rr.grid_position::float) as avg_grid_position,
@@ -296,9 +296,9 @@ async function calculateSeasonStats(season) {
                             ELSE 0 END
                        ELSE 0 END) as avg_points,
               SUM(CASE WHEN rr.penalty_secs_ingame > 0 THEN 1 ELSE 0 END) as penalties,
-              SUM(CASE WHEN rr.status = 'Dsq' THEN 1 ELSE 0 END) as dsqs,
-              (SUM(CASE WHEN rr.status != 'Dnf' AND rr.status != 'Dsq' THEN 1 ELSE 0 END)::float / COUNT(*)) * 100 as finish_rate,
-              AVG(CASE WHEN rr.status != 'Dnf' AND rr.status != 'Dsq' AND rr.grid_position IS NOT NULL
+              SUM(CASE WHEN UPPER(rr.status) IN ('DSQ', 'DISQUALIFIED') THEN 1 ELSE 0 END) as dsqs,
+              (SUM(CASE WHEN UPPER(rr.status) NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') THEN 1 ELSE 0 END)::float / COUNT(*)) * 100 as finish_rate,
+              AVG(CASE WHEN UPPER(rr.status) NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') AND rr.grid_position IS NOT NULL
                        THEN (rr.grid_position - COALESCE(rr.adjusted_position, rr.position))::float
                        ELSE NULL END) as places_gained
             FROM race_results rr
@@ -391,20 +391,36 @@ async function calculateSeasonStats(season) {
           polesMap.set(row.driver, row.poles);
         });
 
-        const enhancedDriverStats = driverStatsRes.rows.map(driver => ({
-          ...driver,
-          fastest_laps: fastestLapMap.get(driver.driver) || 0,
-          poles: polesMap.get(driver.driver) || 0,
-          finish_streak: 0, // Would need complex calculation
-          points_streak: 0, // Would need complex calculation
-          overtakes: 0, // Would need telemetry data
-          // Ensure numeric fields are proper numbers
-          avg_position: typeof driver.avg_position === 'number' ? driver.avg_position : null,
-          avg_grid_position: typeof driver.avg_grid_position === 'number' ? driver.avg_grid_position : null,
-          avg_points: typeof driver.avg_points === 'number' ? driver.avg_points : null,
-          places_gained: typeof driver.places_gained === 'number' ? driver.places_gained : null,
-          finish_rate: typeof driver.finish_rate === 'number' ? driver.finish_rate : null
-        }));
+        const enhancedDriverStats = driverStatsRes.rows.map(driver => {
+          // Debug logging for problematic drivers
+          if (driver.driver && driver.driver.toLowerCase().includes('max')) {
+            console.log(`DEBUG - Max driver stats:`, {
+              driver: driver.driver,
+              dnfs: driver.dnfs,
+              avg_position: driver.avg_position,
+              avg_grid_position: driver.avg_grid_position,
+              status: typeof driver.dnfs
+            });
+          }
+          
+          return {
+            ...driver,
+            fastest_laps: fastestLapMap.get(driver.driver) || 0,
+            poles: polesMap.get(driver.driver) || 0,
+            finish_streak: 0, // Would need complex calculation
+            points_streak: 0, // Would need complex calculation
+            overtakes: 0, // Would need telemetry data
+            // Ensure numeric fields are proper numbers
+            avg_position: driver.avg_position != null ? parseFloat(driver.avg_position) : null,
+            avg_grid_position: driver.avg_grid_position != null ? parseFloat(driver.avg_grid_position) : null,
+            avg_points: typeof driver.avg_points === 'number' ? driver.avg_points : null,
+            places_gained: driver.places_gained != null ? parseFloat(driver.places_gained) : null,
+            finish_rate: driver.finish_rate != null ? parseFloat(driver.finish_rate) : null,
+            dnfs: parseInt(driver.dnfs) || 0,
+            penalties: parseInt(driver.penalties) || 0,
+            dsqs: parseInt(driver.dsqs) || 0
+          };
+        });
 
         return {
           isOverall: false,
