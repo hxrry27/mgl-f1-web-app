@@ -115,7 +115,17 @@ const f1CarPath = "M12,2C13.1,2 14,2.9 14,4C14,5.1 13.1,6 12,6C10.9,6 10,5.1 10,
 function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRegion }) {
   const chartRef = useRef(null);
   const rootRef = useRef(null);
+  const chartInstanceRef = useRef(null);
   const router = useRouter();
+
+  // Define zoom bounds for each region
+  const regionBounds = {
+    'All': { longitude: 0, latitude: 20, zoomLevel: 1.2 },
+    'Europe': { longitude: 10, latitude: 54, zoomLevel: 4 },
+    'Middle East': { longitude: 45, latitude: 25, zoomLevel: 5 },
+    'Asia Pacific': { longitude: 120, latitude: 10, zoomLevel: 3 },
+    'Americas': { longitude: -90, latitude: 20, zoomLevel: 3 }
+  };
 
   useEffect(() => {
     if (chartRef.current && !rootRef.current) {
@@ -139,6 +149,9 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
           homeGeoPoint: { longitude: 0, latitude: 20 }
         })
       );
+      
+      // Store chart instance for later use
+      chartInstanceRef.current = chart;
 
       // Create main polygon series for countries
       const polygonSeries = chart.series.push(
@@ -153,7 +166,6 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
         fill: am5.color("#374151"),
         stroke: am5.color("#1f2937"),
         strokeWidth: 0.5,
-        tooltipText: "{name}",
         interactive: false
       });
 
@@ -255,6 +267,31 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack, selectedRe
       };
     }
   }, [selectedRegion, onTrackClick, setHoveredTrack]);
+
+  // Handle region zoom changes
+  useEffect(() => {
+    if (chartInstanceRef.current && regionBounds[selectedRegion]) {
+      const bounds = regionBounds[selectedRegion];
+      chartInstanceRef.current.animate({
+        key: "rotationX",
+        to: -bounds.longitude,
+        duration: 1000,
+        easing: am5.ease.out(am5.ease.cubic)
+      });
+      chartInstanceRef.current.animate({
+        key: "rotationY", 
+        to: -bounds.latitude,
+        duration: 1000,
+        easing: am5.ease.out(am5.ease.cubic)
+      });
+      chartInstanceRef.current.animate({
+        key: "zoomLevel",
+        to: bounds.zoomLevel,
+        duration: 1000,
+        easing: am5.ease.out(am5.ease.cubic)
+      });
+    }
+  }, [selectedRegion]);
 
   // Cleanup on unmount
   useEffect(() => {

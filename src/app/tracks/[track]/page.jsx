@@ -37,7 +37,7 @@ export default async function TrackPage({ params }) {
   console.log(`Looking up track with slug: ${track}`);
 
   let trackInfo, rawResults, lapHistoryData;
-  let previousWinners, fastestLap, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
+  let fastestLap, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
   let topDrivers = [], topTeams = [], topPoleDrivers = [], topPodiumDrivers = [], topPitDrivers = [];
   let databaseError = false;
 
@@ -525,7 +525,7 @@ export default async function TrackPage({ params }) {
             </div>
           </CardHeader>
           <CardContent>
-            {previousWinners.length > 0 ? (
+            {previousWinners && previousWinners.length > 0 ? (
               <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
                 {previousWinners.map((win, index) => (
                   <div key={index} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
