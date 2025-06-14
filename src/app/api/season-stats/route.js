@@ -231,9 +231,9 @@ async function calculateSeasonStats(season) {
             ms.max_points_streak,
             cs.current_finish_streak,
             cs.current_points_streak,
-            CASE WHEN ms.max_finish_streak = cs.current_finish_streak AND cs.current_finish_streak > 0 
+            CASE WHEN cs.current_finish_streak > 0 AND cs.current_finish_streak = ms.max_finish_streak
                  THEN true ELSE false END as finish_streak_ongoing,
-            CASE WHEN ms.max_points_streak = cs.current_points_streak AND cs.current_points_streak > 0 
+            CASE WHEN cs.current_points_streak > 0 AND cs.current_points_streak = ms.max_points_streak
                  THEN true ELSE false END as points_streak_ongoing
           FROM max_streaks ms
           JOIN current_streaks cs ON ms.driver = cs.driver
@@ -635,9 +635,9 @@ async function calculateSeasonStats(season) {
             ms.max_points_streak,
             cs.current_finish_streak,
             cs.current_points_streak,
-            CASE WHEN ms.max_finish_streak = cs.current_finish_streak AND cs.current_finish_streak > 0 
+            CASE WHEN cs.current_finish_streak > 0 AND cs.current_finish_streak = ms.max_finish_streak
                  THEN true ELSE false END as finish_streak_ongoing,
-            CASE WHEN ms.max_points_streak = cs.current_points_streak AND cs.current_points_streak > 0 
+            CASE WHEN cs.current_points_streak > 0 AND cs.current_points_streak = ms.max_points_streak
                  THEN true ELSE false END as points_streak_ongoing
           FROM max_streaks ms
           JOIN current_streaks cs ON ms.driver = cs.driver
