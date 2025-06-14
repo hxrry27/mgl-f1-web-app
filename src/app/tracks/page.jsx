@@ -134,7 +134,9 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           panX: "translateX",
           panY: "translateY",
           projection: am5map.geoEquirectangular(),
-          panBehavior: "move"
+          panBehavior: "move",
+          wheelable: true,
+          pinchZoom: true
         })
       );
 
@@ -159,55 +161,62 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         am5map.MapPointSeries.new(root, {})
       );
 
-      // Style the track markers with proper click handling
+      // Create clickable bullets with the simplest approach
       pointSeries.bullets.push(function() {
-        // Create a simple circle that we know works
         const circle = am5.Circle.new(root, {
-          radius: 10,
+          radius: 12,
           fill: am5.color("#ef4444"),
           stroke: am5.color("#ffffff"),
-          strokeWidth: 2,
+          strokeWidth: 3,
           cursorOverStyle: "pointer",
-          tooltipText: "{fullName}"
+          tooltipText: "{fullName}",
+          interactive: true,
+          focusable: true
         });
 
         // Add hover effects
         circle.states.create("hover", {
-          scale: 1.3,
+          scale: 1.4,
           fill: am5.color("#fbbf24")
         });
 
-        return am5.Bullet.new(root, {
-          sprite: circle
-        });
-      });
-
-      // Add click handler to the point series itself (more reliable)
-      pointSeries.onPrivate("maskRectangle", function() {
-        // This ensures the series is ready
-        pointSeries.mapPoints.template.on("click", function(e) {
-          const dataItem = e.target.dataItem;
-          if (dataItem && dataItem.dataContext) {
-            const trackSlug = dataItem.dataContext.slug;
-            console.log('Point clicked:', trackSlug);
-            onTrackClick(trackSlug);
-          }
+        // Create bullet
+        const bullet = am5.Bullet.new(root, {
+          sprite: circle,
+          dynamic: true
         });
 
-        pointSeries.mapPoints.template.on("pointerover", function(e) {
-          const dataItem = e.target.dataItem;
-          if (dataItem && dataItem.dataContext) {
-            setHoveredTrack({
-              slug: dataItem.dataContext.slug,
-              name: dataItem.dataContext.fullName,
-              country: dataItem.dataContext.name
-            });
-          }
+        // Add click event directly to circle
+        circle.onPrivate("visible", function() {
+          circle.on("click", function(e) {
+            console.log("Circle clicked!", e);
+            const dataItem = circle.dataItem;
+            if (dataItem && dataItem.dataContext) {
+              const trackSlug = dataItem.dataContext.slug;
+              console.log('Track clicked via circle:', trackSlug);
+              onTrackClick(trackSlug);
+            } else {
+              console.log("No dataContext found:", dataItem);
+            }
+          });
+
+          circle.on("pointerover", function(e) {
+            const dataItem = circle.dataItem;
+            if (dataItem && dataItem.dataContext) {
+              setHoveredTrack({
+                slug: dataItem.dataContext.slug,
+                name: dataItem.dataContext.fullName,
+                country: dataItem.dataContext.name
+              });
+            }
+          });
+
+          circle.on("pointerout", function() {
+            setHoveredTrack(null);
+          });
         });
 
-        pointSeries.mapPoints.template.on("pointerout", function() {
-          setHoveredTrack(null);
-        });
+        return bullet;
       });
 
       // Add all track data points
@@ -220,6 +229,18 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
       }));
 
       pointSeries.data.setAll(trackData);
+
+      // Alternative approach: Add a series-level click handler as backup
+      pointSeries.mapPoints.template.set("interactive", true);
+      pointSeries.mapPoints.template.on("click", function(e) {
+        console.log("MapPoint template clicked!", e);
+        const dataItem = e.target.dataItem;
+        if (dataItem && dataItem.dataContext) {
+          const trackSlug = dataItem.dataContext.slug;
+          console.log('Track clicked via template:', trackSlug);
+          onTrackClick(trackSlug);
+        }
+      });
 
       // Cleanup function
       return () => {
