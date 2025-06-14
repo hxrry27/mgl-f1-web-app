@@ -84,15 +84,20 @@ export default function SeasonSelector({ currentSeason, availableSeasons = [] })
             isChanging && "opacity-50"
           )}>
             <SelectValue>
-              {currentSeason === 'overall' ? 'All-Time' : `Season ${currentSeason}`}
+              {currentSeason === 'overall' ? 'All-Time' : 
+               currentSeason === 'all-seasons' ? 'All Seasons' : 
+               `Season ${currentSeason}`}
             </SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-gray-800 border-gray-600">
             <SelectItem value="overall" className="text-white">
               All-Time
             </SelectItem>
+            <SelectItem value="all-seasons" className="text-white">
+              All Seasons
+            </SelectItem>
             {availableSeasons
-              .filter(season => season !== 'overall')
+              .filter(season => season !== 'overall' && season !== 'all-seasons')
               .sort((a, b) => parseInt(b) - parseInt(a))
               .map((season) => (
                 <SelectItem key={season} value={season} className="text-white">

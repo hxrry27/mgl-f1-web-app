@@ -10,11 +10,11 @@ async function getAvailableSeasons() {
   try {
     const seasonsRes = await pool.query('SELECT season FROM seasons ORDER BY CAST(season AS INTEGER)');
     const seasons = seasonsRes.rows.map(row => row.season);
-    return ['overall', ...seasons];
+    return ['overall', 'all-seasons', ...seasons];
   } catch (error) {
     console.error('Error fetching seasons:', error);
     // Fallback to known seasons
-    return ['overall', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+    return ['overall', 'all-seasons', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   }
 }
 

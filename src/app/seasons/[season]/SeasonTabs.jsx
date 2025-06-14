@@ -66,6 +66,7 @@ function StatCard({ title, winner, allData, season, isUpcoming }) {
 function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   const getSeasonStatus = () => {
     if (isOverall) return 'All-Time';
+    if (season === 'all-seasons') return 'All Seasons';
     const seasonNum = parseInt(season);
     if (seasonNum < 11) return 'Finished';
     if (seasonNum === 11) return 'Active';
@@ -73,7 +74,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   };
 
   const getGameVersion = () => {
-    if (isOverall) return 'Multiple';
+    if (isOverall || season === 'all-seasons') return 'Multiple';
     const seasonNum = parseInt(season);
     if (seasonNum <= 8) return 'F1 23';
     if (seasonNum <= 10) return 'F1 24';
@@ -89,7 +90,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   
   // Get season winner/leader from real data
   const getSeasonWinner = () => {
-    if (isOverall) return 'Multiple';
+    if (isOverall || season === 'all-seasons') return 'Multiple';
     if (isUpcoming) return 'TBD';
     if (seasonStats?.driverStats?.length > 0) {
       return seasonStats.driverStats[0].driver;
@@ -180,12 +181,16 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-white mb-2">
-          {isOverall ? 'All-Time Overview' : `Season ${season} Overview`}
+          {isOverall ? 'All-Time Overview' : 
+           season === 'all-seasons' ? 'All Seasons Overview' : 
+           `Season ${season} Overview`}
         </h2>
         <p className="text-gray-400">
           {isOverall 
             ? 'Complete statistics across all MGL F1 seasons' 
-            : `Complete statistics for Season ${season}`
+            : season === 'all-seasons'
+              ? 'Collective statistics for all drivers across all seasons'
+              : `Complete statistics for Season ${season}`
           }
         </p>
       </div>
@@ -252,7 +257,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
       </div>
 
       {/* Season Statistics */}
-      {!isOverall && (
+      {!isOverall && season !== 'all-seasons' && (
         <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
@@ -260,7 +265,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
               Season {season} Statistics
               {!isUpcoming && (
                 <span className="text-sm text-gray-400 font-normal ml-2">
-                  (Click any stat to see full rankings)
+                  (Click any stat to see full rankings • Min. 5 races required)
                 </span>
               )}
             </CardTitle>
@@ -271,7 +276,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most Wins" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const winsData = generateStatData('wins', seasonStats);
-                  return winsData.length > 0 ? `${winsData[0].name} (${winsData[0].value})` : "No Data";
+                  return winsData.length > 0 ? `${winsData[0].name} (${winsData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('wins', seasonStats)} 
                 season={season} 
@@ -281,7 +286,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most Podiums" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const podiumsData = generateStatData('podiums', seasonStats);
-                  return podiumsData.length > 0 ? `${podiumsData[0].name} (${podiumsData[0].value})` : "No Data";
+                  return podiumsData.length > 0 ? `${podiumsData[0].name} (${podiumsData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('podiums', seasonStats)} 
                 season={season} 
@@ -291,7 +296,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most Fastest Laps" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const fastestLapsData = generateStatData('fastestLaps', seasonStats);
-                  return fastestLapsData.length > 0 ? `${fastestLapsData[0].name} (${fastestLapsData[0].value})` : "No Data";
+                  return fastestLapsData.length > 0 ? `${fastestLapsData[0].name} (${fastestLapsData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('fastestLaps', seasonStats)} 
                 season={season} 
@@ -301,7 +306,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most Poles" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const polesData = generateStatData('poles', seasonStats);
-                  return polesData.length > 0 ? `${polesData[0].name} (${polesData[0].value})` : "No Data";
+                  return polesData.length > 0 ? `${polesData[0].name} (${polesData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('poles', seasonStats)} 
                 season={season} 
@@ -311,7 +316,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Best Avg Grid Position" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const avgGridData = generateStatData('avgGrid', seasonStats);
-                  return avgGridData.length > 0 ? `${avgGridData[0].name} (${avgGridData[0].value})` : "No Data";
+                  return avgGridData.length > 0 ? `${avgGridData[0].name} (${avgGridData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('avgGrid', seasonStats)} 
                 season={season} 
@@ -321,7 +326,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Best Avg Finish Position" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const avgFinishData = generateStatData('avgFinish', seasonStats);
-                  return avgFinishData.length > 0 ? `${avgFinishData[0].name} (${avgFinishData[0].value})` : "No Data";
+                  return avgFinishData.length > 0 ? `${avgFinishData[0].name} (${avgFinishData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('avgFinish', seasonStats)} 
                 season={season} 
@@ -361,7 +366,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Best Avg Points" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const avgPointsData = generateStatData('avgPoints', seasonStats);
-                  return avgPointsData.length > 0 ? `${avgPointsData[0].name} (${avgPointsData[0].value})` : "No Data";
+                  return avgPointsData.length > 0 ? `${avgPointsData[0].name} (${avgPointsData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('avgPoints', seasonStats)} 
                 season={season} 
@@ -371,7 +376,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most Avg Places Gained" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const placesGainedData = generateStatData('placesGained', seasonStats);
-                  return placesGainedData.length > 0 ? `${placesGainedData[0].name} (${placesGainedData[0].value})` : "No Data";
+                  return placesGainedData.length > 0 ? `${placesGainedData[0].name} (${placesGainedData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('placesGained', seasonStats)} 
                 season={season} 
@@ -381,7 +386,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most Avg Overtakes" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const overtakesData = generateStatData('overtakes', seasonStats);
-                  return overtakesData.length > 0 ? `${overtakesData[0].name} (${overtakesData[0].value})` : "No Data";
+                  return overtakesData.length > 0 ? `${overtakesData[0].name} (${overtakesData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('overtakes', seasonStats)} 
                 season={season} 
@@ -391,7 +396,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Best Finish Rate" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const finishRateData = generateStatData('finishRate', seasonStats);
-                  return finishRateData.length > 0 ? `${finishRateData[0].name} (${finishRateData[0].value})` : "No Data";
+                  return finishRateData.length > 0 ? `${finishRateData[0].name} (${finishRateData[0].value})` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('finishRate', seasonStats)} 
                 season={season} 
@@ -401,7 +406,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Max Finish Streak" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const finishStreakData = generateStatData('finishStreak', seasonStats);
-                  return finishStreakData.length > 0 ? `${finishStreakData[0].name} (${finishStreakData[0].value} races)` : "No Data";
+                  return finishStreakData.length > 0 ? `${finishStreakData[0].name} (${finishStreakData[0].value} races)` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('finishStreak', seasonStats)} 
                 season={season} 
@@ -411,7 +416,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Max Points Streak" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const pointsStreakData = generateStatData('pointsStreak', seasonStats);
-                  return pointsStreakData.length > 0 ? `${pointsStreakData[0].name} (${pointsStreakData[0].value} races)` : "No Data";
+                  return pointsStreakData.length > 0 ? `${pointsStreakData[0].name} (${pointsStreakData[0].value} races)` : "Insufficient Data";
                 })()} 
                 allData={generateStatData('pointsStreak', seasonStats)} 
                 season={season} 
@@ -445,6 +450,37 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                   <p><strong className="text-white">Modern Seasons (8+):</strong> Live-calculated from race results</p>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* All Seasons Overview */}
+      {season === 'all-seasons' && (
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <BarChart3 className="h-5 w-5 text-blue-500" />
+              All Seasons Collective Statistics
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <p className="text-gray-300 mb-4">
+                Combined performance statistics for all drivers across their entire MGL F1 careers. 
+                This view aggregates every driver's total achievements across all seasons they've participated in.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
+                <div>
+                  <p><strong className="text-white">Career Totals:</strong> Wins, podiums, points accumulated across all seasons</p>
+                </div>
+                <div>
+                  <p><strong className="text-white">Career Averages:</strong> Performance metrics calculated from all races entered</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-3 text-center">
+                * Only includes drivers with 20+ total career races
+              </p>
             </div>
           </CardContent>
         </Card>

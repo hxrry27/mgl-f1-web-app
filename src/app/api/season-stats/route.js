@@ -5,7 +5,10 @@ const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
 async function calculateSeasonStats(season) {
   try {
-    if (season === 'overall') {
+    if (season === 'overall' || season === 'all-seasons') {
+      // For 'all-seasons', we want career stats with cross-season streaks
+      // For 'overall', we want all-time historical view (existing logic)
+      
       // Get overall stats across all seasons
       const [
         totalRacesRes,
@@ -97,6 +100,7 @@ async function calculateSeasonStats(season) {
             NULLIF(COALESCE(l.race_count, 0) + COALESCE(m.race_count, 0), 0) as avg_position
           FROM legacy_stats l
           FULL OUTER JOIN modern_stats m ON l.driver = m.driver
+          WHERE COALESCE(l.race_count, 0) + COALESCE(m.race_count, 0) >= 20
           ORDER BY total_points DESC, wins DESC
         `),
         
@@ -145,13 +149,102 @@ async function calculateSeasonStats(season) {
         `)
       ]);
 
+      // For 'all-seasons', add cross-season streak calculations
+      let driverStatsWithStreaks = overallDriverStatsRes.rows;
+      
+      if (season === 'all-seasons') {
+        // Calculate cross-season streaks for all-seasons view
+        const crossSeasonStreakResults = await pool.query(`
+          WITH driver_race_history AS (
+            SELECT 
+              d.name as driver,
+              r.date,
+              se.season,
+              rr.race_id,
+              UPPER(rr.status) as status,
+              COALESCE(rr.adjusted_position, rr.position) as final_position,
+              ROW_NUMBER() OVER (PARTITION BY d.name ORDER BY r.date, r.id) as race_order
+            FROM race_results rr
+            JOIN races r ON rr.race_id = r.id
+            JOIN seasons se ON r.season_id = se.id
+            JOIN drivers d ON rr.driver_id = d.id
+            ORDER BY d.name, r.date, r.id
+          ),
+          streak_calculations AS (
+            SELECT 
+              driver,
+              race_order,
+              status,
+              final_position,
+              -- Finish streak: consecutive races that are NOT DNF/DSQ
+              CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                   THEN 1 ELSE 0 END as finished,
+              -- Points streak: consecutive races with P10 or better (and finished)
+              CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                        AND final_position <= 10 
+                   THEN 1 ELSE 0 END as points_finish,
+              -- Create group identifiers for consecutive streaks
+              race_order - ROW_NUMBER() OVER (
+                PARTITION BY driver, 
+                CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                     THEN 1 ELSE 0 END 
+                ORDER BY race_order
+              ) as finish_streak_group,
+              race_order - ROW_NUMBER() OVER (
+                PARTITION BY driver, 
+                CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                          AND final_position <= 10 
+                     THEN 1 ELSE 0 END 
+                ORDER BY race_order
+              ) as points_streak_group
+            FROM driver_race_history
+          )
+          SELECT 
+            driver,
+            MAX(CASE WHEN finished = 1 THEN streak_length ELSE 0 END) as max_finish_streak,
+            MAX(CASE WHEN points_finish = 1 THEN streak_length ELSE 0 END) as max_points_streak
+          FROM (
+            SELECT 
+              driver,
+              finished,
+              points_finish,
+              finish_streak_group,
+              points_streak_group,
+              COUNT(*) as streak_length
+            FROM streak_calculations
+            GROUP BY driver, finished, points_finish, finish_streak_group, points_streak_group
+          ) streak_lengths
+          GROUP BY driver
+        `);
+
+        const streakMap = new Map();
+        crossSeasonStreakResults.rows.forEach(row => {
+          streakMap.set(row.driver, {
+            finish_streak: parseInt(row.max_finish_streak) || 0,
+            points_streak: parseInt(row.max_points_streak) || 0
+          });
+        });
+
+        // Add streak data to driver stats
+        driverStatsWithStreaks = overallDriverStatsRes.rows.map(driver => {
+          const streaks = streakMap.get(driver.driver) || { finish_streak: 0, points_streak: 0 };
+          return {
+            ...driver,
+            finish_streak: streaks.finish_streak,
+            points_streak: streaks.points_streak
+          };
+        });
+      }
+
       return {
-        isOverall: true,
+        isOverall: season === 'overall',
+        isAllSeasons: season === 'all-seasons',
         totalRaces: parseInt(totalRacesRes.rows[0]?.total || 0),
         totalDrivers: parseInt(totalDriversRes.rows[0]?.total || 0),
         totalTeams: parseInt(totalTeamsRes.rows[0]?.total || 0),
         totalSeasons: parseInt(totalSeasonsRes.rows[0]?.total || 0),
-        topDrivers: overallDriverStatsRes.rows.slice(0, 10),
+        topDrivers: driverStatsWithStreaks.slice(0, 10),
+        driverStats: season === 'all-seasons' ? driverStatsWithStreaks : undefined,
         topConstructors: overallConstructorStatsRes.rows.slice(0, 10),
         raceStats: overallRaceStatsRes.rows[0]
       };
@@ -308,6 +401,7 @@ async function calculateSeasonStats(season) {
             JOIN driver_team_info dti ON d.name = dti.driver
             WHERE s.season = $1
             GROUP BY d.name, dti.teams
+            HAVING COUNT(*) >= 5
             ORDER BY points DESC, wins DESC
           `, [season]),
           
@@ -351,6 +445,18 @@ async function calculateSeasonStats(season) {
               JOIN seasons s ON r.season_id = s.id
               WHERE s.season = $1 AND rr.fastest_lap_time_int > 0
               GROUP BY rr.race_id
+            ),
+            driver_race_counts AS (
+              SELECT 
+                d.name as driver,
+                COUNT(*) as total_races
+              FROM race_results rr
+              JOIN races r ON rr.race_id = r.id
+              JOIN seasons s ON r.season_id = s.id
+              JOIN drivers d ON rr.driver_id = d.id
+              WHERE s.season = $1
+              GROUP BY d.name
+              HAVING COUNT(*) >= 5
             )
             SELECT 
               d.name as driver,
@@ -358,15 +464,26 @@ async function calculateSeasonStats(season) {
             FROM race_results rr
             JOIN fastest_laps fl ON rr.race_id = fl.race_id AND rr.fastest_lap_time_int = fl.fastest_time
             JOIN drivers d ON rr.driver_id = d.id
-            JOIN races r ON rr.race_id = r.id
-            JOIN seasons s ON r.season_id = s.id
-            WHERE s.season = $1
+            JOIN driver_race_counts drc ON d.name = drc.driver
+            WHERE rr.race_id IN (SELECT race_id FROM fastest_laps)
             GROUP BY d.name
             ORDER BY fastest_laps DESC
           `, [season]),
           
           // Get pole positions (grid position = 1)
           pool.query(`
+            WITH driver_race_counts AS (
+              SELECT 
+                d.name as driver,
+                COUNT(*) as total_races
+              FROM race_results rr
+              JOIN races r ON rr.race_id = r.id
+              JOIN seasons s ON r.season_id = s.id
+              JOIN drivers d ON rr.driver_id = d.id
+              WHERE s.season = $1
+              GROUP BY d.name
+              HAVING COUNT(*) >= 5
+            )
             SELECT 
               d.name as driver,
               COUNT(*) as poles
@@ -374,6 +491,7 @@ async function calculateSeasonStats(season) {
             JOIN races r ON rr.race_id = r.id
             JOIN seasons s ON r.season_id = s.id
             JOIN drivers d ON rr.driver_id = d.id
+            JOIN driver_race_counts drc ON d.name = drc.driver
             WHERE s.season = $1 AND rr.grid_position = 1
             GROUP BY d.name
             ORDER BY poles DESC
@@ -391,9 +509,21 @@ async function calculateSeasonStats(season) {
           polesMap.set(row.driver, row.poles);
         });
 
-        // Calculate streaks for each driver across all seasons
+        // Calculate streaks for each driver within the current season
         const streakResults = await pool.query(`
-          WITH driver_race_history AS (
+          WITH driver_race_counts AS (
+            SELECT 
+              d.name as driver,
+              COUNT(*) as total_races
+            FROM race_results rr
+            JOIN races r ON rr.race_id = r.id
+            JOIN seasons se ON r.season_id = se.id
+            JOIN drivers d ON rr.driver_id = d.id
+            WHERE se.season = $1
+            GROUP BY d.name
+            HAVING COUNT(*) >= 5
+          ),
+          driver_race_history AS (
             SELECT 
               d.name as driver,
               r.date,
@@ -406,6 +536,8 @@ async function calculateSeasonStats(season) {
             JOIN races r ON rr.race_id = r.id
             JOIN seasons se ON r.season_id = se.id
             JOIN drivers d ON rr.driver_id = d.id
+            JOIN driver_race_counts drc ON d.name = drc.driver
+            WHERE se.season = $1
             ORDER BY d.name, r.date, r.id
           ),
           streak_calculations AS (
@@ -453,7 +585,7 @@ async function calculateSeasonStats(season) {
             GROUP BY driver, finished, points_finish, finish_streak_group, points_streak_group
           ) streak_lengths
           GROUP BY driver
-        `);
+        `, [season]);
 
         const streakMap = new Map();
         streakResults.rows.forEach(row => {
