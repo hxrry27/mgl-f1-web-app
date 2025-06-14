@@ -128,15 +128,17 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         am5themes_Dark.new(root)
       ]);
 
-      // Create the map chart with simple flat projection
+      // Create the globe chart with orthographic projection
       const chart = root.container.children.push(
         am5map.MapChart.new(root, {
-          panX: "translateX",
-          panY: "translateY",
-          projection: am5map.geoEquirectangular(),
-          panBehavior: "move",
-          wheelable: true,
-          pinchZoom: true
+          panX: "rotateX",
+          panY: "rotateY", 
+          projection: am5map.geoOrthographic(),
+          paddingTop: 20,
+          paddingBottom: 20,
+          paddingLeft: 20,
+          paddingRight: 20,
+          wheelable: true
         })
       );
 
@@ -156,113 +158,79 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         interactive: false
       });
 
-      // Create point series for F1 tracks
+      // Create point series for F1 tracks with proper click handling
       const pointSeries = chart.series.push(
-        am5map.MapPointSeries.new(root, {})
+        am5map.MapPointSeries.new(root, {
+          // Enable click handling on the series
+          cursorOverStyle: "pointer"
+        })
       );
 
-      // Create clickable bullets with the simplest approach
+      // Create bullets according to am5 docs
       pointSeries.bullets.push(function() {
         const circle = am5.Circle.new(root, {
-          radius: 12,
+          radius: 8,
           fill: am5.color("#ef4444"),
           stroke: am5.color("#ffffff"),
-          strokeWidth: 3,
-          cursorOverStyle: "pointer",
-          tooltipText: "{fullName}",
-          interactive: true,
-          focusable: true
+          strokeWidth: 2,
+          tooltipText: "{fullName}"
         });
 
-        // Add hover effects
+        // Add hover state
         circle.states.create("hover", {
-          scale: 1.4,
+          scale: 1.3,
           fill: am5.color("#fbbf24")
         });
 
-        // Create bullet
-        const bullet = am5.Bullet.new(root, {
-          sprite: circle,
-          dynamic: true
+        return am5.Bullet.new(root, {
+          sprite: circle
         });
-
-        // Add click event directly to circle
-        circle.onPrivate("visible", function() {
-          circle.on("click", function(e) {
-            console.log("Circle clicked!", e);
-            const dataItem = circle.dataItem;
-            if (dataItem && dataItem.dataContext) {
-              const trackSlug = dataItem.dataContext.slug;
-              console.log('Track clicked via circle:', trackSlug);
-              onTrackClick(trackSlug);
-            } else {
-              console.log("No dataContext found:", dataItem);
-            }
-          });
-
-          circle.on("pointerover", function(e) {
-            const dataItem = circle.dataItem;
-            if (dataItem && dataItem.dataContext) {
-              setHoveredTrack({
-                slug: dataItem.dataContext.slug,
-                name: dataItem.dataContext.fullName,
-                country: dataItem.dataContext.name
-              });
-            }
-          });
-
-          circle.on("pointerout", function() {
-            setHoveredTrack(null);
-          });
-        });
-
-        return bullet;
       });
 
-      // Add all track data points
+      // Set up click handling according to am5 docs
+      pointSeries.set("cursorOverStyle", "pointer");
+
+      // Add track data with URL field for am5 click handling
       const trackData = Object.entries(trackLocations).map(([slug, location]) => ({
         geometry: { type: "Point", coordinates: [location.lng, location.lat] },
         name: trackCountries[slug],
         fullName: trackNames[slug],
         slug: slug,
+        id: slug,
+        url: `/tracks/${slug}`, // URL for am5 navigation
         region: location.region
       }));
 
       pointSeries.data.setAll(trackData);
 
-      // Wait for series to be ready, then add click handlers to each data item
-      pointSeries.onPrivate("maskRectangle", function() {
-        pointSeries.dataItems.forEach(function(dataItem) {
-          const bullet = dataItem.bullets[0];
-          if (bullet && bullet.get("sprite")) {
-            const sprite = bullet.get("sprite");
-            sprite.set("interactive", true);
-            sprite.set("cursorOverStyle", "pointer");
-            
-            sprite.on("click", function(e) {
-              console.log("Sprite clicked directly!", e);
-              if (dataItem.dataContext) {
-                const trackSlug = dataItem.dataContext.slug;
-                console.log('Track clicked via sprite:', trackSlug);
-                onTrackClick(trackSlug);
-              }
-            });
+      // Add click event handler according to am5 docs
+      pointSeries.on("click", function(e) {
+        console.log("Point series clicked!", e);
+        const dataItem = e.target.dataItem;
+        if (dataItem) {
+          const trackSlug = dataItem.get("slug") || dataItem.dataContext.slug;
+          console.log('Track clicked:', trackSlug);
+          onTrackClick(trackSlug);
+        }
+      });
 
-            sprite.on("pointerover", function(e) {
-              if (dataItem.dataContext) {
-                setHoveredTrack({
-                  slug: dataItem.dataContext.slug,
-                  name: dataItem.dataContext.fullName,
-                  country: dataItem.dataContext.name
-                });
-              }
-            });
-
-            sprite.on("pointerout", function() {
-              setHoveredTrack(null);
+      // Add hover handlers
+      pointSeries.on("pointerover", function(e) {
+        const dataItem = e.target.dataItem;
+        if (dataItem) {
+          const trackData = dataItem.dataContext;
+          if (trackData) {
+            setHoveredTrack({
+              slug: trackData.slug,
+              name: trackData.fullName,
+              country: trackData.name
             });
           }
-        });
+        }
+      });
+
+      pointSeries.on("pointerout", function() {
+        setHoveredTrack(null);
       });
 
       // Cleanup function
