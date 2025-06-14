@@ -33,8 +33,8 @@ async function computeSeasonRacesFromDatabase(season) {
       r.date,
       r.race_number,
       CASE 
-        WHEN srm.race_id IS NOT NULL THEN true
-        WHEN rr.race_id IS NOT NULL THEN true
+        WHEN COUNT(DISTINCT srm.race_id) > 0 THEN true
+        WHEN COUNT(DISTINCT rr.race_id) > 0 THEN true
         ELSE false
       END as has_results
     FROM
@@ -47,7 +47,7 @@ async function computeSeasonRacesFromDatabase(season) {
       race_results rr ON rr.race_id = r.id
     WHERE
       r.season_id = $1
-    GROUP BY r.id, t.name, t.slug, r.date, r.race_number, srm.race_id
+    GROUP BY r.id, t.name, t.slug, r.date, r.race_number
     ORDER BY
       r.race_number ASC
   `, [seasonId]);

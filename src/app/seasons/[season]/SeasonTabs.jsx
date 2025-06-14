@@ -63,7 +63,7 @@ function StatCard({ title, winner, allData, season, isUpcoming }) {
 }
 
 // Season Overview Tab Component
-function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
+function SeasonOverview({ overviewStats, season, isOverall, seasonStats, seasonInfo }) {
   const getSeasonStatus = () => {
     if (isOverall) return 'All-Time';
     const seasonNum = parseInt(season);
@@ -833,6 +833,7 @@ export default function SeasonTabs({
               season={season}
               isOverall={isOverall}
               seasonStats={seasonStats}
+              seasonInfo={seasonInfo}
             />
           </TabsContent>
 
