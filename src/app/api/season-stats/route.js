@@ -391,6 +391,78 @@ async function calculateSeasonStats(season) {
           polesMap.set(row.driver, row.poles);
         });
 
+        // Calculate streaks for each driver across all seasons
+        const streakResults = await pool.query(`
+          WITH driver_race_history AS (
+            SELECT 
+              d.name as driver,
+              r.date,
+              s.season,
+              rr.race_id,
+              UPPER(rr.status) as status,
+              COALESCE(rr.adjusted_position, rr.position) as final_position,
+              ROW_NUMBER() OVER (PARTITION BY d.name ORDER BY r.date, r.id) as race_order
+            FROM race_results rr
+            JOIN races r ON rr.race_id = r.id
+            JOIN seasons se ON r.season_id = se.id
+            JOIN drivers d ON rr.driver_id = d.id
+            ORDER BY d.name, r.date, r.id
+          ),
+          streak_calculations AS (
+            SELECT 
+              driver,
+              race_order,
+              status,
+              final_position,
+              -- Finish streak: consecutive races that are NOT DNF/DSQ
+              CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                   THEN 1 ELSE 0 END as finished,
+              -- Points streak: consecutive races with P10 or better (and finished)
+              CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                        AND final_position <= 10 
+                   THEN 1 ELSE 0 END as points_finish,
+              -- Create group identifiers for consecutive streaks
+              race_order - ROW_NUMBER() OVER (
+                PARTITION BY driver, 
+                CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                     THEN 1 ELSE 0 END 
+                ORDER BY race_order
+              ) as finish_streak_group,
+              race_order - ROW_NUMBER() OVER (
+                PARTITION BY driver, 
+                CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                          AND final_position <= 10 
+                     THEN 1 ELSE 0 END 
+                ORDER BY race_order
+              ) as points_streak_group
+            FROM driver_race_history
+          )
+          SELECT 
+            driver,
+            MAX(CASE WHEN finished = 1 THEN streak_length ELSE 0 END) as max_finish_streak,
+            MAX(CASE WHEN points_finish = 1 THEN streak_length ELSE 0 END) as max_points_streak
+          FROM (
+            SELECT 
+              driver,
+              finished,
+              points_finish,
+              finish_streak_group,
+              points_streak_group,
+              COUNT(*) as streak_length
+            FROM streak_calculations
+            GROUP BY driver, finished, points_finish, finish_streak_group, points_streak_group
+          ) streak_lengths
+          GROUP BY driver
+        `);
+
+        const streakMap = new Map();
+        streakResults.rows.forEach(row => {
+          streakMap.set(row.driver, {
+            finish_streak: parseInt(row.max_finish_streak) || 0,
+            points_streak: parseInt(row.max_points_streak) || 0
+          });
+        });
+
         const enhancedDriverStats = driverStatsRes.rows.map(driver => {
           // Debug logging for problematic drivers
           if (driver.driver && driver.driver.toLowerCase().includes('max')) {
@@ -403,12 +475,14 @@ async function calculateSeasonStats(season) {
             });
           }
           
+          const streaks = streakMap.get(driver.driver) || { finish_streak: 0, points_streak: 0 };
+          
           return {
             ...driver,
             fastest_laps: fastestLapMap.get(driver.driver) || 0,
             poles: polesMap.get(driver.driver) || 0,
-            finish_streak: 0, // Would need complex calculation
-            points_streak: 0, // Would need complex calculation
+            finish_streak: streaks.finish_streak,
+            points_streak: streaks.points_streak,
             overtakes: 0, // Would need telemetry data
             // Ensure numeric fields are proper numbers
             avg_position: driver.avg_position != null ? parseFloat(driver.avg_position) : null,
