@@ -73,6 +73,12 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   };
 
   const getGameVersion = () => {
+    // Use game version from season info API if available
+    if (seasonInfo?.gameVersion) {
+      return seasonInfo.gameVersion;
+    }
+    
+    // Fallback to hardcoded logic if API data isn't loaded yet
     if (isOverall) return 'Multiple';
     const seasonNum = parseInt(season);
     if (seasonNum <= 8) return 'F1 23';
@@ -669,6 +675,7 @@ export default function SeasonTabs({
   const [seasonStats, setSeasonStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState(null);
+  const [seasonInfo, setSeasonInfo] = useState(null);
 
   // Fetch season statistics when component mounts or season changes
   useEffect(() => {
@@ -695,6 +702,27 @@ export default function SeasonTabs({
 
     if (season || isOverall) {
       fetchSeasonStats();
+    }
+  }, [season, isOverall]);
+
+  // Fetch season info for game version and other metadata
+  useEffect(() => {
+    const fetchSeasonInfo = async () => {
+      try {
+        const seasonParam = isOverall ? 'overall' : season;
+        const response = await fetch(`/api/season-info?season=${seasonParam}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSeasonInfo(data);
+        }
+      } catch (err) {
+        console.error('Error fetching season info:', err);
+        // Don't set error state - this is non-critical
+      }
+    };
+
+    if (season || isOverall) {
+      fetchSeasonInfo();
     }
   }, [season, isOverall]);
 
