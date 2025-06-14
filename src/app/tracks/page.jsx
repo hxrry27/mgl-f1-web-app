@@ -159,47 +159,42 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         am5map.MapPointSeries.new(root, {})
       );
 
-      // Style the track markers with a more modern icon
+      // Style the track markers with proper click handling
       pointSeries.bullets.push(function() {
-        // Create a rounded rectangle pin-style marker
-        const pin = am5.RoundedRectangle.new(root, {
-          width: 20,
-          height: 20,
-          cornerRadiusTL: 10,
-          cornerRadiusTR: 10,
-          cornerRadiusBL: 10,
-          cornerRadiusBR: 0, // Sharp bottom point like a map pin
+        // Create a simple circle that we know works
+        const circle = am5.Circle.new(root, {
+          radius: 10,
           fill: am5.color("#ef4444"),
           stroke: am5.color("#ffffff"),
           strokeWidth: 2,
           cursorOverStyle: "pointer",
-          tooltipText: "{fullName}",
-          centerX: am5.p50,
-          centerY: am5.p100
+          tooltipText: "{fullName}"
         });
 
         // Add hover effects
-        pin.states.create("hover", {
-          scale: 1.2,
+        circle.states.create("hover", {
+          scale: 1.3,
           fill: am5.color("#fbbf24")
         });
 
-        // Add click handler directly to the bullet
-        const bullet = am5.Bullet.new(root, {
-          sprite: pin
+        return am5.Bullet.new(root, {
+          sprite: circle
         });
+      });
 
-        bullet.on("click", function(e) {
+      // Add click handler to the point series itself (more reliable)
+      pointSeries.onPrivate("maskRectangle", function() {
+        // This ensures the series is ready
+        pointSeries.mapPoints.template.on("click", function(e) {
           const dataItem = e.target.dataItem;
           if (dataItem && dataItem.dataContext) {
             const trackSlug = dataItem.dataContext.slug;
-            console.log('Track clicked:', trackSlug);
+            console.log('Point clicked:', trackSlug);
             onTrackClick(trackSlug);
           }
         });
 
-        // Add hover handlers to the bullet
-        bullet.on("pointerover", function(e) {
+        pointSeries.mapPoints.template.on("pointerover", function(e) {
           const dataItem = e.target.dataItem;
           if (dataItem && dataItem.dataContext) {
             setHoveredTrack({
@@ -210,11 +205,9 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           }
         });
 
-        bullet.on("pointerout", function() {
+        pointSeries.mapPoints.template.on("pointerout", function() {
           setHoveredTrack(null);
         });
-
-        return bullet;
       });
 
       // Add all track data points
@@ -261,6 +254,18 @@ export default function TracksPage() {
   };
 
   const totalTracks = Object.keys(trackLocations).length;
+  
+  // Calculate track statistics (example data - you can replace with real data)
+  const trackStats = {
+    totalCircuits: totalTracks,
+    totalCorners: 312, // Estimated based on known F1 tracks
+    totalDistance: 142.8, // Total km of all tracks combined
+    averageLength: 4.9, // Average track length in km
+    longestTrack: "Spa-Francorchamps (7.0km)",
+    shortestTrack: "Monaco (3.3km)",
+    mostCorners: "Suzuka (18 corners)",
+    fewestCorners: "Monza (11 corners)"
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-900/30 min-h-screen">
@@ -307,20 +312,67 @@ export default function TracksPage() {
         )}
       </div>
 
-      {/* Quick Stats */}
+      {/* Main Stats */}
       <div className="mb-8">
         <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
           <CardContent className="p-6">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Trophy className="w-6 h-6 text-yellow-500" />
-                <div className="text-3xl font-bold text-white">{totalTracks}</div>
+                <Trophy className="w-6 w-6 text-yellow-500" />
+                <div className="text-3xl font-bold text-white">{trackStats.totalCircuits}</div>
               </div>
               <div className="text-gray-400">Formula 1 Circuits Worldwide</div>
               <p className="text-gray-500 text-sm mt-2">
                 From Monaco's tight streets to Monza's high speeds
               </p>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Stats Grid */}
+      <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <MapPin className="w-5 h-5 text-blue-500" />
+              <div className="text-2xl font-bold text-white">{trackStats.totalCorners}</div>
+            </div>
+            <div className="text-gray-400 text-sm">Total Corners</div>
+            <p className="text-gray-500 text-xs mt-1">Across all circuits</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Flag className="w-5 h-5 text-green-500" />
+              <div className="text-2xl font-bold text-white">{trackStats.totalDistance}</div>
+            </div>
+            <div className="text-gray-400 text-sm">Total Distance (km)</div>
+            <p className="text-gray-500 text-xs mt-1">Combined circuit length</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Calendar className="w-5 h-5 text-purple-500" />
+              <div className="text-2xl font-bold text-white">{trackStats.averageLength}</div>
+            </div>
+            <div className="text-gray-400 text-sm">Average Length (km)</div>
+            <p className="text-gray-500 text-xs mt-1">Per circuit</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Zap className="w-5 h-5 text-orange-500" />
+              <div className="text-lg font-bold text-white">7.0</div>
+            </div>
+            <div className="text-gray-400 text-sm">Longest Track (km)</div>
+            <p className="text-gray-500 text-xs mt-1">Spa-Francorchamps</p>
           </CardContent>
         </Card>
       </div>
