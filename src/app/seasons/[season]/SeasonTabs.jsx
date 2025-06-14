@@ -677,7 +677,9 @@ export default function SeasonTabs({
       setStatsError(null);
       
       try {
-        const response = await fetch(`/api/season-stats?season=${season}`);
+        // Use all-time-stats API for overall view, season-stats for specific seasons
+        const apiEndpoint = isOverall ? '/api/all-time-stats' : `/api/season-stats?season=${season}`;
+        const response = await fetch(apiEndpoint);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -691,10 +693,10 @@ export default function SeasonTabs({
       }
     };
 
-    if (season) {
+    if (season || isOverall) {
       fetchSeasonStats();
     }
-  }, [season]);
+  }, [season, isOverall]);
 
   // Provide fallback data when there's an error
   const fallbackData = {
