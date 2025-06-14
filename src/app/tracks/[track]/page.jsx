@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { 
   Trophy, Flag, MapPin, Timer, GitBranch, 
-  Users, UsersRound, Medal
+  Users, UsersRound, Medal, TrendingUp
 } from 'lucide-react';
 import TrackSelector from './TrackSelector';
 
@@ -37,7 +37,7 @@ export default async function TrackPage({ params }) {
   console.log(`Looking up track with slug: ${track}`);
 
   let trackInfo, rawResults, lapHistoryData;
-  let previousWinners, fastestLap, top3FastestLaps, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
+  let previousWinners, fastestLap, top3FastestLaps, allComebacks, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
   let topDrivers = [], topTeams = [], topPoleDrivers = [], topPodiumDrivers = [], topPitDrivers = [];
   let databaseError = false;
 
@@ -278,6 +278,36 @@ export default async function TrackPage({ params }) {
   // For backward compatibility, keep the fastest lap as the first one
   const fastestLap = top3FastestLaps.length > 0 ? top3FastestLaps[0] : null;
 
+  // Biggest Comebacks - Top 3 (most positions gained from grid to finish)
+  allComebacks = rawResults
+    .filter(row => {
+      const effectivePosition = row.adjusted_position !== null ? row.adjusted_position : row.position;
+      return (
+        row.grid_position && 
+        row.grid_position > 0 && 
+        effectivePosition && 
+        effectivePosition > 0 &&
+        row.status !== 'DNF' && 
+        row.status !== 'DSQ' && 
+        row.status !== 'DNS' &&
+        row.grid_position > effectivePosition // Only positive gains (comebacks)
+      );
+    })
+    .map(row => {
+      const effectivePosition = row.adjusted_position !== null ? row.adjusted_position : row.position;
+      const positionsGained = row.grid_position - effectivePosition;
+      return {
+        driver: row.driver,
+        team: row.team,
+        season: row.season,
+        gridPosition: row.grid_position,
+        finishPosition: effectivePosition,
+        positionsGained: positionsGained
+      };
+    })
+    .sort((a, b) => b.positionsGained - a.positionsGained) // Sort by most positions gained
+    .slice(0, 3); // Top 3 comebacks
+
   // Most Poles - Top 3
   const poleCounts = significantResults.reduce((acc, result) => {
     if (result.pole && result.pole !== 'N/A') {
@@ -408,6 +438,13 @@ export default async function TrackPage({ params }) {
       { driver: 'Max Verstappen', time: '1:32.567', season: '2024', team: 'Red Bull Racing' },
       { driver: 'Lewis Hamilton', time: '1:32.789', season: '2023', team: 'Mercedes' },
       { driver: 'Charles Leclerc', time: '1:33.124', season: '2024', team: 'Ferrari' }
+    ];
+
+    // Test data for biggest comebacks
+    allComebacks = [
+      { driver: 'Lewis Hamilton', team: 'Mercedes', season: '2023', gridPosition: 14, finishPosition: 2, positionsGained: 12 },
+      { driver: 'Oscar Piastri', team: 'McLaren', season: '2024', gridPosition: 16, finishPosition: 5, positionsGained: 11 },
+      { driver: 'Fernando Alonso', team: 'Aston Martin', season: '2024', gridPosition: 18, finishPosition: 8, positionsGained: 10 }
     ];
     
     // Create test data objects for fallback
@@ -746,6 +783,45 @@ export default async function TrackPage({ params }) {
               </div>
             ) : (
               <p className="text-gray-400">No pit stops recorded</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-orange-500" />
+              <CardTitle className="text-md font-semibold text-white">Biggest Comebacks</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {allComebacks && allComebacks.length > 0 ? (
+              <div className="space-y-2">
+                {allComebacks.map((comeback, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-orange-400 font-bold w-4">#{index + 1}</span>
+                      <span className="font-medium text-white">{comeback.driver}</span>
+                      <Badge 
+                        className="font-medium"
+                        style={{ 
+                          backgroundColor: teamColors[comeback.team] || '#444',
+                          color: lightTeams.includes(comeback.team) ? 'black' : 'white' 
+                        }}
+                      >
+                        {comeback.team}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-right">
+                      <span className="text-orange-400 font-bold">+{comeback.positionsGained}</span>
+                      <span className="text-gray-400 text-sm">(P{comeback.gridPosition}→P{comeback.finishPosition})</span>
+                      <span className="text-gray-500 text-sm">(S{comeback.season})</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No significant comebacks recorded.</p>
             )}
           </CardContent>
         </Card>
