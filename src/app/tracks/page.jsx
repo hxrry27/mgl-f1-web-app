@@ -166,17 +166,20 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         })
       );
 
-      // Create bullets according to am5 docs
+      // Create bullets with proper interactivity according to am5 docs
       pointSeries.bullets.push(function() {
         const circle = am5.Circle.new(root, {
           radius: 8,
           fill: am5.color("#ef4444"),
           stroke: am5.color("#ffffff"),
           strokeWidth: 2,
-          tooltipText: "{fullName}"
+          tooltipText: "{fullName}",
+          // Manually enable interactivity as docs state it's not automatic
+          interactive: true,
+          cursorOverStyle: "pointer"
         });
 
-        // Add hover state
+        // Add hover state - note: adding hover state doesn't auto-enable interactivity
         circle.states.create("hover", {
           scale: 1.3,
           fill: am5.color("#fbbf24")
@@ -187,41 +190,55 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         });
       });
 
-      // Set up click handling according to am5 docs
-      pointSeries.set("cursorOverStyle", "pointer");
-
-      // Add track data with URL field for am5 click handling
+      // Use the exact format from am5 docs: pointSeries.data.setAll([{id: "trackId", url: "https://..."}])
       const trackData = Object.entries(trackLocations).map(([slug, location]) => ({
+        // GeoJSON geometry for positioning
         geometry: { type: "Point", coordinates: [location.lng, location.lat] },
+        
+        // am5 required fields for click handling
+        id: slug,                    // Required ID field
+        url: `/tracks/${slug}`,      // URL for navigation (exactly as docs show)
+        
+        // Additional data fields
         name: trackCountries[slug],
         fullName: trackNames[slug],
         slug: slug,
-        id: slug,
-        url: `/tracks/${slug}`, // URL for am5 navigation
         region: location.region
       }));
 
       pointSeries.data.setAll(trackData);
 
-      // Add click event handler according to am5 docs
+      // Enable automatic URL handling by am5 (if this works, we don't need manual click handlers)
+      pointSeries.set("clickTarget", "url");
+      
+      // But also add manual click handler as backup
       pointSeries.on("click", function(e) {
         console.log("Point series clicked!", e);
         const dataItem = e.target.dataItem;
         if (dataItem) {
-          const trackSlug = dataItem.get("slug") || dataItem.dataContext.slug;
-          console.log('Track clicked:', trackSlug);
-          onTrackClick(trackSlug);
+          // Try to get the URL from the data
+          const url = dataItem.get("url");
+          const trackSlug = dataItem.get("id") || dataItem.get("slug");
+          
+          console.log('Track clicked:', trackSlug, 'URL:', url);
+          
+          // Use Next.js router for SPA navigation instead of page reload
+          if (trackSlug) {
+            onTrackClick(trackSlug);
+          }
         }
       });
 
-      // Add hover handlers
+      // Add hover handlers with proper data access
       pointSeries.on("pointerover", function(e) {
         const dataItem = e.target.dataItem;
         if (dataItem) {
+          const trackId = dataItem.get("id");
           const trackData = dataItem.dataContext;
+          
           if (trackData) {
             setHoveredTrack({
-              slug: trackData.slug,
+              slug: trackId || trackData.slug,
               name: trackData.fullName,
               country: trackData.name
             });
