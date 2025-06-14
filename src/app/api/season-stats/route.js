@@ -397,7 +397,7 @@ async function calculateSeasonStats(season) {
             SELECT 
               d.name as driver,
               r.date,
-              s.season,
+              se.season,
               rr.race_id,
               UPPER(rr.status) as status,
               COALESCE(rr.adjusted_position, rr.position) as final_position,
