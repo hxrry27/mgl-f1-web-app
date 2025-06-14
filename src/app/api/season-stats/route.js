@@ -264,6 +264,7 @@ async function calculateSeasonStats(season) {
 
       return {
         isOverall: true,
+        gameVersion: 'Multiple',
         totalRaces: parseInt(totalRacesRes.rows[0]?.total || 0),
         totalDrivers: parseInt(totalDriversRes.rows[0]?.total || 0),
         totalTeams: parseInt(totalTeamsRes.rows[0]?.total || 0),
@@ -290,12 +291,11 @@ async function calculateSeasonStats(season) {
               COUNT(DISTINCT r.id) as total_races,
               COUNT(DISTINCT l.driver_id) as total_drivers,
               COUNT(DISTINCT l.team_id) as total_teams,
-              s.game as game_version
+              MAX(s.game) as game_version
             FROM races r
             JOIN seasons s ON r.season_id = s.id
             LEFT JOIN lineups l ON s.id = l.season_id
             WHERE s.season = $1
-            GROUP BY s.game
           `, [season]),
           
           pool.query(`
@@ -374,12 +374,11 @@ async function calculateSeasonStats(season) {
               COUNT(DISTINCT r.id) as total_races,
               COUNT(DISTINCT rr.driver_id) as total_drivers,
               COUNT(DISTINCT rr.team_id) as total_teams,
-              s.game as game_version
+              MAX(s.game) as game_version
             FROM races r
             JOIN seasons s ON r.season_id = s.id
             LEFT JOIN race_results rr ON r.id = rr.race_id
             WHERE s.season = $1
-            GROUP BY s.game
           `, [season]),
           
           pool.query(`
