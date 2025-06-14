@@ -95,7 +95,8 @@ export async function GET() {
           rr.race_id,
           UPPER(rr.status) as status,
           COALESCE(rr.adjusted_position, rr.position) as final_position,
-          ROW_NUMBER() OVER (PARTITION BY d.name ORDER BY r.date, r.id) as race_order
+          ROW_NUMBER() OVER (PARTITION BY d.name ORDER BY r.date, r.id) as race_order,
+          ROW_NUMBER() OVER (PARTITION BY d.name ORDER BY r.date DESC, r.id DESC) as reverse_race_order
         FROM race_results rr
         JOIN races r ON rr.race_id = r.id
         JOIN seasons se ON r.season_id = se.id
@@ -107,6 +108,7 @@ export async function GET() {
         SELECT 
           driver,
           race_order,
+          reverse_race_order,
           status,
           final_position,
           -- Finish streak: consecutive races that are NOT DNF/DSQ
@@ -131,30 +133,59 @@ export async function GET() {
             ORDER BY race_order
           ) as points_streak_group
         FROM driver_race_history
-      )
-      SELECT 
-        driver,
-        MAX(CASE WHEN finished = 1 THEN streak_length ELSE 0 END) as max_finish_streak,
-        MAX(CASE WHEN points_finish = 1 THEN streak_length ELSE 0 END) as max_points_streak
-      FROM (
+      ),
+      streak_lengths AS (
         SELECT 
           driver,
           finished,
           points_finish,
           finish_streak_group,
           points_streak_group,
-          COUNT(*) as streak_length
+          COUNT(*) as streak_length,
+          MIN(reverse_race_order) as min_reverse_order
         FROM streak_calculations
         GROUP BY driver, finished, points_finish, finish_streak_group, points_streak_group
-      ) streak_lengths
-      GROUP BY driver
+      ),
+      max_streaks AS (
+        SELECT 
+          driver,
+          MAX(CASE WHEN finished = 1 THEN streak_length ELSE 0 END) as max_finish_streak,
+          MAX(CASE WHEN points_finish = 1 THEN streak_length ELSE 0 END) as max_points_streak
+        FROM streak_lengths
+        GROUP BY driver
+      ),
+      current_streaks AS (
+        SELECT 
+          driver,
+          MAX(CASE WHEN finished = 1 AND min_reverse_order = 1 THEN streak_length ELSE 0 END) as current_finish_streak,
+          MAX(CASE WHEN points_finish = 1 AND min_reverse_order = 1 THEN streak_length ELSE 0 END) as current_points_streak
+        FROM streak_lengths
+        GROUP BY driver
+      )
+      SELECT 
+        ms.driver,
+        ms.max_finish_streak,
+        ms.max_points_streak,
+        cs.current_finish_streak,
+        cs.current_points_streak,
+        CASE WHEN ms.max_finish_streak = cs.current_finish_streak AND cs.current_finish_streak > 0 
+             THEN true ELSE false END as finish_streak_ongoing,
+        CASE WHEN ms.max_points_streak = cs.current_points_streak AND cs.current_points_streak > 0 
+             THEN true ELSE false END as points_streak_ongoing
+      FROM max_streaks ms
+      JOIN current_streaks cs ON ms.driver = cs.driver
     `);
 
     const streakMap = new Map();
     crossSeasonStreakResults.rows.forEach(row => {
+      const finishStreak = parseInt(row.max_finish_streak) || 0;
+      const pointsStreak = parseInt(row.max_points_streak) || 0;
+      const finishOngoing = row.finish_streak_ongoing;
+      const pointsOngoing = row.points_streak_ongoing;
+      
       streakMap.set(row.driver, {
-        finish_streak: parseInt(row.max_finish_streak) || 0,
-        points_streak: parseInt(row.max_points_streak) || 0
+        finish_streak: finishOngoing ? `${finishStreak}*` : finishStreak,
+        points_streak: pointsOngoing ? `${pointsStreak}*` : pointsStreak
       });
     });
 
