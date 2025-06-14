@@ -66,7 +66,6 @@ function StatCard({ title, winner, allData, season, isUpcoming }) {
 function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   const getSeasonStatus = () => {
     if (isOverall) return 'All-Time';
-    if (season === 'all-seasons') return 'All Seasons';
     const seasonNum = parseInt(season);
     if (seasonNum < 11) return 'Finished';
     if (seasonNum === 11) return 'Active';
@@ -74,7 +73,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   };
 
   const getGameVersion = () => {
-    if (isOverall || season === 'all-seasons') return 'Multiple';
+    if (isOverall) return 'Multiple';
     const seasonNum = parseInt(season);
     if (seasonNum <= 8) return 'F1 23';
     if (seasonNum <= 10) return 'F1 24';
@@ -90,7 +89,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
   
   // Get season winner/leader from real data
   const getSeasonWinner = () => {
-    if (isOverall || season === 'all-seasons') return 'Multiple';
+    if (isOverall) return 'Multiple';
     if (isUpcoming) return 'TBD';
     if (seasonStats?.driverStats?.length > 0) {
       return seasonStats.driverStats[0].driver;
@@ -181,16 +180,12 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
     <div className="space-y-6">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-white mb-2">
-          {isOverall ? 'All-Time Overview' : 
-           season === 'all-seasons' ? 'All Seasons Overview' : 
-           `Season ${season} Overview`}
+          {isOverall ? 'All-Time Overview' : `Season ${season} Overview`}
         </h2>
         <p className="text-gray-400">
           {isOverall 
             ? 'Complete statistics across all MGL F1 seasons' 
-            : season === 'all-seasons'
-              ? 'Collective statistics for all drivers across all seasons'
-              : `Complete statistics for Season ${season}`
+            : `Complete statistics for Season ${season}`
           }
         </p>
       </div>
@@ -256,8 +251,117 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
         </Card>
       </div>
 
+      {/* All-Time Statistics */}
+      {isOverall && (
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <BarChart3 className="h-5 w-5 text-blue-500" />
+              All-Time Career Statistics
+              <span className="text-sm text-gray-400 font-normal ml-2">
+                (Click any stat to see full rankings • Min. 20 career races required)
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <StatCard 
+                title="Most Career Wins" 
+                winner={(() => {
+                  const winsData = generateStatData('wins', seasonStats);
+                  return winsData.length > 0 ? `${winsData[0].name} (${winsData[0].value})` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('wins', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Most Career Podiums" 
+                winner={(() => {
+                  const podiumsData = generateStatData('podiums', seasonStats);
+                  return podiumsData.length > 0 ? `${podiumsData[0].name} (${podiumsData[0].value})` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('podiums', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Most Career Fastest Laps" 
+                winner={(() => {
+                  const fastestLapsData = generateStatData('fastestLaps', seasonStats);
+                  return fastestLapsData.length > 0 ? `${fastestLapsData[0].name} (${fastestLapsData[0].value})` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('fastestLaps', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Most Career Poles" 
+                winner={(() => {
+                  const polesData = generateStatData('poles', seasonStats);
+                  return polesData.length > 0 ? `${polesData[0].name} (${polesData[0].value})` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('poles', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Best Career Avg Finish" 
+                winner={(() => {
+                  const avgFinishData = generateStatData('avgFinish', seasonStats);
+                  return avgFinishData.length > 0 ? `${avgFinishData[0].name} (${avgFinishData[0].value})` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('avgFinish', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Best Career Finish Rate" 
+                winner={(() => {
+                  const finishRateData = generateStatData('finishRate', seasonStats);
+                  return finishRateData.length > 0 ? `${finishRateData[0].name} (${finishRateData[0].value})` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('finishRate', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Max Career Finish Streak" 
+                winner={(() => {
+                  const finishStreakData = generateStatData('finishStreak', seasonStats);
+                  return finishStreakData.length > 0 ? `${finishStreakData[0].name} (${finishStreakData[0].value} races)` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('finishStreak', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Max Career Points Streak" 
+                winner={(() => {
+                  const pointsStreakData = generateStatData('pointsStreak', seasonStats);
+                  return pointsStreakData.length > 0 ? `${pointsStreakData[0].name} (${pointsStreakData[0].value} races)` : "Insufficient Data";
+                })()} 
+                allData={generateStatData('pointsStreak', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+              <StatCard 
+                title="Most Career DNFs" 
+                winner={(() => {
+                  const dnfsData = generateStatData('dnfs', seasonStats);
+                  return dnfsData.length > 0 && dnfsData[0].value > 0 ? `${dnfsData[0].name} (${dnfsData[0].value})` : "None";
+                })()} 
+                allData={generateStatData('dnfs', seasonStats)} 
+                season={season} 
+                isUpcoming={false} 
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Season Statistics */}
-      {!isOverall && season !== 'all-seasons' && (
+      {!isOverall && (
         <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-white">
@@ -455,36 +559,6 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
         </Card>
       )}
 
-      {/* All Seasons Overview */}
-      {season === 'all-seasons' && (
-        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <BarChart3 className="h-5 w-5 text-blue-500" />
-              All Seasons Collective Statistics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <p className="text-gray-300 mb-4">
-                Combined performance statistics for all drivers across their entire MGL F1 careers. 
-                This view aggregates every driver's total achievements across all seasons they've participated in.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-400">
-                <div>
-                  <p><strong className="text-white">Career Totals:</strong> Wins, podiums, points accumulated across all seasons</p>
-                </div>
-                <div>
-                  <p><strong className="text-white">Career Averages:</strong> Performance metrics calculated from all races entered</p>
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 mt-3 text-center">
-                * Only includes drivers with 20+ total career races
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

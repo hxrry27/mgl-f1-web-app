@@ -5,9 +5,7 @@ const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
 async function calculateSeasonStats(season) {
   try {
-    if (season === 'overall' || season === 'all-seasons') {
-      // For 'all-seasons', we want career stats with cross-season streaks
-      // For 'overall', we want all-time historical view (existing logic)
+    if (season === 'overall') {
       
       // Get overall stats across all seasons
       const [
@@ -149,11 +147,9 @@ async function calculateSeasonStats(season) {
         `)
       ]);
 
-      // For 'all-seasons', add cross-season streak calculations
+      // Add cross-season streak calculations for overall view
       let driverStatsWithStreaks = overallDriverStatsRes.rows;
-      
-      if (season === 'all-seasons') {
-        // Calculate cross-season streaks for all-seasons view
+        // Calculate cross-season streaks for overall view
         const crossSeasonStreakResults = await pool.query(`
           WITH driver_race_history AS (
             SELECT 
@@ -234,17 +230,15 @@ async function calculateSeasonStats(season) {
             points_streak: streaks.points_streak
           };
         });
-      }
 
       return {
-        isOverall: season === 'overall',
-        isAllSeasons: season === 'all-seasons',
+        isOverall: true,
         totalRaces: parseInt(totalRacesRes.rows[0]?.total || 0),
         totalDrivers: parseInt(totalDriversRes.rows[0]?.total || 0),
         totalTeams: parseInt(totalTeamsRes.rows[0]?.total || 0),
         totalSeasons: parseInt(totalSeasonsRes.rows[0]?.total || 0),
         topDrivers: driverStatsWithStreaks.slice(0, 10),
-        driverStats: season === 'all-seasons' ? driverStatsWithStreaks : undefined,
+        driverStats: driverStatsWithStreaks, // Include for stats grid
         topConstructors: overallConstructorStatsRes.rows.slice(0, 10),
         raceStats: overallRaceStatsRes.rows[0]
       };
