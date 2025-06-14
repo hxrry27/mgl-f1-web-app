@@ -285,8 +285,10 @@ async function calculateSeasonStats(season) {
                             WHEN 6 THEN 8 WHEN 7 THEN 6 WHEN 8 THEN 4 WHEN 9 THEN 2 WHEN 10 THEN 1
                             ELSE 0 END
                        ELSE 0 END) as points,
-              AVG(COALESCE(rr.adjusted_position, rr.position)) as avg_position,
-              AVG(rr.grid_position) as avg_grid_position,
+              AVG(CASE WHEN rr.status != 'Dnf' AND rr.status != 'Dsq' 
+                       THEN COALESCE(rr.adjusted_position, rr.position)::float 
+                       ELSE NULL END) as avg_position,
+              AVG(rr.grid_position::float) as avg_grid_position,
               AVG(CASE WHEN COALESCE(rr.adjusted_position, rr.position) <= 10 
                        THEN CASE COALESCE(rr.adjusted_position, rr.position)
                             WHEN 1 THEN 25 WHEN 2 THEN 18 WHEN 3 THEN 15 WHEN 4 THEN 12 WHEN 5 THEN 10
@@ -295,8 +297,10 @@ async function calculateSeasonStats(season) {
                        ELSE 0 END) as avg_points,
               SUM(CASE WHEN rr.penalty_secs_ingame > 0 THEN 1 ELSE 0 END) as penalties,
               SUM(CASE WHEN rr.status = 'Dsq' THEN 1 ELSE 0 END) as dsqs,
-              (COUNT(*) - SUM(CASE WHEN rr.status = 'Dnf' THEN 1 ELSE 0 END))::float / COUNT(*) * 100 as finish_rate,
-              AVG(COALESCE(rr.grid_position, 0) - COALESCE(COALESCE(rr.adjusted_position, rr.position), 0)) as places_gained
+              (SUM(CASE WHEN rr.status != 'Dnf' AND rr.status != 'Dsq' THEN 1 ELSE 0 END)::float / COUNT(*)) * 100 as finish_rate,
+              AVG(CASE WHEN rr.status != 'Dnf' AND rr.status != 'Dsq' AND rr.grid_position IS NOT NULL
+                       THEN (rr.grid_position - COALESCE(rr.adjusted_position, rr.position))::float
+                       ELSE NULL END) as places_gained
             FROM race_results rr
             JOIN races r ON rr.race_id = r.id
             JOIN seasons s ON r.season_id = s.id

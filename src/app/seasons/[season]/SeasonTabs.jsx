@@ -167,8 +167,10 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
       };
     }).sort((a, b) => {
       // Sort appropriately based on stat type
-      if (['avgGrid', 'avgFinish', 'dnfs', 'penalties', 'dsqs'].includes(statName)) {
-        return parseFloat(a.value) - parseFloat(b.value); // Ascending for "bad" stats
+      if (['avgGrid', 'avgFinish'].includes(statName)) {
+        return parseFloat(a.value) - parseFloat(b.value); // Ascending for averages (lower is better)
+      } else if (['dnfs', 'penalties', 'dsqs'].includes(statName)) {
+        return parseFloat(b.value) - parseFloat(a.value); // Descending for "bad" stats (higher is worse, so show highest first)
       }
       return parseFloat(b.value) - parseFloat(a.value); // Descending for "good" stats
     });
@@ -329,7 +331,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most DNFs" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const dnfsData = generateStatData('dnfs', seasonStats);
-                  return dnfsData.length > 0 ? `${dnfsData[0].name} (${dnfsData[0].value})` : "No Data";
+                  return dnfsData.length > 0 && dnfsData[0].value > 0 ? `${dnfsData[0].name} (${dnfsData[0].value})` : "None";
                 })()} 
                 allData={generateStatData('dnfs', seasonStats)} 
                 season={season} 
@@ -339,7 +341,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most Penalties" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const penaltiesData = generateStatData('penalties', seasonStats);
-                  return penaltiesData.length > 0 ? `${penaltiesData[0].name} (${penaltiesData[0].value})` : "No Data";
+                  return penaltiesData.length > 0 && penaltiesData[0].value > 0 ? `${penaltiesData[0].name} (${penaltiesData[0].value})` : "None";
                 })()} 
                 allData={generateStatData('penalties', seasonStats)} 
                 season={season} 
@@ -349,7 +351,7 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats }) {
                 title="Most DSQs" 
                 winner={isUpcoming ? "N/A" : (() => {
                   const dsqsData = generateStatData('dsqs', seasonStats);
-                  return dsqsData.length > 0 ? `${dsqsData[0].name} (${dsqsData[0].value})` : "No Data";
+                  return dsqsData.length > 0 && dsqsData[0].value > 0 ? `${dsqsData[0].name} (${dsqsData[0].value})` : "None";
                 })()} 
                 allData={generateStatData('dsqs', seasonStats)} 
                 season={season} 
