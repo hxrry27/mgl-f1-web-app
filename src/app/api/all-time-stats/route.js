@@ -3,215 +3,175 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Get all drivers who have raced since S6 (same as driver page logic)
-    const driversRes = await pool.query(
-      'SELECT DISTINCT d.name, d.id ' +
-      'FROM drivers d ' +
-      'JOIN race_results rr ON rr.driver_id = d.id ' +
-      'JOIN races r ON rr.race_id = r.id ' +
-      'JOIN seasons s ON r.season_id = s.id ' +
-      'WHERE CAST(s.season AS INTEGER) >= 6 ' +
-      'ORDER BY d.name'
-    );
-
-    const allDriverStats = [];
-
-    // Process each driver individually using the EXACT same logic as driver page
-    for (const driver of driversRes.rows) {
-      const driverId = driver.id;
-      const driverName = driver.name;
-      
-      // Get season-by-season points for standings table data (S6-S10)
-      const seasonStatsRes = await pool.query(
-        'SELECT s.season, STRING_AGG(t.name, \'/\') AS teams, st.points ' +
-        'FROM seasons s ' +
-        'LEFT JOIN lineups l ON l.season_id = s.id AND l.driver_id = $1 ' +
-        'LEFT JOIN teams t ON l.team_id = t.id ' +
-        'LEFT JOIN standings st ON st.season_id = s.id AND st.driver_id = $1 AND st.type = $2 ' +
-        'WHERE CAST(s.season AS INTEGER) >= 6 AND CAST(s.season AS INTEGER) <= 10 ' +
-        'GROUP BY s.season, st.points ' +
-        'ORDER BY s.season DESC',
-        [driverId, 'drivers']
-      );
-
-      // Get calculated points for modern seasons (S11+)
-      const calculatedPointsRes = await pool.query(
-        `SELECT 
-          s.season,
-          STRING_AGG(DISTINCT t.name, '/') AS teams, 
-          SUM(
-            CASE 
-              WHEN COALESCE(rr.adjusted_position, rr.position) <= 10 
-                AND rr.status != 'DSQ' AND rr.status != 'DNS'
-              THEN 
-                (ARRAY[25, 18, 15, 12, 10, 8, 6, 4, 2, 1])[COALESCE(rr.adjusted_position, rr.position)]
-              ELSE 0
-            END + 
-            CASE 
-              WHEN rr.fastest_lap_time_int > 0 
-                AND rr.fastest_lap_time_int = (
-                  SELECT MIN(rr2.fastest_lap_time_int) 
-                  FROM race_results rr2 
-                  WHERE rr2.race_id = rr.race_id AND rr2.fastest_lap_time_int > 0
-                ) 
-                AND COALESCE(rr.adjusted_position, rr.position) <= 10
-                AND rr.status != 'DSQ' AND rr.status != 'DNS'
-              THEN 1 
-              ELSE 0 
-            END
-          ) AS points
+    // Use SQL-based calculation like the working season-stats API
+    const allDriverStatsRes = await pool.query(`
+      WITH driver_team_info AS (
+        SELECT 
+          d.name as driver,
+          STRING_AGG(DISTINCT t.name, ', ' ORDER BY t.name) as teams
         FROM race_results rr
         JOIN races r ON rr.race_id = r.id
         JOIN seasons s ON r.season_id = s.id
+        JOIN drivers d ON rr.driver_id = d.id
         JOIN teams t ON rr.team_id = t.id
-        WHERE CAST(s.season AS INTEGER) >= 11
-        AND rr.driver_id = $1
-        GROUP BY s.season
-        ORDER BY s.season DESC`,
-        [driverId]
-      );
+        WHERE CAST(s.season AS INTEGER) >= 6
+        GROUP BY d.name
+      ),
+      race_stats AS (
+        SELECT 
+          d.name as driver,
+          dti.teams as team,
+          COUNT(*) as races_entered,
+          SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) = 1 THEN 1 ELSE 0 END) as wins,
+          SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) <= 3 THEN 1 ELSE 0 END) as podiums,
+          SUM(CASE WHEN UPPER(rr.status) IN ('DNF', 'DID NOT FINISH', 'RETIRED') THEN 1 ELSE 0 END) as dnfs,
+          SUM(CASE WHEN rr.grid_position = 1 THEN 1 ELSE 0 END) as poles,
+          SUM(CASE WHEN COALESCE(rr.adjusted_position, rr.position) <= 10 
+                   AND UPPER(rr.status) NOT IN ('DSQ', 'DISQUALIFIED', 'DNS')
+                   THEN CASE COALESCE(rr.adjusted_position, rr.position)
+                        WHEN 1 THEN 25 WHEN 2 THEN 18 WHEN 3 THEN 15 WHEN 4 THEN 12 WHEN 5 THEN 10
+                        WHEN 6 THEN 8 WHEN 7 THEN 6 WHEN 8 THEN 4 WHEN 9 THEN 2 WHEN 10 THEN 1
+                        ELSE 0 END
+                   ELSE 0 END) as points,
+          AVG(CASE WHEN UPPER(rr.status) NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED', 'DNS') 
+                   THEN COALESCE(rr.adjusted_position, rr.position)::float 
+                   ELSE NULL END) as avg_position,
+          (SUM(CASE WHEN UPPER(rr.status) NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED', 'DNS') THEN 1 ELSE 0 END)::float / COUNT(*)) * 100 as finish_rate
+        FROM race_results rr
+        JOIN races r ON rr.race_id = r.id
+        JOIN seasons s ON r.season_id = s.id
+        JOIN drivers d ON rr.driver_id = d.id
+        JOIN driver_team_info dti ON d.name = dti.driver
+        WHERE CAST(s.season AS INTEGER) >= 6
+        GROUP BY d.name, dti.teams
+        HAVING COUNT(*) >= 20
+      ),
+      fastest_laps AS (
+        SELECT 
+          rr.race_id, 
+          MIN(rr.fastest_lap_time_int) as fastest_time
+        FROM race_results rr
+        JOIN races r ON rr.race_id = r.id
+        JOIN seasons s ON r.season_id = s.id
+        WHERE CAST(s.season AS INTEGER) >= 6 AND rr.fastest_lap_time_int > 0
+        GROUP BY rr.race_id
+      ),
+      fastest_lap_counts AS (
+        SELECT 
+          d.name as driver,
+          COUNT(*) as fastest_laps
+        FROM race_results rr
+        JOIN fastest_laps fl ON rr.race_id = fl.race_id AND rr.fastest_lap_time_int = fl.fastest_time
+        JOIN races r ON rr.race_id = r.id
+        JOIN seasons s ON r.season_id = s.id
+        JOIN drivers d ON rr.driver_id = d.id
+        WHERE CAST(s.season AS INTEGER) >= 6
+        GROUP BY d.name
+      )
+      SELECT 
+        rs.driver,
+        rs.team,
+        rs.races_entered,
+        rs.wins,
+        rs.podiums,
+        rs.dnfs,
+        rs.poles,
+        rs.points,
+        rs.avg_position,
+        rs.finish_rate,
+        COALESCE(flc.fastest_laps, 0) as fastest_laps
+      FROM race_stats rs
+      LEFT JOIN fastest_lap_counts flc ON rs.driver = flc.driver
+      ORDER BY rs.points DESC, rs.wins DESC
+    `);
 
-      // Calculate career totals using EXACT same logic as driver page
-      let careerPoints = 0;
-      let careerRaces = 0;
-      let careerWins = 0;
-      let careerPodiums = 0;
-      let careerPoles = 0;
-      let careerFastestLaps = 0;
-      let careerDNFs = 0;
-      let totalTeams = new Set();
+    // Calculate cross-season streaks using the working logic from season-stats
+    const crossSeasonStreakResults = await pool.query(`
+      WITH driver_race_history AS (
+        SELECT 
+          d.name as driver,
+          r.date,
+          se.season,
+          rr.race_id,
+          UPPER(rr.status) as status,
+          COALESCE(rr.adjusted_position, rr.position) as final_position,
+          ROW_NUMBER() OVER (PARTITION BY d.name ORDER BY r.date, r.id) as race_order
+        FROM race_results rr
+        JOIN races r ON rr.race_id = r.id
+        JOIN seasons se ON r.season_id = se.id
+        JOIN drivers d ON rr.driver_id = d.id
+        WHERE CAST(se.season AS INTEGER) >= 6
+        ORDER BY d.name, r.date, r.id
+      ),
+      streak_calculations AS (
+        SELECT 
+          driver,
+          race_order,
+          status,
+          final_position,
+          -- Finish streak: consecutive races that are NOT DNF/DSQ
+          CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+               THEN 1 ELSE 0 END as finished,
+          -- Points streak: consecutive races with P10 or better (and finished)
+          CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                    AND final_position <= 10 
+               THEN 1 ELSE 0 END as points_finish,
+          -- Create group identifiers for consecutive streaks
+          race_order - ROW_NUMBER() OVER (
+            PARTITION BY driver, 
+            CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                 THEN 1 ELSE 0 END 
+            ORDER BY race_order
+          ) as finish_streak_group,
+          race_order - ROW_NUMBER() OVER (
+            PARTITION BY driver, 
+            CASE WHEN status NOT IN ('DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED') 
+                      AND final_position <= 10 
+                 THEN 1 ELSE 0 END 
+            ORDER BY race_order
+          ) as points_streak_group
+        FROM driver_race_history
+      )
+      SELECT 
+        driver,
+        MAX(CASE WHEN finished = 1 THEN streak_length ELSE 0 END) as max_finish_streak,
+        MAX(CASE WHEN points_finish = 1 THEN streak_length ELSE 0 END) as max_points_streak
+      FROM (
+        SELECT 
+          driver,
+          finished,
+          points_finish,
+          finish_streak_group,
+          points_streak_group,
+          COUNT(*) as streak_length
+        FROM streak_calculations
+        GROUP BY driver, finished, points_finish, finish_streak_group, points_streak_group
+      ) streak_lengths
+      GROUP BY driver
+    `);
 
-      // Add points from standings table (S6-S10)
-      seasonStatsRes.rows.forEach((row) => {
-        if (row.points !== null) {
-          careerPoints += parseInt(row.points, 10) || 0;
-        }
-        if (row.teams && row.teams !== "Didn't Race") {
-          row.teams.split('/').forEach(team => totalTeams.add(team));
-        }
+    const streakMap = new Map();
+    crossSeasonStreakResults.rows.forEach(row => {
+      streakMap.set(row.driver, {
+        finish_streak: parseInt(row.max_finish_streak) || 0,
+        points_streak: parseInt(row.max_points_streak) || 0
       });
+    });
 
-      // Add points from calculated seasons (S11+)
-      calculatedPointsRes.rows.forEach((row) => {
-        careerPoints += parseInt(row.points, 10) || 0;
-        if (row.teams && row.teams !== "Didn't Race") {
-          row.teams.split('/').forEach(team => totalTeams.add(team));
-        }
-      });
-
-      // Get race results for detailed stats (S6+) - EXACT same query as driver page
-      const raceStatsRes = await pool.query(
-        'SELECT ' +
-        '  rr.race_id, ' +
-        '  rr.position, ' +
-        '  rr.adjusted_position, ' +
-        '  rr.grid_position, ' +
-        '  rr.fastest_lap_time_int, ' +
-        '  rr.status, ' +
-        '  s.season, ' +
-        '  t.name AS track_name, ' +
-        '  t.id AS track_id ' +
-        'FROM race_results rr ' +
-        'JOIN races r ON rr.race_id = r.id ' +
-        'JOIN seasons s ON r.season_id = s.id ' +
-        'JOIN tracks t ON r.track_id = t.id ' +
-        'WHERE rr.driver_id = $1 ' +
-        'AND CAST(s.season AS INTEGER) >= 6',
-        [driverId]
-      );
-
-      // Get fastest laps - EXACT same query as driver page
-      const allRaceResultsRes = await pool.query(
-        'SELECT ' +
-        '  rr.race_id, ' +
-        '  rr.driver_id, ' +
-        '  rr.fastest_lap_time_int, ' +
-        '  s.season, ' +
-        '  t.name AS track_name ' +
-        'FROM race_results rr ' +
-        'JOIN races r ON rr.race_id = r.id ' +
-        'JOIN seasons s ON r.season_id = s.id ' +
-        'JOIN tracks t ON r.track_id = t.id ' +
-        'WHERE rr.fastest_lap_time_int > 0 ' +
-        'AND rr.driver_id = $1 ' +
-        'AND CAST(s.season AS INTEGER) >= 6 ' +
-        'AND rr.fastest_lap_time_int = (' +
-        '  SELECT MIN(rr2.fastest_lap_time_int) ' +
-        '  FROM race_results rr2 ' +
-        '  WHERE rr2.race_id = rr.race_id ' +
-        '  AND rr2.fastest_lap_time_int > 0' +
-        ') ' +
-        'ORDER BY s.season DESC, rr.race_id',
-        [driverId]
-      );
-
-      const raceResults = raceStatsRes.rows;
-      const fastestLapRaces = allRaceResultsRes.rows;
-
-      // Process career stats using EXACT same logic as driver page
-      careerRaces = raceResults.length;
-      careerFastestLaps = fastestLapRaces.length;
-
-      let finishedRaces = 0;
-      let totalPositions = 0;
-
-      raceResults.forEach(row => {
-        const effectivePosition = row.adjusted_position !== null ? row.adjusted_position : row.position;
-        const statusUpper = row.status ? row.status.toUpperCase() : '';
-        
-        // Count finished races and positions for average
-        if (!['DNF', 'DID NOT FINISH', 'RETIRED', 'DSQ', 'DISQUALIFIED', 'DNS'].includes(statusUpper)) {
-          finishedRaces++;
-          totalPositions += effectivePosition;
-        }
-
-        // Count DNFs using case-insensitive matching
-        if (['DNF', 'DID NOT FINISH', 'RETIRED'].includes(statusUpper)) {
-          careerDNFs++;
-        }
-        
-        // Wins
-        if (effectivePosition === 1) {
-          careerWins++;
-        }
-        
-        // Podiums
-        if (effectivePosition <= 3) {
-          careerPodiums++;
-        }
-        
-        // Poles
-        if (row.grid_position === 1) {
-          careerPoles++;
-        }
-      });
-
-      // Calculate averages and finish rate
-      const avgFinishPosition = finishedRaces > 0 ? totalPositions / finishedRaces : null;
-      const finishRate = careerRaces > 0 ? (finishedRaces / careerRaces) * 100 : 0;
-
-      // Only include drivers with at least 20 career races for meaningful stats
-      if (careerRaces >= 20) {
-        allDriverStats.push({
-          driver: driverName,
-          team: Array.from(totalTeams).join(', '),
-          races_entered: careerRaces,
-          wins: careerWins,
-          podiums: careerPodiums,
-          dnfs: careerDNFs,
-          points: careerPoints,
-          fastest_laps: careerFastestLaps,
-          poles: careerPoles,
-          avg_position: avgFinishPosition,
-          finish_rate: finishRate
-        });
-      }
-    }
+    // Add streak data to driver stats
+    const driverStatsWithStreaks = allDriverStatsRes.rows.map(driver => {
+      const streaks = streakMap.get(driver.driver) || { finish_streak: 0, points_streak: 0 };
+      return {
+        ...driver,
+        finish_streak: streaks.finish_streak,
+        points_streak: streaks.points_streak
+      };
+    });
 
     return NextResponse.json({
       isOverall: true,
-      driverStats: allDriverStats,
-      totalDrivers: allDriverStats.length
+      driverStats: driverStatsWithStreaks,
+      totalDrivers: driverStatsWithStreaks.length
     }, {
       headers: {
         'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
