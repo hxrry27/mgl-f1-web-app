@@ -178,27 +178,20 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           fill: am5.color("#fbbf24")
         });
 
+        // ✅ Attach click directly to bullet circle
+        circle.events.on("click", function () {
+          const trackData = dataItem.dataContext;
+          const trackSlug = trackData.id || trackData.slug;
+          if (trackSlug && onTrackClick) {
+            onTrackClick(trackSlug);
+          }
+        });
+
         return am5.Bullet.new(root, {
           sprite: circle
         });
       });
 
-      // Handle clicks on map points - this is the most reliable approach for globe
-      pointSeries.mapPoints.template.on("click", function(e) {
-        console.log("Map point clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem && dataItem.dataContext) {
-          const trackData = dataItem.dataContext;
-          const trackSlug = trackData.id || trackData.slug;
-          console.log('Track clicked:', trackSlug, 'Track data:', trackData);
-          
-          if (trackSlug && onTrackClick) {
-            onTrackClick(trackSlug);
-          }
-        }
-      });
-
-      // Use the exact format from am5 docs: pointSeries.data.setAll([{id: "trackId", url: "https://..."}])
       const trackData = Object.entries(trackLocations).map(([slug, location]) => ({
         geometry: { type: "Point", coordinates: [location.lng, location.lat] },
         id: slug,
@@ -227,37 +220,6 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         setHoveredTrack(null);
       });
 
-      // Additional click handler on bullets template as backup
-      pointSeries.bullets.template.on("click", function(e) {
-        console.log("Bullet template clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem && dataItem.dataContext) {
-          const trackData = dataItem.dataContext;
-          const trackSlug = trackData.id || trackData.slug;
-          console.log('Track clicked via bullet template:', trackSlug);
-          
-          if (trackSlug && onTrackClick) {
-            onTrackClick(trackSlug);
-          }
-        }
-      });
-
-      // Final fallback: series-level click handler
-      pointSeries.on("click", function(e) {
-        console.log("Series clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem && dataItem.dataContext) {
-          const trackData = dataItem.dataContext;
-          const trackSlug = trackData.id || trackData.slug;
-          console.log('Track clicked via series:', trackSlug);
-          
-          if (trackSlug && onTrackClick) {
-            onTrackClick(trackSlug);
-          }
-        }
-      });
-
-      // Cleanup function
       return () => {
         if (rootRef.current) {
           rootRef.current.dispose();
@@ -278,6 +240,7 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
 
   return <div ref={chartRef} className="w-full h-[500px]" />;
 }
+
 
 
 export default function TracksPage() {
