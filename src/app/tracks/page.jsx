@@ -138,7 +138,9 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           paddingBottom: 20,
           paddingLeft: 20,
           paddingRight: 20,
-          wheelable: true
+          wheelable: true,
+          // Enable interactivity on the chart itself
+          interactive: true
         })
       );
 
@@ -166,43 +168,48 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         })
       );
 
-      // Create bullets with proper interactivity according to am5 docs
-      pointSeries.bullets.push(function() {
+      // Configure map points template for interactivity
+      pointSeries.mapPoints.template.setAll({
+        interactive: true,
+        cursorOverStyle: "pointer"
+      });
+
+      // Create bullets with click functionality
+      pointSeries.bullets.push(function(root, series, dataItem) {
         const circle = am5.Circle.new(root, {
           radius: 8,
           fill: am5.color("#ef4444"),
           stroke: am5.color("#ffffff"),
           strokeWidth: 2,
           tooltipText: "{fullName}",
-          // Manually enable interactivity as docs state it's not automatic
           interactive: true,
           cursorOverStyle: "pointer"
         });
 
-        // Add hover state - note: adding hover state doesn't auto-enable interactivity
+        // Add hover state
         circle.states.create("hover", {
           scale: 1.3,
           fill: am5.color("#fbbf24")
         });
 
-        // Add click handler directly to the circle sprite
-        circle.on("click", function(e) {
-          console.log("Circle clicked!", e);
-          const dataItem = e.target.dataItem;
-          if (dataItem) {
-            const trackSlug = dataItem.get("id");
-            const url = dataItem.get("url");
-            console.log('Track clicked:', trackSlug, 'URL:', url);
-            
-            if (trackSlug) {
-              onTrackClick(trackSlug);
-            }
-          }
-        });
-
         return am5.Bullet.new(root, {
           sprite: circle
         });
+      });
+
+      // Handle clicks on map points - this is the most reliable approach for globe
+      pointSeries.mapPoints.template.on("click", function(e) {
+        console.log("Map point clicked!", e);
+        const dataItem = e.target.dataItem;
+        if (dataItem && dataItem.dataContext) {
+          const trackData = dataItem.dataContext;
+          const trackSlug = trackData.id || trackData.slug;
+          console.log('Track clicked:', trackSlug, 'Track data:', trackData);
+          
+          if (trackSlug && onTrackClick) {
+            onTrackClick(trackSlug);
+          }
+        }
       });
 
       // Use the exact format from am5 docs: pointSeries.data.setAll([{id: "trackId", url: "https://..."}])
@@ -223,25 +230,52 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
 
       pointSeries.data.setAll(trackData);
 
-      // Add hover handlers with proper data access
-      pointSeries.on("pointerover", function(e) {
+      // Add hover handlers on mapPoints template for consistency
+      pointSeries.mapPoints.template.on("pointerover", function(e) {
         const dataItem = e.target.dataItem;
-        if (dataItem) {
-          const trackId = dataItem.get("id");
+        if (dataItem && dataItem.dataContext) {
           const trackData = dataItem.dataContext;
           
-          if (trackData) {
-            setHoveredTrack({
-              slug: trackId || trackData.slug,
-              name: trackData.fullName,
-              country: trackData.name
-            });
+          setHoveredTrack({
+            slug: trackData.id || trackData.slug,
+            name: trackData.fullName,
+            country: trackData.name
+          });
+        }
+      });
+
+      pointSeries.mapPoints.template.on("pointerout", function() {
+        setHoveredTrack(null);
+      });
+
+      // Additional click handler on bullets template as backup
+      pointSeries.bullets.template.on("click", function(e) {
+        console.log("Bullet template clicked!", e);
+        const dataItem = e.target.dataItem;
+        if (dataItem && dataItem.dataContext) {
+          const trackData = dataItem.dataContext;
+          const trackSlug = trackData.id || trackData.slug;
+          console.log('Track clicked via bullet template:', trackSlug);
+          
+          if (trackSlug && onTrackClick) {
+            onTrackClick(trackSlug);
           }
         }
       });
 
-      pointSeries.on("pointerout", function() {
-        setHoveredTrack(null);
+      // Final fallback: series-level click handler
+      pointSeries.on("click", function(e) {
+        console.log("Series clicked!", e);
+        const dataItem = e.target.dataItem;
+        if (dataItem && dataItem.dataContext) {
+          const trackData = dataItem.dataContext;
+          const trackSlug = trackData.id || trackData.slug;
+          console.log('Track clicked via series:', trackSlug);
+          
+          if (trackSlug && onTrackClick) {
+            onTrackClick(trackSlug);
+          }
+        }
       });
 
       // Cleanup function
