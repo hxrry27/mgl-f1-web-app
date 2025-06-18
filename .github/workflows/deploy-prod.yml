@@ -1,0 +1,24 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to prod server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd ~/docker/repos/mglf1-prod/
+          git pull origin main
+          cd ~/docker/compose/web/
+          docker-compose -f f1-prod.yml down
+          docker-compose -f f1-prod.yml build --no-cache
+          docker-compose -f f1-prod.yml up -d
+          echo "Production deployment completed at $(date)"

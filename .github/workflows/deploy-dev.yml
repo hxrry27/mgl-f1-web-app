@@ -1,0 +1,24 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches: [ develop ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to dev server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd ~/docker/repos/mglf1-dev/
+          git pull origin develop
+          cd ~/docker/compose/web/
+          docker-compose -f f1-dev.yml down
+          docker-compose -f f1-dev.yml build --no-cache
+          docker-compose -f f1-dev.yml up -d
+          echo "Dev deployment completed at $(date)"
