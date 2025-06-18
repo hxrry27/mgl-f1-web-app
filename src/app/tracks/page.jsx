@@ -151,18 +151,10 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
       });
 
       const pointSeries = chart.series.push(
-        am5map.MapPointSeries.new(root, {
-          cursorOverStyle: "pointer"
-        })
+        am5map.MapPointSeries.new(root, {})
       );
 
-      pointSeries.mapPoints.template.setAll({
-        interactive: true,
-        cursorOverStyle: "pointer"
-      });
-
-      // ✅ Correct click handler inside bullet creation
-      pointSeries.bullets.push(function (root, series, dataItem) {
+      pointSeries.bullets.push((root, series, dataItem) => {
         const circle = am5.Circle.new(root, {
           radius: 8,
           fill: am5.color("#ef4444"),
@@ -178,12 +170,11 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           fill: am5.color("#fbbf24")
         });
 
-        // 🔑 Key fix: manually enable click interaction with hit test
-        circle.events.on("pointerdown", function (ev) {
-          const hitTarget = root?.current?.document?.pointSeries?.hitTest?.(ev.point);
+        // ✅ Main click handler
+        circle.events.on("click", () => {
           const trackData = dataItem.dataContext;
           const trackSlug = trackData?.id || trackData?.slug;
-          console.log("✅ Pointer down on circle:", trackSlug);
+          console.log("✅ CLICKED:", trackSlug);
           if (trackSlug && onTrackClick) {
             onTrackClick(trackSlug);
           }
@@ -194,19 +185,8 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         });
       });
 
-      const trackData = Object.entries(trackLocations).map(([slug, location]) => ({
-        geometry: { type: "Point", coordinates: [location.lng, location.lat] },
-        id: slug,
-        url: `/tracks/${slug}`,
-        name: trackCountries[slug],
-        fullName: trackNames[slug],
-        slug: slug,
-        region: location.region
-      }));
-
-      pointSeries.data.setAll(trackData);
-
-      pointSeries.mapPoints.template.on("pointerover", function (e) {
+      // ✅ Hover tracking using bullet template events
+      pointSeries.bullets.template.events.on("pointerover", function (e) {
         const dataItem = e.target.dataItem;
         if (dataItem && dataItem.dataContext) {
           const trackData = dataItem.dataContext;
@@ -218,9 +198,20 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         }
       });
 
-      pointSeries.mapPoints.template.on("pointerout", function () {
+      pointSeries.bullets.template.events.on("pointerout", function () {
         setHoveredTrack(null);
       });
+
+      const trackData = Object.entries(trackLocations).map(([slug, location]) => ({
+        geometry: { type: "Point", coordinates: [location.lng, location.lat] },
+        id: slug,
+        slug: slug,
+        name: trackCountries[slug],
+        fullName: trackNames[slug],
+        region: location.region
+      }));
+
+      pointSeries.data.setAll(trackData);
 
       return () => {
         if (rootRef.current) {
@@ -230,15 +221,6 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
       };
     }
   }, [onTrackClick, setHoveredTrack]);
-
-  useEffect(() => {
-    return () => {
-      if (rootRef.current) {
-        rootRef.current.dispose();
-        rootRef.current = null;
-      }
-    };
-  }, []);
 
   return <div ref={chartRef} className="w-full h-[500px]" />;
 }
