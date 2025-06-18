@@ -118,41 +118,31 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
 
   useEffect(() => {
     if (chartRef.current && !rootRef.current) {
-      // Create root element
       const root = am5.Root.new(chartRef.current);
       rootRef.current = root;
 
-      // Set themes
       root.setThemes([
         am5themes_Animated.new(root),
         am5themes_Dark.new(root)
       ]);
 
-      // Create the globe chart with orthographic projection
       const chart = root.container.children.push(
         am5map.MapChart.new(root, {
           panX: "rotateX",
-          panY: "rotateY", 
+          panY: "rotateY",
           projection: am5map.geoOrthographic(),
-          paddingTop: 20,
-          paddingBottom: 20,
-          paddingLeft: 20,
-          paddingRight: 20,
           wheelable: true,
-          // Enable interactivity on the chart itself
           interactive: true
         })
       );
 
-      // Create main polygon series for countries
       const polygonSeries = chart.series.push(
         am5map.MapPolygonSeries.new(root, {
           geoJSON: am5geodata_worldLow,
-          exclude: ["AQ"] // Exclude Antarctica
+          exclude: ["AQ"]
         })
       );
 
-      // Style the countries
       polygonSeries.mapPolygons.template.setAll({
         fill: am5.color("#374151"),
         stroke: am5.color("#1f2937"),
@@ -160,22 +150,19 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         interactive: false
       });
 
-      // Create point series for F1 tracks with proper click handling
       const pointSeries = chart.series.push(
         am5map.MapPointSeries.new(root, {
-          // Enable click handling on the series
           cursorOverStyle: "pointer"
         })
       );
 
-      // Configure map points template for interactivity
       pointSeries.mapPoints.template.setAll({
         interactive: true,
         cursorOverStyle: "pointer"
       });
 
-      // Create bullets with click functionality
-      pointSeries.bullets.push(function(root, series, dataItem) {
+      // ✅ Correct click handler inside bullet creation
+      pointSeries.bullets.push(function (root, series, dataItem) {
         const circle = am5.Circle.new(root, {
           radius: 8,
           fill: am5.color("#ef4444"),
@@ -186,10 +173,18 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           cursorOverStyle: "pointer"
         });
 
-        // Add hover state
         circle.states.create("hover", {
           scale: 1.3,
           fill: am5.color("#fbbf24")
+        });
+
+        // ✅ Attach click directly to bullet circle
+        circle.events.on("click", function () {
+          const trackData = dataItem.dataContext;
+          const trackSlug = trackData.id || trackData.slug;
+          if (trackSlug && onTrackClick) {
+            onTrackClick(trackSlug);
+          }
         });
 
         return am5.Bullet.new(root, {
@@ -197,31 +192,10 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         });
       });
 
-      // Handle clicks on map points - this is the most reliable approach for globe
-      pointSeries.mapPoints.template.on("click", function(e) {
-        console.log("Map point clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem && dataItem.dataContext) {
-          const trackData = dataItem.dataContext;
-          const trackSlug = trackData.id || trackData.slug;
-          console.log('Track clicked:', trackSlug, 'Track data:', trackData);
-          
-          if (trackSlug && onTrackClick) {
-            onTrackClick(trackSlug);
-          }
-        }
-      });
-
-      // Use the exact format from am5 docs: pointSeries.data.setAll([{id: "trackId", url: "https://..."}])
       const trackData = Object.entries(trackLocations).map(([slug, location]) => ({
-        // GeoJSON geometry for positioning
         geometry: { type: "Point", coordinates: [location.lng, location.lat] },
-        
-        // am5 required fields for click handling
-        id: slug,                    // Required ID field
-        url: `/tracks/${slug}`,      // URL for navigation (exactly as docs show)
-        
-        // Additional data fields
+        id: slug,
+        url: `/tracks/${slug}`,
         name: trackCountries[slug],
         fullName: trackNames[slug],
         slug: slug,
@@ -230,12 +204,10 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
 
       pointSeries.data.setAll(trackData);
 
-      // Add hover handlers on mapPoints template for consistency
-      pointSeries.mapPoints.template.on("pointerover", function(e) {
+      pointSeries.mapPoints.template.on("pointerover", function (e) {
         const dataItem = e.target.dataItem;
         if (dataItem && dataItem.dataContext) {
           const trackData = dataItem.dataContext;
-          
           setHoveredTrack({
             slug: trackData.id || trackData.slug,
             name: trackData.fullName,
@@ -244,41 +216,10 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         }
       });
 
-      pointSeries.mapPoints.template.on("pointerout", function() {
+      pointSeries.mapPoints.template.on("pointerout", function () {
         setHoveredTrack(null);
       });
 
-      // Additional click handler on bullets template as backup
-      pointSeries.bullets.template.on("click", function(e) {
-        console.log("Bullet template clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem && dataItem.dataContext) {
-          const trackData = dataItem.dataContext;
-          const trackSlug = trackData.id || trackData.slug;
-          console.log('Track clicked via bullet template:', trackSlug);
-          
-          if (trackSlug && onTrackClick) {
-            onTrackClick(trackSlug);
-          }
-        }
-      });
-
-      // Final fallback: series-level click handler
-      pointSeries.on("click", function(e) {
-        console.log("Series clicked!", e);
-        const dataItem = e.target.dataItem;
-        if (dataItem && dataItem.dataContext) {
-          const trackData = dataItem.dataContext;
-          const trackSlug = trackData.id || trackData.slug;
-          console.log('Track clicked via series:', trackSlug);
-          
-          if (trackSlug && onTrackClick) {
-            onTrackClick(trackSlug);
-          }
-        }
-      });
-
-      // Cleanup function
       return () => {
         if (rootRef.current) {
           rootRef.current.dispose();
@@ -288,7 +229,6 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
     }
   }, [onTrackClick, setHoveredTrack]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (rootRef.current) {
@@ -300,6 +240,7 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
 
   return <div ref={chartRef} className="w-full h-[500px]" />;
 }
+
 
 export default function TracksPage() {
   const router = useRouter();
