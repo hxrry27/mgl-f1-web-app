@@ -182,6 +182,7 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
         circle.events.on("click", function () {
           const trackData = dataItem.dataContext;
           const trackSlug = trackData.id || trackData.slug;
+          console.log("✅ Circle clicked:", trackSlug);
           if (trackSlug && onTrackClick) {
             onTrackClick(trackSlug);
           }
