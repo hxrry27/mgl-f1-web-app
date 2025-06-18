@@ -169,8 +169,8 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           stroke: am5.color("#ffffff"),
           strokeWidth: 2,
           tooltipText: "{fullName}",
-          interactive: true,
-          cursorOverStyle: "pointer"
+          cursorOverStyle: "pointer",
+          interactive: true
         });
 
         circle.states.create("hover", {
@@ -178,11 +178,12 @@ function WorldMapChart({ onTrackClick, hoveredTrack, setHoveredTrack }) {
           fill: am5.color("#fbbf24")
         });
 
-        // ✅ Attach click directly to bullet circle
-        circle.events.on("click", function () {
+        // 🔑 Key fix: manually enable click interaction with hit test
+        circle.events.on("pointerdown", function (ev) {
+          const hitTarget = root?.current?.document?.pointSeries?.hitTest?.(ev.point);
           const trackData = dataItem.dataContext;
-          const trackSlug = trackData.id || trackData.slug;
-          console.log("✅ Circle clicked:", trackSlug);
+          const trackSlug = trackData?.id || trackData?.slug;
+          console.log("✅ Pointer down on circle:", trackSlug);
           if (trackSlug && onTrackClick) {
             onTrackClick(trackSlug);
           }
