@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { 
   Trophy, Flag, MapPin, Timer, GitBranch, 
-  Users, UsersRound, Medal
+  Users, UsersRound, Medal, TrendingUp
 } from 'lucide-react';
+import TrackSelector from './TrackSelector';
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -35,47 +36,39 @@ export default async function TrackPage({ params }) {
   const track = params.track;
   console.log(`Looking up track with slug: ${track}`);
 
-  // Fetch track info
-  const trackQuery = `
-    SELECT id, country, name, length, turns, first_grand_prix AS first_grand_prix, laps
-    FROM tracks
-    WHERE slug = $1
-  `;
-  const trackResult = await pool.query(trackQuery, [track]);
-  console.log(`Track info results: ${trackResult.rows.length} rows found`);
-  
-  const trackInfo = trackResult.rows[0] || {
-    id: null,
-    country: 'UNKNOWN',
-    name: 'Unknown Circuit',
-    length: 'N/A',
-    turns: 'N/A',
-    first_grand_prix: 'N/A',
-    laps: 'N/A',
-  };
-  console.log(`Track ID: ${trackInfo.id}`);
-  const halfLaps = trackInfo.laps !== 'N/A' ? Math.round(trackInfo.laps / 2) : 'N/A';
+  let trackInfo, rawResults, lapHistoryData;
+  let previousWinners, fastestLap, top3FastestLaps, allComebacks, mostSuccessfulDriverText, mostSuccessfulTeamText, mostPolesText, mostPodiumsText, mostPitsText;
+  let topDrivers = [], topTeams = [], topPoleDrivers = [], topPodiumDrivers = [], topPitDrivers = [];
+  let databaseError = false;
 
-  const countryFlagMap = {
-    'GREAT BRITAIN': 'united_kingdom',
-    'EMILIA-ROMAGNA': 'italy',
-    'LAS VEGAS': 'united_states_of_america',
-    'AUSTIN': 'united_states_of_america',
-    'MIAMI': 'united_states_of_america',
-    'SAUDI ARABIA': 'saudi_arabia',
-    'ABU DHABI': 'united_arab_emirates',
-  };
+  try {
+    // Fetch track info
+    const trackQuery = `
+      SELECT id, country, name, length, turns, first_grand_prix AS first_grand_prix, laps
+      FROM tracks
+      WHERE slug = $1
+    `;
+    const trackResult = await pool.query(trackQuery, [track]);
+    console.log(`Track info results: ${trackResult.rows.length} rows found`);
+    
+    trackInfo = trackResult.rows[0] || {
+      id: null,
+      country: 'UNKNOWN',
+      name: 'Unknown Circuit',
+      length: 'N/A',
+      turns: 'N/A',
+      first_grand_prix: 'N/A',
+      laps: 'N/A',
+    };
+    console.log(`Track ID: ${trackInfo.id}`);
 
-  // Normalize country name for flag filename
-  const flagCountry = countryFlagMap[trackInfo.country] || trackInfo.country.toLowerCase().replace(/\s+/g, '');
-
-  // Step 1: Find race sessions for this track
-  const raceSessionsQuery = `
-    SELECT session_uid, season
-    FROM sessions
-    WHERE track_id = $1 AND session_type = 10
-  `;
-  const raceSessionsResult = await pool.query(raceSessionsQuery, [trackInfo.id]);
+    // Step 1: Find race sessions for this track
+    const raceSessionsQuery = `
+      SELECT session_uid, season
+      FROM sessions
+      WHERE track_id = $1 AND session_type = 10
+    `;
+    const raceSessionsResult = await pool.query(raceSessionsQuery, [trackInfo.id]);
   console.log(`Found ${raceSessionsResult.rows.length} race sessions for track_id=${trackInfo.id}`);
   
   // Extract session UIDs
@@ -165,6 +158,7 @@ export default async function TrackPage({ params }) {
   // Process results into historical data
   const historicalResults = [];
   const seasonMap = new Map();
+  const allFastestLaps = []; // Collect all fastest laps across all seasons
 
   // First process the race_results data
   rawResults.forEach(row => {
@@ -185,6 +179,19 @@ export default async function TrackPage({ params }) {
     if (row.grid_position === 1) {
       seasonData.pole = row.driver;
     }
+    
+    // Collect ALL fastest lap times for later ranking
+    if (row.fastest_lap_time_int && row.fastest_lap_time_int > 0) {
+      allFastestLaps.push({
+        driver: row.driver,
+        time: row.fastest_lap_time_int,
+        season,
+        team: row.team,
+        source: 'race_results'
+      });
+    }
+
+    // Also keep the per-season fastest lap for historical results display
     if (row.fastest_lap_time_int && row.fastest_lap_time_int > 0 && (!seasonData.fastestLap || row.fastest_lap_time_int < seasonData.fastestLap.time)) {
       seasonData.fastestLap = {
         driver: row.driver,
@@ -204,7 +211,19 @@ export default async function TrackPage({ params }) {
     }
     const seasonData = seasonMap.get(season);
 
-    // Compare with existing fastest lap (if any)
+    // Collect ALL fastest lap times for later ranking
+    if (lap.fastest_lap_time > 0) {
+      allFastestLaps.push({
+        driver: lap.driver,
+        time: lap.fastest_lap_time,
+        season,
+        team: lap.team,
+        source: 'lap_history_bulk_data',
+        session_uid: lap.session_uid
+      });
+    }
+
+    // Compare with existing fastest lap (if any) for per-season display
     if (lap.fastest_lap_time > 0 && (!seasonData.fastestLap || lap.fastest_lap_time < seasonData.fastestLap.time)) {
       seasonData.fastestLap = {
         driver: lap.driver,
@@ -235,7 +254,7 @@ export default async function TrackPage({ params }) {
   );
 
   // Previous Winners
-  const previousWinners = significantResults
+  previousWinners = significantResults
     .filter(result => result.winner)
     .map(result => ({
       driver: result.winner,
@@ -243,55 +262,84 @@ export default async function TrackPage({ params }) {
       season: `${result.season}`,
     }));
 
-  // Fastest Historical Race Lap
-  const fastestLap = significantResults
-    .filter(result => result.fastestLapData && result.fastestLapData.time > 0)
-    .reduce((fastest, result) => {
-      // Convert time to a number to ensure correct comparison
-      const time = Number(result.fastestLapData.time);
-      if (!fastest || time < fastest.rawTime) {
-        return {
-          driver: result.fastestLapData.driver,
-          time: formatTime(result.fastestLapData.time),
-          rawTime: time, // Store as number
-          season: result.fastestLapData.season,
-          team: result.fastestLapData.team,
-          source: result.fastestLapData.source || 'race_results'
-        };
-      }
-      return fastest;
-    }, null);
+  // Get top 3 fastest laps overall across all seasons
+  top3FastestLaps = allFastestLaps
+    .sort((a, b) => a.time - b.time) // Sort by time ascending (fastest first)
+    .slice(0, 3) // Take top 3
+    .map(lap => ({
+      driver: lap.driver,
+      time: formatTime(lap.time),
+      rawTime: lap.time,
+      season: lap.season,
+      team: lap.team,
+      source: lap.source
+    }));
 
-  // Most Poles
+  // For backward compatibility, keep the fastest lap as the first one
+  const fastestLap = top3FastestLaps.length > 0 ? top3FastestLaps[0] : null;
+
+  // Biggest Comebacks - Top 3 (most positions gained from grid to finish)
+  allComebacks = rawResults
+    .filter(row => {
+      const effectivePosition = row.adjusted_position !== null ? row.adjusted_position : row.position;
+      return (
+        row.grid_position && 
+        row.grid_position > 0 && 
+        effectivePosition && 
+        effectivePosition > 0 &&
+        row.status !== 'DNF' && 
+        row.status !== 'DSQ' && 
+        row.status !== 'DNS' &&
+        row.grid_position > effectivePosition // Only positive gains (comebacks)
+      );
+    })
+    .map(row => {
+      const effectivePosition = row.adjusted_position !== null ? row.adjusted_position : row.position;
+      const positionsGained = row.grid_position - effectivePosition;
+      return {
+        driver: row.driver,
+        team: row.team,
+        season: row.season,
+        gridPosition: row.grid_position,
+        finishPosition: effectivePosition,
+        positionsGained: positionsGained
+      };
+    })
+    .sort((a, b) => b.positionsGained - a.positionsGained) // Sort by most positions gained
+    .slice(0, 3); // Top 3 comebacks
+
+  // Most Poles - Top 3
   const poleCounts = significantResults.reduce((acc, result) => {
     if (result.pole && result.pole !== 'N/A') {
       acc[result.pole] = (acc[result.pole] || 0) + 1;
     }
     return acc;
   }, {});
-  const maxPoles = Math.max(...Object.values(poleCounts), 0);
-  const mostPoleDrivers = Object.entries(poleCounts)
-    .filter(([, poles]) => poles === maxPoles)
-    .map(([driver]) => driver)
-    .sort((a, b) => a.localeCompare(b));
-  const mostPolesText = mostPoleDrivers.length > 0
-    ? `${mostPoleDrivers.join(' / ')} - ${maxPoles} pole${maxPoles !== 1 ? 's' : ''}`
+  
+  topPoleDrivers = Object.entries(poleCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([driver, poles]) => ({ driver, poles }));
+  
+  const mostPolesText = topPoleDrivers.length > 0
+    ? topPoleDrivers.map(({driver, poles}) => `${driver} (${poles})`).join(' • ')
     : 'No poles recorded';
 
-  // Most Podiums
+  // Most Podiums - Top 3
   const podiumCounts = significantResults.reduce((acc, result) => {
     result.podium.forEach(driver => {
       acc[driver] = (acc[driver] || 0) + 1;
     });
     return acc;
   }, {});
-  const maxPodiums = Math.max(...Object.values(podiumCounts), 0);
-  const mostPodiumDrivers = Object.entries(podiumCounts)
-    .filter(([, podiums]) => podiums === maxPodiums)
-    .map(([driver]) => driver)
-    .sort((a, b) => a.localeCompare(b));
-  const mostPodiumsText = mostPodiumDrivers.length > 0
-    ? `${mostPodiumDrivers.join(' / ')} - ${maxPodiums} podium${maxPodiums !== 1 ? 's' : ''}`
+  
+  topPodiumDrivers = Object.entries(podiumCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([driver, podiums]) => ({ driver, podiums }));
+  
+  const mostPodiumsText = topPodiumDrivers.length > 0
+    ? topPodiumDrivers.map(({driver, podiums}) => `${driver} (${podiums})`).join(' • ')
     : 'No podiums recorded';
 
   // Most Successful Driver (by points, including fastest lap)
@@ -303,13 +351,15 @@ export default async function TrackPage({ params }) {
     acc[row.driver] = (acc[row.driver] || 0) + basePoints + fastestLapPoint;
     return acc;
   }, {});
-  const maxPointsDriver = Math.max(...Object.values(pointsByDriver), 0);
-  const mostSuccessfulDrivers = Object.entries(pointsByDriver)
-    .filter(([, points]) => points === maxPointsDriver)
-    .map(([driver]) => driver)
-    .sort((a, b) => a.localeCompare(b));
-  const mostSuccessfulDriverText = mostSuccessfulDrivers.length > 0
-    ? `${mostSuccessfulDrivers.join(' / ')} - ${maxPointsDriver} point${maxPointsDriver !== 1 ? 's' : ''}`
+  
+  // Get top 3 drivers by points
+  topDrivers = Object.entries(pointsByDriver)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([driver, points]) => ({ driver, points }));
+  
+  const mostSuccessfulDriverText = topDrivers.length > 0 
+    ? topDrivers.map(({driver, points}) => `${driver} (${points})`).join(' • ')
     : 'No points recorded';
 
   // Most Successful Constructor (by points, including fastest lap)
@@ -321,33 +371,149 @@ export default async function TrackPage({ params }) {
     acc[row.team] = (acc[row.team] || 0) + basePoints + fastestLapPoint;
     return acc;
   }, {});
-  const maxPointsTeam = Math.max(...Object.values(pointsByTeam), 0);
-  const mostSuccessfulTeams = Object.entries(pointsByTeam)
-    .filter(([, points]) => points === maxPointsTeam)
-    .map(([team]) => team)
-    .sort((a, b) => a.localeCompare(b));
-  const mostSuccessfulTeamText = mostSuccessfulTeams.length > 0
-    ? `${mostSuccessfulTeams.join(' / ')} - ${maxPointsTeam} point${maxPointsTeam !== 1 ? 's' : ''}`
+  
+  // Get top 3 teams by points
+  topTeams = Object.entries(pointsByTeam)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([team, points]) => ({ team, points }));
+  
+  const mostSuccessfulTeamText = topTeams.length > 0
+    ? topTeams.map(({team, points}) => `${team} (${points})`).join(' • ')
     : 'No points recorded';
 
-  // Most Pit Stops
+  // Most Pit Stops - Top 3
   const pitCounts = rawResults.reduce((acc, row) => {
     if (row.pits_count && row.pits_count > 0) {
       acc[row.driver] = (acc[row.driver] || 0) + row.pits_count;
     }
     return acc;
   }, {});
-  const maxPits = Math.max(...Object.values(pitCounts), 0);
-  const mostPitDrivers = Object.entries(pitCounts)
-    .filter(([, pits]) => pits === maxPits)
-    .map(([driver]) => driver)
-    .sort((a, b) => a.localeCompare(b));
-  const mostPitsText = mostPitDrivers.length > 0
-    ? `${mostPitDrivers.join(' / ')} - ${maxPits} pit stop${maxPits !== 1 ? 's' : ''}`
+  
+  topPitDrivers = Object.entries(pitCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3)
+    .map(([driver, pits]) => ({ driver, pits }));
+  
+  const mostPitsText = topPitDrivers.length > 0
+    ? topPitDrivers.map(({driver, pits}) => `${driver} (${pits})`).join(' • ')
     : 'No pit stops recorded';
+
+  } catch (error) {
+    console.error('Database error in TrackPage:', error);
+    databaseError = true;
+    
+    // Fallback data when database fails
+    trackInfo = {
+      country: track.toUpperCase().replace(/-/g, ' '),
+      name: `${track.replace(/-/g, ' ')} Circuit`,
+      length: '5.412',
+      turns: '17',
+      first_grand_prix: '2024',
+      laps: '55',
+    };
+    
+    rawResults = [];
+    lapHistoryData = [];
+    
+    // Generate some realistic test data
+    const testDrivers = ['Lewis Hamilton', 'Max Verstappen', 'Charles Leclerc', 'Lando Norris', 'Oscar Piastri'];
+    const testTeams = ['Mercedes', 'Red Bull Racing', 'Ferrari', 'McLaren', 'McLaren'];
+    
+    previousWinners = testDrivers.slice(0, 3).map((driver, index) => ({
+      driver,
+      team: testTeams[index],
+      season: `${2024 - index}`
+    }));
+    
+    fastestLap = {
+      driver: 'Max Verstappen',
+      time: '1:32.567',
+      season: '2024',
+      team: 'Red Bull Racing'
+    };
+
+    // Test data for top 3 fastest laps
+    top3FastestLaps = [
+      { driver: 'Max Verstappen', time: '1:32.567', season: '2024', team: 'Red Bull Racing' },
+      { driver: 'Lewis Hamilton', time: '1:32.789', season: '2023', team: 'Mercedes' },
+      { driver: 'Charles Leclerc', time: '1:33.124', season: '2024', team: 'Ferrari' }
+    ];
+
+    // Test data for biggest comebacks
+    allComebacks = [
+      { driver: 'Lewis Hamilton', team: 'Mercedes', season: '2023', gridPosition: 14, finishPosition: 2, positionsGained: 12 },
+      { driver: 'Oscar Piastri', team: 'McLaren', season: '2024', gridPosition: 16, finishPosition: 5, positionsGained: 11 },
+      { driver: 'Fernando Alonso', team: 'Aston Martin', season: '2024', gridPosition: 18, finishPosition: 8, positionsGained: 10 }
+    ];
+    
+    // Create test data objects for fallback
+    topDrivers = [
+      { driver: 'Max Verstappen', points: 75 },
+      { driver: 'Lewis Hamilton', points: 62 },
+      { driver: 'Charles Leclerc', points: 45 }
+    ];
+    
+    topTeams = [
+      { team: 'Red Bull Racing', points: 125 },
+      { team: 'Mercedes', points: 89 },
+      { team: 'Ferrari', points: 67 }
+    ];
+    
+    topPoleDrivers = [
+      { driver: 'Max Verstappen', poles: 3 },
+      { driver: 'Lewis Hamilton', poles: 2 },
+      { driver: 'Charles Leclerc', poles: 1 }
+    ];
+    
+    topPodiumDrivers = [
+      { driver: 'Lewis Hamilton', podiums: 4 },
+      { driver: 'Max Verstappen', podiums: 3 },
+      { driver: 'Charles Leclerc', podiums: 2 }
+    ];
+    
+    topPitDrivers = [
+      { driver: 'Charles Leclerc', pits: 8 },
+      { driver: 'Max Verstappen', pits: 6 },
+      { driver: 'Lewis Hamilton', pits: 5 }
+    ];
+  }
+
+  const halfLaps = trackInfo.laps !== 'N/A' ? Math.round(trackInfo.laps / 2) : 'N/A';
+
+  const countryFlagMap = {
+    'GREAT BRITAIN': 'united_kingdom',
+    'EMILIA-ROMAGNA': 'italy',
+    'LAS VEGAS': 'united_states_of_america',
+    'AUSTIN': 'united_states_of_america',
+    'MIAMI': 'united_states_of_america',
+    'SAUDI ARABIA': 'saudi_arabia',
+    'ABU DHABI': 'united_arab_emirates',
+  };
+
+  // Normalize country name for flag filename
+  const flagCountry = countryFlagMap[trackInfo.country] || trackInfo.country.toLowerCase().replace(/\s+/g, '');
 
   return (
     <div className="container mx-auto px-4 py-6 bg-gray-900/30 min-h-screen">
+      {/* Track Selector */}
+      <div className="flex justify-end mb-6">
+        <TrackSelector currentTrack={track} />
+      </div>
+
+      {/* Database Error Banner */}
+      {databaseError && (
+        <div className="mb-6 p-4 bg-red-900/30 border border-red-700/60 rounded-lg backdrop-blur-sm">
+          <div className="flex items-center gap-3 text-red-400">
+            <Trophy className="w-5 h-5" />
+            <div>
+              <p className="font-semibold">Database Connection Issue</p>
+              <p className="text-sm text-red-300">Showing test data for demonstration</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Track Header Section */}
       <div className="mb-6">
         <div className="flex items-center gap-4">
@@ -426,7 +592,7 @@ export default async function TrackPage({ params }) {
             </div>
           </CardHeader>
           <CardContent>
-            {previousWinners.length > 0 ? (
+            {previousWinners && previousWinners.length > 0 ? (
               <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
                 {previousWinners.map((win, index) => (
                   <div key={index} className="flex items-center justify-between py-2 border-b border-gray-800 last:border-0">
@@ -461,7 +627,19 @@ export default async function TrackPage({ params }) {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium text-white">{mostSuccessfulDriverText}</p>
+            {topDrivers.length > 0 ? (
+              <div className="space-y-2">
+                {topDrivers.map((driver, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-blue-500 font-bold w-4">#{index + 1}</span>
+                    <span className="text-white font-medium">{driver.driver}</span>
+                    <span className="text-gray-400">({driver.points} pts)</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No points recorded</p>
+            )}
           </CardContent>
         </Card>
 
@@ -473,7 +651,19 @@ export default async function TrackPage({ params }) {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium text-white">{mostSuccessfulTeamText}</p>
+            {topTeams.length > 0 ? (
+              <div className="space-y-2">
+                {topTeams.map((team, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-red-500 font-bold w-4">#{index + 1}</span>
+                    <span className="text-white font-medium">{team.team}</span>
+                    <span className="text-gray-400">({team.points} pts)</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No points recorded</p>
+            )}
           </CardContent>
         </Card>
 
@@ -485,7 +675,19 @@ export default async function TrackPage({ params }) {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium text-white">{mostPolesText}</p>
+            {topPoleDrivers.length > 0 ? (
+              <div className="space-y-2">
+                {topPoleDrivers.map((driver, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-purple-500 font-bold w-4">#{index + 1}</span>
+                    <span className="text-white font-medium">{driver.driver}</span>
+                    <span className="text-gray-400">({driver.poles} poles)</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No poles recorded</p>
+            )}
           </CardContent>
         </Card>
 
@@ -497,7 +699,19 @@ export default async function TrackPage({ params }) {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium text-white">{mostPodiumsText}</p>
+            {topPodiumDrivers.length > 0 ? (
+              <div className="space-y-2">
+                {topPodiumDrivers.map((driver, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-amber-500 font-bold w-4">#{index + 1}</span>
+                    <span className="text-white font-medium">{driver.driver}</span>
+                    <span className="text-gray-400">({driver.podiums} podiums)</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No podiums recorded</p>
+            )}
           </CardContent>
         </Card>
 
@@ -505,27 +719,36 @@ export default async function TrackPage({ params }) {
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <Timer className="h-5 w-5 text-green-500" />
-              <CardTitle className="text-md font-semibold text-white">Fastest Race Lap</CardTitle>
+              <CardTitle className="text-md font-semibold text-white">Fastest Race Laps</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            {fastestLap ? (
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-white">{fastestLap.driver}</span>
-                <Badge 
-                  className="font-medium"
-                  style={{ 
-                    backgroundColor: teamColors[fastestLap.team] || '#444',
-                    color: lightTeams.includes(fastestLap.team) ? 'black' : 'white' 
-                  }}
-                >
-                  {fastestLap.team}
-                </Badge>
-                <span className="text-gray-300">{fastestLap.time}</span>
-                <span className="text-gray-500 text-sm">(S{fastestLap.season})</span>
+            {top3FastestLaps && top3FastestLaps.length > 0 ? (
+              <div className="space-y-2">
+                {top3FastestLaps.map((lap, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 font-bold w-4">#{index + 1}</span>
+                      <span className="font-medium text-white">{lap.driver}</span>
+                      <Badge 
+                        className="font-medium"
+                        style={{ 
+                          backgroundColor: teamColors[lap.team] || '#444',
+                          color: lightTeams.includes(lap.team) ? 'black' : 'white' 
+                        }}
+                      >
+                        {lap.team}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-300 font-mono">{lap.time}</span>
+                      <span className="text-gray-500 text-sm">(S{lap.season})</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              <p className="text-gray-400">No fastest lap recorded.</p>
+              <p className="text-gray-400">No fastest laps recorded.</p>
             )}
           </CardContent>
         </Card>
@@ -538,7 +761,58 @@ export default async function TrackPage({ params }) {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-lg font-medium text-white">{mostPitsText}</p>
+            {topPitDrivers.length > 0 ? (
+              <div className="space-y-2">
+                {topPitDrivers.map((driver, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <span className="text-cyan-500 font-bold w-4">#{index + 1}</span>
+                    <span className="text-white font-medium">{driver.driver}</span>
+                    <span className="text-gray-400">({driver.pits} pit stops)</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No pit stops recorded</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-orange-500" />
+              <CardTitle className="text-md font-semibold text-white">Biggest Comebacks</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {allComebacks && allComebacks.length > 0 ? (
+              <div className="space-y-2">
+                {allComebacks.map((comeback, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-orange-400 font-bold w-4">#{index + 1}</span>
+                      <span className="font-medium text-white">{comeback.driver}</span>
+                      <Badge 
+                        className="font-medium"
+                        style={{ 
+                          backgroundColor: teamColors[comeback.team] || '#444',
+                          color: lightTeams.includes(comeback.team) ? 'black' : 'white' 
+                        }}
+                      >
+                        {comeback.team}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-right">
+                      <span className="text-orange-400 font-bold">+{comeback.positionsGained}</span>
+                      <span className="text-gray-400 text-sm">(P{comeback.gridPosition}→P{comeback.finishPosition})</span>
+                      <span className="text-gray-500 text-sm">(S{comeback.season})</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-400">No significant comebacks recorded.</p>
+            )}
           </CardContent>
         </Card>
       </div>

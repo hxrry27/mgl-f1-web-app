@@ -1,7 +1,0 @@
-2025-03-25 18:23:21,846 - INFO - Processing lap_data_s11 with race mapping: {}
-2025-03-25 18:23:21,847 - WARNING - No race_id mapping for Bahrain in season 11, skipping...
-2025-03-25 18:23:21,847 - INFO - Unmapped files in lap_data_s11: ['export_lapdata_Bahrain_race.csv']
-2025-03-25 18:23:21,847 - INFO - All CSVs imported successfully!
-2025-03-25 18:39:13,883 - INFO - Processing lap_data_s11 with race mapping: {'Bahrain': 1241, 'Jeddah': 1242, 'Melbourne': 1243, 'Baku': 1257, 'Miami': 1246, 'Imola': 1247, 'Monaco': 1248, 'Barcelona': 1250, 'Montreal': 1249, 'Spielberg': 1251, 'Silverstone': 1252, 'Hungaroring': 1253, 'Spa Francorchamps': 1254, 'Zandvoort': 1255, 'Monza': 1256, 'Singapore': 1258, 'Suzuka': 1244, 'Losail': 1263, 'Austin': 1259, 'Mexico': 1260, 'Interlagos': 1261, 'Las Vegas': 1262, 'Yas Marina': 1264, 'Shanghai': 1245}
-2025-03-25 18:39:13,883 - INFO - Importing C:/Users/harry/Downloads\lap_data_s11\export_lapdata_Bahrain_race.csv with race_id 1241
-2025-03-25 18:39:14,021 - INFO - All CSVs imported successfully!

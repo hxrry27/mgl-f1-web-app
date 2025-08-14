@@ -1,20 +1,16 @@
 name: Deploy Development
-
 on:
   push:
     branches: [ develop ]
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: self-hosted
-    
     steps:
       - name: Deploy to development
         run: |
           echo "🎯 Deploying to dev.mglf1.co.uk"
           /home/hxrry27/docker/scripts/deploy-dev.sh
-          
       - name: Health check
         run: |
           sleep 10

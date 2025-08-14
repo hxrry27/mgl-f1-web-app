@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trophy, Clock } from 'lucide-react';
 import pool from '@/lib/db';
 import { teamColors, lightTeams } from '@/lib/data';
+import SeasonRaceSelector from './SeasonRaceSelector';
 
 const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
@@ -89,7 +90,7 @@ function mapStatus(status) {
 }
 
 export default async function RaceResultsPage({ params }) {
-  const { season, race } = params;
+  const { season, race } = await params;
 
   // Get full track name from slug
   const raceName = trackNames[race] || race.replace(/-/g, ' '); // Fallback to slug with spaces if not mapped
@@ -108,17 +109,38 @@ export default async function RaceResultsPage({ params }) {
     isUpcoming = !raceData; // No race ID means it hasn't happened yet
 
     if (raceData) {
-      const resultsRes = await pool.query(
-        'SELECT rr.position, rr.adjusted_position, d.name AS driver, t.name AS team, rr.time_int, rr.fastest_lap_time_int, ' +
-        'rr.grid_position, rr.penalty_secs_ingame, rr.post_race_penalty_secs, rr.stints_raw, rr.status ' +
-        'FROM race_results rr ' +
-        'JOIN drivers d ON rr.driver_id = d.id ' +
-        'JOIN teams t ON rr.team_id = t.id ' +
-        'JOIN session_race_mapping srm ON rr.race_id = srm.race_id ' +
-        'WHERE rr.race_id = $1 ' +
-        'AND srm.session_uid = (SELECT session_uid FROM session_race_mapping WHERE race_id = $1 ORDER BY created_at DESC LIMIT 1)',
+      // First, check if there's any session_race_mapping for this race
+      const sessionMappingRes = await pool.query(
+        'SELECT session_uid FROM session_race_mapping WHERE race_id = $1 ORDER BY created_at DESC LIMIT 1',
         [raceData.id]
       );
+
+      let resultsRes;
+      if (sessionMappingRes.rows.length > 0) {
+        // If session mapping exists, use the most recent session
+        resultsRes = await pool.query(
+          'SELECT rr.position, rr.adjusted_position, d.name AS driver, t.name AS team, rr.time_int, rr.fastest_lap_time_int, ' +
+          'rr.grid_position, rr.penalty_secs_ingame, rr.post_race_penalty_secs, rr.stints_raw, rr.status ' +
+          'FROM race_results rr ' +
+          'JOIN drivers d ON rr.driver_id = d.id ' +
+          'JOIN teams t ON rr.team_id = t.id ' +
+          'JOIN session_race_mapping srm ON rr.race_id = srm.race_id ' +
+          'WHERE rr.race_id = $1 ' +
+          'AND srm.session_uid = $2',
+          [raceData.id, sessionMappingRes.rows[0].session_uid]
+        );
+      } else {
+        // If no session mapping, just pull all race_results for this race
+        resultsRes = await pool.query(
+          'SELECT rr.position, rr.adjusted_position, d.name AS driver, t.name AS team, rr.time_int, rr.fastest_lap_time_int, ' +
+          'rr.grid_position, rr.penalty_secs_ingame, rr.post_race_penalty_secs, rr.stints_raw, rr.status ' +
+          'FROM race_results rr ' +
+          'JOIN drivers d ON rr.driver_id = d.id ' +
+          'JOIN teams t ON rr.team_id = t.id ' +
+          'WHERE rr.race_id = $1',
+          [raceData.id]
+        );
+      }
 
       const processedResults = resultsRes.rows.map(r => {
         const penalty = r.post_race_penalty_secs || 0;
@@ -214,7 +236,12 @@ export default async function RaceResultsPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto px-4 max-w-6xl">
+    <div className="container mx-auto px-4 max-w-7xl">
+      {/* Season and Race Selector */}
+      <div className="flex justify-end mb-6">
+        <SeasonRaceSelector currentSeason={season} currentRace={race} />
+      </div>
+      
       <h1 className="text-3xl font-bold text-white text-center mb-6 flex items-center justify-center gap-2">
         <Trophy className="text-yellow-500 h-6 w-6" />
         {raceName} - Season {season}

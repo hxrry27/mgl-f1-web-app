@@ -133,16 +133,6 @@ function getSubMenuContent(item) {
           label: `Season ${season}`,
           href: `/results/season/${season}/bahrain`,
         }));
-    case 'Standings':
-      return [
-        { label: 'All-Time Standings', href: '/standings/season/overall' },
-        ...Object.keys(seasons)
-          .sort((a, b) => a - b)
-          .map((season) => ({
-            label: `Season ${season}`,
-            href: `/standings/season/${season}`,
-          })),
-      ];
     case 'Drivers':
       return drivers.map((driver) => ({
         label: driver,
@@ -167,12 +157,12 @@ function getSubMenuContent(item) {
 }
 
 const NAV_ITEMS = [
-  { label: 'Results', hasDropdown: true, icon: <Trophy size={18} /> },
-  { label: 'Standings', hasDropdown: true, icon: <BarChart2 size={18} /> },
-  { label: 'Drivers', hasDropdown: true, icon: <Users size={18} /> },
-  { label: 'Teams', hasDropdown: true, icon: <UsersRound size={18} /> },
-  { label: 'Tracks', hasDropdown: true, icon: <MapPin size={18} /> },
+  { label: 'Drivers', hasDropdown: false, href: '/drivers', icon: <Users size={18} /> },
+  { label: 'Teams', hasDropdown: false, href: '/teams', icon: <UsersRound size={18} /> },
+  { label: 'Tracks', hasDropdown: false, href: '/tracks', icon: <MapPin size={18} /> },
   { label: 'Schedule', hasDropdown: false, href: '/schedule', icon: <Calendar size={18} /> },
+  { label: 'Results', hasDropdown: false, href: '/results', icon: <Trophy size={18} /> },
+  { label: 'Seasons', hasDropdown: false, href: '/seasons', icon: <BarChart2 size={18} /> },
   { label: 'Dashboard', hasDropdown: false, href: '/dashboard', icon: <LayoutDashboard size={18} /> },
 ];
 

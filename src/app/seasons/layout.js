@@ -2,7 +2,7 @@
 
 import React from 'react';
 
-export default function TeamsLayout({ children }) {
+export default function SeasonsLayout({ children }) {
   return (
     <div className="flex flex-col min-h-screen bg-gray-900 bg-opacity-90 text-white">
       {/* Main Content */}
