@@ -1,24 +1,18 @@
-name: Deploy to Production
-
+name: Deploy Production
 on:
   push:
     branches: [ main ]
-
+  workflow_dispatch:
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-    - name: Deploy to prod server
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.HOST }}
-        username: ${{ secrets.USERNAME }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          cd ~/docker/repos/mglf1-prod/
-          git pull origin main
-          cd ~/docker/compose/web/
-          docker-compose -f f1-prod.yml down
-          docker-compose -f f1-prod.yml build --no-cache
-          docker-compose -f f1-prod.yml up -d
-          echo "Production deployment completed at $(date)"
+      - name: Deploy to production
+        run: |
+          echo "🎯 Deploying to mglf1.co.uk"
+          /home/hxrry27/docker/scripts/deploy-prod.sh
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://localhost:3100 || exit 1
+          echo "✅ Production site is responding"
