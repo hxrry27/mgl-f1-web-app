@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Trophy, Flag } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
 // Available seasons and tracks (this could be fetched from API in the future)
-const SEASONS = ['8', '9', '10', '11'];
+const SEASONS = ['8', '9', '10', '11', '12'];
 
 // Map slugs to full track names
 const trackNames = {
@@ -45,7 +45,8 @@ const SEASON_RACES = {
   '8': ['bahrain', 'jeddah', 'melbourne', 'baku', 'miami', 'monaco', 'barcelona', 'montreal', 'silverstone', 'spielberg', 'hungaroring', 'spa-francorchamps', 'monza', 'singapore', 'suzuka', 'austin', 'mexico', 'interlagos', 'yas-marina'],
   '9': ['bahrain', 'jeddah', 'melbourne', 'baku', 'miami', 'monaco', 'barcelona', 'montreal', 'silverstone', 'spielberg', 'hungaroring', 'spa-francorchamps', 'monza', 'singapore', 'suzuka', 'austin', 'mexico', 'interlagos', 'yas-marina'],
   '10': ['bahrain', 'jeddah', 'melbourne', 'baku', 'miami', 'monaco', 'barcelona', 'montreal', 'silverstone', 'spielberg', 'hungaroring', 'spa-francorchamps', 'monza', 'singapore', 'suzuka', 'austin', 'mexico', 'interlagos', 'yas-marina'],
-  '11': ['bahrain', 'jeddah', 'melbourne', 'baku', 'miami', 'monaco', 'barcelona', 'montreal', 'silverstone', 'spielberg', 'hungaroring', 'spa-francorchamps', 'monza', 'singapore', 'suzuka', 'austin', 'mexico', 'interlagos', 'yas-marina']
+  '11': ['bahrain', 'jeddah', 'melbourne', 'baku', 'miami', 'monaco', 'barcelona', 'montreal', 'silverstone', 'spielberg', 'hungaroring', 'spa-francorchamps', 'monza', 'singapore', 'suzuka', 'austin', 'mexico', 'interlagos', 'yas-marina'],
+  '12': ['bahrain', 'jeddah', 'melbourne', 'suzuka', 'shanghai', 'miami', 'imola', 'monaco', 'montreal', 'barcelona', 'spielberg', 'silverstone', 'hungaroring', 'spa-francorchamps', 'zandvoort', 'monza', 'baku', 'singapore', 'austin', 'mexico', 'interlagos', 'las-vegas', 'losail', 'yas-marina']
 };
 
 export default function SeasonRaceSelector({ currentSeason, currentRace }) {
@@ -200,7 +201,7 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
             <SelectValue>{currentSeason}</SelectValue>
           </SelectTrigger>
           <SelectContent className="bg-gray-800 border-gray-600">
-            {SEASONS.map((season) => (
+            {SEASONS.sort((a, b) => parseInt(b) - parseInt(a)).map((season) => (
               <SelectItem key={season} value={season} className="text-white">
                 Season {season}
               </SelectItem>
