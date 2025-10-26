@@ -162,7 +162,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 bg-opacity-90 flex justify-center items-center px-4">
+    <div className="h-full overflow-y-auto bg-gray-900 bg-opacity-90 flex justify-center items-center px-4">
       <div className="container flex flex-col md:flex-row justify-between items-center max-w-6xl gap-8 py-12">
         {/* Left content */}
         <div className="w-full md:w-1/2 space-y-6">
