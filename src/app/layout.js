@@ -24,33 +24,30 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background font-sans antialiased">
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {/* Fixed Header */}
-            <Header />
-           
-            {/* Main Content */}
-            <div className="flex min-h-screen flex-col">
-              {/* Content starts below the header */}
-              <div className="flex-1">
-                {children}
-              </div>
-            </div>
-          </ThemeProvider>
-          
-          {/* React Query DevTools - only shows in development */}
-          <ReactQueryDevtools 
-            initialIsOpen={false} 
-            position="bottom-right"
-          />
-        </QueryClientProvider>
-      </body>
+      <body className="bg-background font-sans antialiased overflow-hidden h-screen">
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {/* Sticky Header */}
+          <Header />
+        
+          {/* Main Content - fills remaining space after header */}
+          <div className="h-[calc(100vh-4rem)] overflow-y-auto">
+            {children}
+          </div>
+        </ThemeProvider>
+        
+        {/* React Query DevTools - only shows in development */}
+        <ReactQueryDevtools 
+          initialIsOpen={false} 
+          position="bottom-right"
+        />
+      </QueryClientProvider>
+    </body>
     </html>
   );
 }

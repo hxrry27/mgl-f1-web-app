@@ -468,16 +468,14 @@ export default async function TeamPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto px-4 max-w-7xl">
-      {/* Team Selector */}
-      <div className="flex justify-end mb-6">
-        <TeamSelector currentTeam={team} />
-      </div>
-      
-      <h1 className="text-3xl font-bold text-white text-center mb-8 flex items-center justify-center gap-2">
-        <UsersRound className="h-7 w-7 text-red-500" />
+    <div className="container mx-auto px-4 max-w-7x">
+      <div className="flex items-center justify-between mb-6">
+      <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+        <UsersRound className="h-7 w-7" />
         {teamName}
       </h1>
+      <TeamSelector currentTeam={team} />
+    </div>
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
