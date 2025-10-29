@@ -3,9 +3,10 @@
 import "./globals.css";
 import React, { useState } from 'react';
 import { ThemeProvider } from "@/components/theme-provider";
-import Header from '@/components/Header';
+import NewHeader from '@/components/NewHeader';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ConsoleArt } from './console-art';
 
 const createQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="bg-background font-sans antialiased overflow-hidden h-screen">
+      <ConsoleArt/>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider
           attribute="class"
@@ -33,10 +35,10 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           {/* Sticky Header */}
-          <Header />
+          <NewHeader />
         
           {/* Main Content - fills remaining space after header */}
-          <div className="h-[calc(100vh-4rem)] overflow-y-auto">
+          <div className="min-h-screen overflow-y-auto">
             {children}
           </div>
         </ThemeProvider>

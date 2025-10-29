@@ -459,15 +459,13 @@ export default async function DriverPage({ params }) {
 
   return (
     <div className="container mx-auto px-4 max-w-7xl">
-      {/* Driver Selector */}
-      <div className="flex justify-end mb-6">
-        <DriverSelector currentDriver={driver} />
-      </div>
-      
-      <h1 className="text-3xl font-bold text-white text-center mb-8 flex items-center justify-center gap-2">
+      <div className="flex items-center justify-between mb-6">
+      <h1 className="text-3xl font-bold text-white flex items-center gap-2">
         <User className="h-7 w-7 text-blue-500" />
         {driverName}
       </h1>
+        <DriverSelector currentDriver={driver} />
+      </div>
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">

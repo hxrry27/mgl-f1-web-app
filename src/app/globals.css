@@ -48,10 +48,9 @@ text-fixing {
   font-family: 'MainFont', sans-serif;
 }
 
-
-
 @layer base {
   :root {
+    /* old shtuff */
     --background: 0 0% 100%;
     --foreground: 224 71% 4%;
     --card: 0 0% 100%;
@@ -72,8 +71,24 @@ text-fixing {
     --input: 220 13% 91%;
     --ring: 224 71% 4%;
     --radius: 0.5rem;
+
+    /* new shtuff*/
+    /* Primary - Main backgrounds */
+    --color-primary: #0a0a0a;
+
+    /* Secondary - Cards, surfaces */
+    --color-secondary: #171717;
+
+    /* Tertiary - Borders, subtle elements */
+    --color-tertiary: #262626;
+
+    /* Accent - Your existing cyan/teal */
+    --color-accent-cyan: #22d3ee;
+    --color-accent-teal: #14b8a6;
+
+    --color-test: #1b3b5a;
   }
- 
+
   .dark {
     /* F1 Dark Theme */
     --background: 225 55% 10%;
@@ -96,8 +111,27 @@ text-fixing {
     --input: 225 40% 20%;
     --ring: 215 100% 50%;
   }
+  .theme {
+    --animate-aurora: aurora 8s ease-in-out infinite alternate;
+  }
 }
- 
+
+@keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-aurora {
+  animation: aurora linear infinite;
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -178,4 +212,29 @@ text-fixing {
 
 .compound-wet {
   @apply bg-blue-400;
+}
+
+@theme inline {
+  @keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+    transform: rotate(-5deg) scale(0.9);
+    }
+  25% {
+    background-position: 50% 100%;
+    transform: rotate(5deg) scale(1.1);
+    }
+  50% {
+    background-position: 100% 50%;
+    transform: rotate(-3deg) scale(0.95);
+    }
+  75% {
+    background-position: 50% 0%;
+    transform: rotate(3deg) scale(1.05);
+    }
+  100% {
+    background-position: 0% 50%;
+    transform: rotate(-5deg) scale(0.9);
+    }
+  }
 }
