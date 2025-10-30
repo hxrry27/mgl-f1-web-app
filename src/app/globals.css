@@ -2,12 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #0a0e27;
-  font-family: 'MainFont', sans-serif;
-}
+/* ============================================
+   FONTS
+   ============================================ */
 
 @font-face {
   font-family: 'MainFont';
@@ -19,14 +16,14 @@ body {
 @font-face {
   font-family: 'Formula1Bold';
   src: url('/fonts/Formula1-Bold_web.ttf') format('truetype');
-  font-weight: normal;
+  font-weight: 700;
   font-style: normal;
 }
 
 @font-face {
   font-family: 'Formula1Black';
   src: url('/fonts/Formula1-Black.ttf') format('truetype');
-  font-weight: normal;
+  font-weight: 900;
   font-style: normal;
 }
 
@@ -34,207 +31,171 @@ body {
   font-family: 'Formula1Italic';
   src: url('/fonts/Formula1-Italic.ttf') format('truetype');
   font-weight: normal;
-  font-style: normal;
+  font-style: italic;
 }
 
 @font-face {
   font-family: 'Formula1Regular1';
   src: url('/fonts/Formula1-Regular-1.ttf') format('truetype');
-  font-weight: normal;
+  font-weight: 400;
   font-style: normal;
 }
 
-text-fixing {
-  font-family: 'MainFont', sans-serif;
-}
+/* ============================================
+   CSS VARIABLES - DESIGN SYSTEM
+   ============================================ */
 
 @layer base {
   :root {
-    /* old shtuff */
-    --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
-    --primary: 215 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 224 71% 4%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 8% 40%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 224 71% 4%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 224 71% 4%;
-    --radius: 0.5rem;
-
-    /* new shtuff*/
-    /* Primary - Main backgrounds */
+    /* Primary Colors */
     --color-primary: #0a0a0a;
-
-    /* Secondary - Cards, surfaces */
     --color-secondary: #171717;
-
-    /* Tertiary - Borders, subtle elements */
     --color-tertiary: #262626;
-
-    /* Accent - Your existing cyan/teal */
     --color-accent-cyan: #22d3ee;
     --color-accent-teal: #14b8a6;
 
-    --color-test: #1b3b5a;
-  }
-
-  .dark {
-    /* F1 Dark Theme */
-    --background: 225 55% 10%;
+    /* Shadcn UI Variables (HSL format) */
+    --background: 0 0% 4%;
     --foreground: 0 0% 98%;
-    --card: 224 71% 4%;
+    --card: 0 0% 9%;
     --card-foreground: 0 0% 98%;
-    --popover: 224 71% 4%;
+    --popover: 0 0% 9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 215 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 215 50% 23%;
+    --primary: 188 95% 54%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 225 55% 14%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 215 70% 20%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62% 50%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 188 95% 54%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 225 40% 20%;
-    --input: 225 40% 20%;
-    --ring: 215 100% 50%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 188 95% 54%;
+    --radius: 1.5rem;
+
+    /* Menu overlay color test variable */
+    --color-test: rgba(94, 60, 60, 0.98);
   }
   .theme {
-    --animate-aurora: aurora 8s ease-in-out infinite alternate;
+    --animate-rippling: rippling var(--duration) ease-out;
   }
 }
 
-@keyframes aurora {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-aurora {
-  animation: aurora linear infinite;
-}
+/* ============================================
+   BASE STYLES
+   ============================================ */
 
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'MainFont', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 }
 
-/* F1 Custom Styles */
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-aurora {
+  animation: aurora linear infinite;
+  background-size: 200% 200%;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+@layer components {
+  .card-glass {
+    @apply bg-neutral-900/60 backdrop-blur-xl rounded-3xl border border-neutral-700/50;
+  }
+
+  .btn-gradient {
+    @apply bg-gradient-to-r from-cyan-500 to-teal-500 text-black font-bold rounded-2xl shadow-lg shadow-cyan-500/20;
+  }
+
+  .btn-ghost {
+    @apply bg-neutral-800/80 hover:bg-neutral-700/80 border border-neutral-700 text-white font-bold rounded-2xl backdrop-blur-sm;
+  }
+
+  .badge-pill {
+    @apply bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-6 py-3 text-sm font-bold uppercase tracking-wider backdrop-blur-sm rounded-full;
+  }
+}
+
+/* ============================================
+   CHART STYLING
+   ============================================ */
+
 .recharts-cartesian-grid-horizontal line,
 .recharts-cartesian-grid-vertical line {
-  @apply stroke-muted;
+  @apply stroke-neutral-800;
 }
 
 .recharts-tooltip-wrapper {
   @apply !shadow-lg;
 }
 
-/* Custom track colors for various F1 teams */
-.team-red-bull {
-  @apply bg-blue-600;
+/* ============================================
+   RACING UTILITIES
+   ============================================ */
+
+@layer utilities {
+  .position-1 { @apply text-yellow-400; }
+  .position-2 { @apply text-neutral-300; }
+  .position-3 { @apply text-orange-400; }
+
+  .status-finished { @apply text-green-400; }
+  .status-dnf { @apply text-red-400; }
+  .status-dsq { @apply text-orange-400; }
+
+  .fastest-lap { @apply text-purple-400 font-bold; }
+  .pole-position { @apply text-cyan-400 font-bold; }
 }
 
-.team-ferrari {
-  @apply bg-red-600;
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+*:focus-visible {
+  @apply outline-none ring-2 ring-cyan-400 ring-offset-2 ring-offset-neutral-950;
 }
 
-.team-mercedes {
-  @apply bg-teal-400;
-}
-
-.team-mclaren {
-  @apply bg-orange-500;
-}
-
-.team-aston-martin {
-  @apply bg-green-600;
-}
-
-.team-alpine {
-  @apply bg-blue-500;
-}
-
-.team-williams {
-  @apply bg-blue-800;
-}
-
-.team-haas {
-  @apply bg-gray-200 text-gray-800;
-}
-
-.team-alfa-romeo {
-  @apply bg-red-800;
-}
-
-.team-alpha-tauri,
-.team-racing-bulls {
-  @apply bg-indigo-800;
-}
-
-/* Tyre compound colors */
-.compound-soft {
-  @apply bg-red-500;
-}
-
-.compound-medium {
-  @apply bg-yellow-400;
-}
-
-.compound-hard {
-  @apply bg-neutral-100 text-black;
-}
-
-.compound-intermediate {
-  @apply bg-green-500;
-}
-
-.compound-wet {
-  @apply bg-blue-400;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @theme inline {
-  @keyframes aurora {
+  @keyframes rippling {
   0% {
-    background-position: 0% 50%;
-    transform: rotate(-5deg) scale(0.9);
-    }
-  25% {
-    background-position: 50% 100%;
-    transform: rotate(5deg) scale(1.1);
-    }
-  50% {
-    background-position: 100% 50%;
-    transform: rotate(-3deg) scale(0.95);
-    }
-  75% {
-    background-position: 50% 0%;
-    transform: rotate(3deg) scale(1.05);
+    opacity: 1;
     }
   100% {
-    background-position: 0% 50%;
-    transform: rotate(-5deg) scale(0.9);
+    transform: scale(2);
+    opacity: 0;
     }
   }
 }

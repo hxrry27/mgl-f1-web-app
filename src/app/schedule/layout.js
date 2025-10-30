@@ -4,8 +4,8 @@ import React from 'react';
 
 export default function ScheduleLayout({ children }) {
   return (
-    <div className="bg-gray-900 bg-opacity-90 text-white h-full">
-      <div className="pt-6">
+    <div className="min-h-screen bg-neutral-950 text-white">
+      <div className="pt-24">
         {children}
       </div>
     </div>

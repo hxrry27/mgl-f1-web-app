@@ -1,5 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-import { f1Theme } from '@/lib/shadcn-theme'
 
 module.exports = {
   darkMode: ["class"],

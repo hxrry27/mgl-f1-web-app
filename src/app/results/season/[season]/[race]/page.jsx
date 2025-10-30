@@ -1,63 +1,175 @@
 import Image from 'next/image';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Clock } from 'lucide-react';
+import { Trophy, Clock, Zap, Flag } from 'lucide-react';
 import pool from '@/lib/db';
 import { teamColors, lightTeams } from '@/lib/data';
-import SeasonRaceSelector from './SeasonRaceSelector';
+import { cn } from "@/lib/utils";
 
 const pointsSystem = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1];
 
-// Map slugs to full track names
-const trackNames = {
-  'bahrain': 'Bahrain International Circuit',
-  'jeddah': 'Jeddah Corniche Circuit',
-  'yas-marina': 'Yas Marina Circuit',
-  'melbourne': 'Albert Park Circuit',
-  'suzuka': 'Suzuka International Racing Course',
-  'shanghai': 'Shanghai International Circuit',
-  'baku': 'Baku City Circuit',
-  'miami': 'Miami International Autodrome',
-  'monaco': 'Circuit de Monaco',
-  'montreal': 'Circuit Gilles Villeneuve',
-  'barcelona': 'Circuit de Barcelona-Catalunya',
-  'spielberg': 'Red Bull Ring',
-  'silverstone': 'Silverstone Circuit',
-  'hungaroring': 'Hungaroring',
-  'spa-francorchamps': 'Circuit de Spa-Francorchamps',
-  'zandvoort': 'Circuit Zandvoort',
-  'monza': 'Autodromo Nazionale Monza',
-  'singapore': 'Marina Bay Street Circuit',
-  'austin': 'Circuit of The Americas',
-  'mexico': 'Autodromo Hermanos Rodriguez',
-  'interlagos': 'Autodromo Jose Carlos Pace',
-  'las-vegas': 'Las Vegas Strip Circuit',
-  'losail': 'Lusail International Circuit',
-  'imola': 'Autodromo Enzo e Dino Ferrari',
-  'portimao': 'Algarve International Circuit',
-  'paul-ricard': 'Circuit Paul Ricard'
+// Track data with full GP names and countries
+const trackData = {
+  'bahrain': { 
+    gpName: 'FORMULA 1 GULF AIR BAHRAIN GRAND PRIX',
+    circuit: 'Bahrain International Circuit',
+    country: 'Bahrain',
+    flag: 'bahrain'
+  },
+  'jeddah': { 
+    gpName: 'FORMULA 1 STC SAUDI ARABIAN GRAND PRIX',
+    circuit: 'Jeddah Corniche Circuit',
+    country: 'Jeddah',
+    flag: 'saudi_arabia'
+  },
+  'melbourne': { 
+    gpName: 'FORMULA 1 ROLEX AUSTRALIAN GRAND PRIX',
+    circuit: 'Albert Park Grand Prix Circuit',
+    country: 'Melbourne',
+    flag: 'australia'
+  },
+  'suzuka': { 
+    gpName: 'FORMULA 1 HONDA JAPANESE GRAND PRIX',
+    circuit: 'Suzuka International Racing Course',
+    country: 'Suzuka',
+    flag: 'japan'
+  },
+  'shanghai': { 
+    gpName: 'FORMULA 1 LENOVO CHINESE GRAND PRIX',
+    circuit: 'Shanghai International Circuit',
+    country: 'Shanghai',
+    flag: 'china'
+  },
+  'miami': { 
+    gpName: 'FORMULA 1 CRYPTO.COM MIAMI GRAND PRIX',
+    circuit: 'Miami International Autodrome',
+    country: 'Miami',
+    flag: 'united_states_of_america'
+  },
+  'monaco': { 
+    gpName: 'FORMULA 1 GRAND PRIX DE MONACO',
+    circuit: 'Circuit de Monaco',
+    country: 'Monaco',
+    flag: 'monaco'
+  },
+  'montreal': { 
+    gpName: 'FORMULA 1 AWS GRAND PRIX DU CANADA',
+    circuit: 'Circuit Gilles Villeneuve',
+    country: 'Montreal',
+    flag: 'canada'
+  },
+  'barcelona': { 
+    gpName: 'FORMULA 1 ARAMCO GRAN PREMIO DE ESPAÑA',
+    circuit: 'Circuit de Barcelona-Catalunya',
+    country: 'Barcelona',
+    flag: 'spain'
+  },
+  'spielberg': { 
+    gpName: 'FORMULA 1 QATAR AIRWAYS AUSTRIAN GRAND PRIX',
+    circuit: 'Red Bull Ring',
+    country: 'Spielberg',
+    flag: 'austria'
+  },
+  'silverstone': { 
+    gpName: 'FORMULA 1 ARAMCO BRITISH GRAND PRIX',
+    circuit: 'Silverstone Circuit',
+    country: 'Silverstone',
+    flag: 'united_kingdom'
+  },
+  'hungaroring': { 
+    gpName: 'FORMULA 1 MAGYAR NAGYDÍJ',
+    circuit: 'Hungaroring',
+    country: 'Budapest',
+    flag: 'hungary'
+  },
+  'spa-francorchamps': { 
+    gpName: 'FORMULA 1 ROLEX BELGIAN GRAND PRIX',
+    circuit: 'Circuit de Spa-Francorchamps',
+    country: 'Spa',
+    flag: 'belgium'
+  },
+  'zandvoort': { 
+    gpName: 'FORMULA 1 HEINEKEN DUTCH GRAND PRIX',
+    circuit: 'Circuit Zandvoort',
+    country: 'Zandvoort',
+    flag: 'netherlands'
+  },
+  'monza': { 
+    gpName: 'FORMULA 1 PIRELLI GRAN PREMIO D\'ITALIA',
+    circuit: 'Autodromo Nazionale Monza',
+    country: 'Monza',
+    flag: 'italy'
+  },
+  'baku': { 
+    gpName: 'FORMULA 1 AZERBAIJAN GRAND PRIX',
+    circuit: 'Baku City Circuit',
+    country: 'Baku',
+    flag: 'azerbaijan'
+  },
+  'singapore': { 
+    gpName: 'FORMULA 1 SINGAPORE AIRLINES SINGAPORE GRAND PRIX',
+    circuit: 'Marina Bay Street Circuit',
+    country: 'Singapore',
+    flag: 'singapore'
+  },
+  'austin': { 
+    gpName: 'FORMULA 1 ARAMCO UNITED STATES GRAND PRIX',
+    circuit: 'Circuit of The Americas',
+    country: 'Austin',
+    flag: 'united_states_of_america'
+  },
+  'mexico': { 
+    gpName: 'FORMULA 1 GRAN PREMIO DE LA CIUDAD DE MÉXICO',
+    circuit: 'Autódromo Hermanos Rodríguez',
+    country: 'Mexico City',
+    flag: 'mexico'
+  },
+  'interlagos': { 
+    gpName: 'FORMULA 1 ROLEX GRANDE PRÊMIO DE SÃO PAULO',
+    circuit: 'Autódromo José Carlos Pace',
+    country: 'São Paulo',
+    flag: 'brazil'
+  },
+  'las-vegas': { 
+    gpName: 'FORMULA 1 HEINEKEN SILVER LAS VEGAS GRAND PRIX',
+    circuit: 'Las Vegas Strip Circuit',
+    country: 'Las Vegas',
+    flag: 'united_states_of_america'
+  },
+  'losail': { 
+    gpName: 'FORMULA 1 QATAR AIRWAYS QATAR GRAND PRIX',
+    circuit: 'Lusail International Circuit',
+    country: 'Lusail',
+    flag: 'qatar'
+  },
+  'yas-marina': { 
+    gpName: 'FORMULA 1 ETIHAD AIRWAYS ABU DHABI GRAND PRIX',
+    circuit: 'Yas Marina Circuit',
+    country: 'Abu Dhabi',
+    flag: 'united_arab_emirates'
+  },
+  'imola': { 
+    gpName: 'FORMULA 1 ROLEX GRAN PREMIO DELL\'EMILIA-ROMAGNA',
+    circuit: 'Autodromo Enzo e Dino Ferrari',
+    country: 'Imola',
+    flag: 'italy'
+  },
+  'portimao': { 
+    gpName: 'FORMULA 1 HEINEKEN PORTUGUESE GRAND PRIX',
+    circuit: 'Algarve International Circuit',
+    country: 'Portimão',
+    flag: 'portugal'
+  },
+  'paul-ricard': { 
+    gpName: 'FORMULA 1 LENOVO FRENCH GRAND PRIX',
+    circuit: 'Circuit Paul Ricard',
+    country: 'Paul Ricard',
+    flag: 'france'
+  }
 };
 
-// Format gap time in milliseconds to a readable string
+// Format gap time
 function formatGap(ms) {
   if (!ms || ms === null) return '--:--.--';
   const totalSeconds = ms / 1000;
@@ -76,7 +188,7 @@ function formatTime(ms) {
   return `${minutes}:${seconds}`;
 }
 
-// Parse stints_raw into tyre types
+// Parse stints into tyre types
 function parseStints(stintsRaw) {
   if (!stintsRaw) return [];
   return stintsRaw.split(',').map(stint => stint.charAt(0).toLowerCase());
@@ -89,27 +201,49 @@ function mapStatus(status) {
   return statusMap[status] || status;
 }
 
+// Tyre component
+function TyreIndicator({ compound }) {
+  const tyreColors = {
+    's': 'bg-red-500',
+    'm': 'bg-yellow-500',
+    'h': 'bg-gray-200',
+    'i': 'bg-green-500',
+    'w': 'bg-blue-500'
+  };
+  
+  return (
+    <div className={cn("w-3 h-3 rounded-full border border-neutral-600", tyreColors[compound] || 'bg-neutral-500')} />
+  );
+}
+
 export default async function RaceResultsPage({ params }) {
   const { season, race } = await params;
 
-  // Get full track name from slug
-  const raceName = trackNames[race] || race.replace(/-/g, ' '); // Fallback to slug with spaces if not mapped
+  // Get track info
+  const trackInfo = trackData[race] || {
+    gpName: race.replace(/-/g, ' ').toUpperCase(),
+    circuit: race.replace(/-/g, ' '),
+    country: race,
+    flag: 'default'
+  };
 
-  let results, isUpcoming;
+  let results, isUpcoming, raceDate;
+  
   try {
     const seasonRes = await pool.query('SELECT id FROM seasons WHERE season = $1', [season]);
     const seasonId = seasonRes.rows[0]?.id;
     if (!seasonId) throw new Error('Season not found');
 
     const raceRes = await pool.query(
-      'SELECT r.id FROM races r JOIN tracks t ON r.track_id = t.id WHERE r.season_id = $1 AND t.slug = $2',
+      'SELECT r.id, r.date FROM races r JOIN tracks t ON r.track_id = t.id WHERE r.season_id = $1 AND t.slug = $2',
       [seasonId, race]
     );
     const raceData = raceRes.rows[0];
-    isUpcoming = !raceData; // No race ID means it hasn't happened yet
+    isUpcoming = !raceData;
+    raceDate = raceData?.date;
 
     if (raceData) {
-      // First, check if there's any session_race_mapping for this race
+      // Check for session mapping
       const sessionMappingRes = await pool.query(
         'SELECT session_uid FROM session_race_mapping WHERE race_id = $1 ORDER BY created_at DESC LIMIT 1',
         [raceData.id]
@@ -117,240 +251,279 @@ export default async function RaceResultsPage({ params }) {
 
       let resultsRes;
       if (sessionMappingRes.rows.length > 0) {
-        // If session mapping exists, use the most recent session
         resultsRes = await pool.query(
           'SELECT rr.position, rr.adjusted_position, d.name AS driver, t.name AS team, rr.time_int, rr.fastest_lap_time_int, ' +
           'rr.grid_position, rr.penalty_secs_ingame, rr.post_race_penalty_secs, rr.stints_raw, rr.status ' +
           'FROM race_results rr ' +
           'JOIN drivers d ON rr.driver_id = d.id ' +
-          'JOIN teams t ON rr.team_id = t.id ' +
-          'JOIN session_race_mapping srm ON rr.race_id = srm.race_id ' +
-          'WHERE rr.race_id = $1 ' +
-          'AND srm.session_uid = $2',
-          [raceData.id, sessionMappingRes.rows[0].session_uid]
+          'JOIN lineups l ON rr.driver_id = l.driver_id AND l.season_id = $1 ' +
+          'JOIN teams t ON l.team_id = t.id ' +
+          'WHERE rr.race_id = $2 ' +
+          'ORDER BY COALESCE(rr.adjusted_position, rr.position)',
+          [seasonId, raceData.id]
         );
       } else {
-        // If no session mapping, just pull all race_results for this race
         resultsRes = await pool.query(
           'SELECT rr.position, rr.adjusted_position, d.name AS driver, t.name AS team, rr.time_int, rr.fastest_lap_time_int, ' +
           'rr.grid_position, rr.penalty_secs_ingame, rr.post_race_penalty_secs, rr.stints_raw, rr.status ' +
           'FROM race_results rr ' +
           'JOIN drivers d ON rr.driver_id = d.id ' +
-          'JOIN teams t ON rr.team_id = t.id ' +
-          'WHERE rr.race_id = $1',
-          [raceData.id]
+          'JOIN lineups l ON rr.driver_id = l.driver_id AND l.season_id = $1 ' +
+          'JOIN teams t ON l.team_id = t.id ' +
+          'WHERE rr.race_id = $2 ' +
+          'ORDER BY COALESCE(rr.adjusted_position, rr.position)',
+          [seasonId, raceData.id]
         );
       }
 
-      const processedResults = resultsRes.rows.map(r => {
-        const penalty = r.post_race_penalty_secs || 0;
-        const effectivePosition = r.adjusted_position !== null ? r.adjusted_position : r.position;
-        return { ...r, effectivePosition, penalty };
-      });
+      const fastestLapTime = Math.min(...resultsRes.rows.map(r => r.fastest_lap_time_int || Infinity).filter(t => t !== Infinity));
+      let leaderTime = resultsRes.rows[0]?.time_int || 0;
 
-      processedResults.sort((a, b) => a.effectivePosition - b.effectivePosition);
-
-      const p1Time = processedResults.find(r => r.effectivePosition === 1)?.time_int || 0;
-
-      const sortedLaps = processedResults
-        .filter(r => r.fastest_lap_time_int !== null && r.fastest_lap_time_int !== undefined)
-        .sort((a, b) => a.fastest_lap_time_int - b.fastest_lap_time_int);
-      const fastestLapDriver = sortedLaps.find(r => r.fastest_lap_time_int > 0) || null;
-
-      let prevGapDisplay = '--:--.--';
-      results = processedResults.map((r, index, arr) => {
-        const penaltyMs = r.penalty * 1000;
-        const rawGap = r.effectivePosition === 1 ? null : (r.time_int - p1Time) + (r.penalty > 0 ? penaltyMs : 0);
-        const status = mapStatus(r.status);
-
-        let gapDisplay;
-        if (status && ['DNF', 'DNS', 'DSQ'].includes(status)) {
-          gapDisplay = status;
-        } else if (index === 0) {
-          gapDisplay = '--:--.--';
+      results = resultsRes.rows.map((row, idx) => {
+        const displayPos = row.adjusted_position || row.position;
+        let points = displayPos <= 10 ? pointsSystem[displayPos - 1] : 0;
+        
+        // Add fastest lap point (only for seasons < 12, and only if driver finished in top 10)
+        const hasFastestLap = row.fastest_lap_time_int === fastestLapTime;
+        if (parseInt(season) < 12 && hasFastestLap && displayPos <= 10) {
+          points += 1;
+        }
+        
+        const totalPenalty = (row.penalty_secs_ingame || 0) + (row.post_race_penalty_secs || 0);
+        const posChange = row.grid_position ? row.grid_position - displayPos : 0;
+        const status = mapStatus(row.status);
+        
+        let gap;
+        if (status) {
+          gap = status;
+        } else if (idx === 0) {
+          gap = 'Winner';
         } else {
-          const prevResult = arr[index - 1];
-          const prevGap = prevResult.effectivePosition === 1 ? 0 : (prevResult.time_int - p1Time) + (prevResult.penalty > 0 ? prevResult.penalty * 1000 : 0);
-          if (prevGapDisplay === 'Lapped' || (rawGap !== null && prevGap > rawGap)) {
-            gapDisplay = 'Lapped';
-          } else {
-            gapDisplay = formatGap(rawGap);
-          }
+          gap = formatGap(row.time_int - leaderTime);
         }
 
-        const basePoints = r.effectivePosition <= 10 && r.status !== 'DSQ' && r.status !== 'DNS' ? pointsSystem[r.effectivePosition - 1] : 0;
-        const fastestLapPoint = fastestLapDriver && r.driver === fastestLapDriver.driver && r.effectivePosition <= 10 ? 1 : 0;
-        const totalPenalties = (r.penalty_secs_ingame || 0) + r.penalty;
-
-        const isFastestLap = fastestLapDriver && r.driver === fastestLapDriver.driver;
-
-        const result = {
-          position: r.effectivePosition,
-          driver: r.driver,
-          team: r.team,
-          gap: gapDisplay,
-          fastest_lap: r.fastest_lap_time_int,
-          positions_changed: r.grid_position ? r.grid_position - r.effectivePosition : 0,
-          points: basePoints + fastestLapPoint,
-          penalties: totalPenalties > 0 ? totalPenalties : null,
-          strategy: parseStints(r.stints_raw),
-          status: status,
-          isFastestLap: isFastestLap,
+        return {
+          position: displayPos,
+          driver: row.driver,
+          team: row.team,
+          gap,
+          fastestLap: formatTime(row.fastest_lap_time_int),
+          isFastestLap: hasFastestLap,
+          posChange,
+          points,
+          penalties: totalPenalty > 0 ? `+${totalPenalty}s` : null,
+          stints: parseStints(row.stints_raw)
         };
-
-        prevGapDisplay = gapDisplay;
-        return result;
       });
-    } else {
-      // Placeholder for upcoming race
-      results = Array(20).fill(null).map((_, index) => ({
-        position: index + 1,
-        driver: 'TBD',
-        team: 'TBD',
-        gap: '--:--.--',
-        fastest_lap: null,
-        positions_changed: 0,
-        points: 0,
-        penalties: null,
-        strategy: [],
-        status: null,
-        isFastestLap: false,
-      }));
     }
-  } catch (err) {
-    console.error('Error fetching race results:', err);
-    results = Array(20).fill(null).map((_, index) => ({
-      position: index + 1,
-      driver: 'TBD',
-      team: 'TBD',
-      gap: '--:--.--',
-      fastest_lap: null,
-      positions_changed: 0,
-      points: 0,
-      penalties: null,
-      strategy: [],
-      status: null,
-      isFastestLap: false,
-    }));
-    isUpcoming = true;
-  }
+  } catch (error) {
+  console.error('Error fetching race results:', error);
+  console.error('Season:', season, 'Race:', race);
+  console.error('Error details:', error.message, error.stack);
+  results = [];
+  isUpcoming = true;
+}
+
+  // Format date
+  const formattedDate = raceDate 
+    ? new Date(raceDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    : 'TBD';
 
   return (
-    <div className="container mx-auto px-4 max-w-7xl">
-      {/* Season and Race Selector */}
-      <div className="flex justify-end mb-6">
-        <SeasonRaceSelector currentSeason={season} currentRace={race} />
-      </div>
-      
-      <h1 className="text-3xl font-bold text-white text-center mb-6 flex items-center justify-center gap-2">
-        <Trophy className="text-yellow-500 h-6 w-6" />
-        {raceName} - Season {season}
-      </h1>
-
-      {isUpcoming && (
-        <div className="text-gray-400 text-center mb-6 italic">
-          This race has not yet occurred. Results will be available after the event.
+    <div className="min-h-screen bg-neutral-950">
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+        {/* Header with GP Name and Flag */}
+        <div className="mb-8">
+          <div className="flex items-start gap-6 mb-4">
+            <div className="relative w-20 h-14 flex-shrink-0">
+              <Image
+                src={`/images/flags/${trackInfo.flag}.png`}
+                alt={`${trackInfo.country} flag`}
+                fill
+                className="object-cover rounded-lg"
+              />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black text-white mb-2 uppercase tracking-tight">
+                {trackInfo.gpName} {season > 2000 ? season : `20${season}`}
+              </h1>
+              <p className="text-cyan-400 font-bold text-lg mb-1">{formattedDate}</p>
+              <p className="text-neutral-400">{trackInfo.circuit}, {trackInfo.country}</p>
+            </div>
+          </div>
         </div>
-      )}
 
-      <Tabs defaultValue="race" className="w-full">
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 bg-gray-800/60 border border-gray-700/60 mb-6">
-          <TabsTrigger value="race" className="data-[state=active]:bg-gray-700">
-            Race Results
-          </TabsTrigger>
-          <TabsTrigger value="qualifying" disabled className="data-[state=active]:bg-gray-700">
-            Qualifying
-          </TabsTrigger>
-        </TabsList>
+        {/* Session Tabs */}
+        <Tabs defaultValue="race" className="w-full">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-4 gap-2 bg-transparent p-1 mb-8">
+            <TabsTrigger 
+              value="race"
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all",
+                "bg-neutral-800/50 border border-neutral-700/50",
+                "hover:bg-neutral-700/50 hover:border-neutral-600",
+                "data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500",
+                "data-[state=active]:text-black data-[state=active]:border-transparent",
+                "data-[state=inactive]:text-neutral-400"
+              )}
+            >
+              <Trophy className="h-4 w-4" />
+              <span>Race</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="qualifying"
+              disabled
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all",
+                "bg-neutral-800/50 border border-neutral-700/50",
+                "opacity-50 cursor-not-allowed",
+                "data-[state=inactive]:text-neutral-500"
+              )}
+            >
+              <Clock className="h-4 w-4" />
+              <span>Qualifying</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sprint-quali"
+              disabled
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all",
+                "bg-neutral-800/50 border border-neutral-700/50",
+                "opacity-50 cursor-not-allowed",
+                "data-[state=inactive]:text-neutral-500"
+              )}
+            >
+              <Zap className="h-4 w-4" />
+              <span>Sprint Quali</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="sprint"
+              disabled
+              className={cn(
+                "flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold transition-all",
+                "bg-neutral-800/50 border border-neutral-700/50",
+                "opacity-50 cursor-not-allowed",
+                "data-[state=inactive]:text-neutral-500"
+              )}
+            >
+              <Flag className="h-4 w-4" />
+              <span>Sprint</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="race" className="mt-0">
-          <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden">
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="text-white w-16">Pos</TableHead>
-                      <TableHead className="text-white w-40">Driver</TableHead>
-                      <TableHead className="text-white w-32">Team</TableHead>
-                      <TableHead className="text-white w-32">Gap</TableHead>
-                      <TableHead className="text-white w-32">Fastest Lap</TableHead>
-                      <TableHead className="text-white w-24">Pos +/-</TableHead>
-                      <TableHead className="text-white w-16">Points</TableHead>
-                      <TableHead className="text-white w-24">Penalties</TableHead>
-                      <TableHead className="text-white w-36">Strategy</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {results.map((result, index) => (
-                      <TableRow key={index} className="hover:bg-gray-800/50 border-gray-800">
-                        <TableCell className="text-white font-semibold">
-                          {`P${result.position}`}
-                        </TableCell>
-                        <TableCell className="text-white">
-                          {result.driver}
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            className="font-medium"
-                            style={{ 
-                              backgroundColor: teamColors[result.team] || '#444',
-                              color: lightTeams.includes(result.team) ? 'black' : 'white',
-                            }}
-                          >
-                            {result.team}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className={`${['DNF', 'DNS', 'DSQ', 'Lapped'].includes(result.gap) ? 'text-gray-400' : 'text-white'} ${result.gap === 'Lapped' ? 'italic' : ''}`}>
-                          {result.gap}
-                        </TableCell>
-                        <TableCell className={`${result.isFastestLap ? 'text-purple-400 font-semibold' : 'text-white'}`}>
-                          {formatTime(result.fastest_lap)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-1">
-                            <div className="relative w-4 h-4">
-                              <Image
-                                src={`/images/misc/${result.positions_changed > 0 ? 'up' : result.positions_changed < 0 ? 'down' : 'equal'}.png`}
-                                alt={result.positions_changed > 0 ? 'Up' : result.positions_changed < 0 ? 'Down' : 'Equal'}
-                                fill
-                                style={{ objectFit: 'contain' }}
-                              />
-                            </div>
-                            <span className={`${result.positions_changed > 0 ? 'text-green-500' : result.positions_changed < 0 ? 'text-red-500' : 'text-white'}`}>
-                              {Math.abs(result.positions_changed)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className={`${result.isFastestLap ? 'text-purple-400 font-semibold' : 'text-white'}`}>
-                          {result.points}
-                        </TableCell>
-                        <TableCell className={`${result.penalties === null ? 'text-gray-400' : 'text-white'}`}>
-                          {result.penalties === null ? '-' : `${result.penalties}s`}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap items-center">
-                            {result.strategy.length > 0 ? result.strategy.map((tyre, i) => (
-                              <div key={i} className="relative w-6 h-6 mr-0.5">
-                                <Image
-                                  src={`/images/tyres/${tyre}.png`}
-                                  alt={`${tyre} tyre`}
-                                  fill
-                                  style={{ objectFit: 'contain' }}
-                                />
+          <TabsContent value="race" className="mt-0">
+            {isUpcoming ? (
+              <Card className="bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50">
+                <CardContent className="p-12 text-center">
+                  <Trophy className="h-16 w-16 text-neutral-600 mx-auto mb-4" />
+                  <p className="text-neutral-400 text-lg font-bold">
+                    Results will be available after the race
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50">
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-neutral-800">
+                          <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Pos</th>
+                          <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Driver</th>
+                          <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Team</th>
+                          <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Gap</th>
+                          <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Fastest Lap</th>
+                          <th className="text-center p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Pos +/-</th>
+                          <th className="text-center p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Points</th>
+                          <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Penalties</th>
+                          <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Strategy</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {results.map((result, index) => (
+                          <tr key={index} className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
+                            <td className="p-4">
+                              <span className={cn(
+                                "text-xl font-black",
+                                index === 0 && "text-yellow-400",
+                                index === 1 && "text-neutral-300",
+                                index === 2 && "text-orange-400",
+                                index > 2 && "text-white"
+                              )}>
+                                {result.position}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <p className="text-white font-bold">{result.driver}</p>
+                            </td>
+                            <td className="p-4">
+                              <Badge 
+                                className="font-bold px-3 py-1 text-xs uppercase tracking-wider border-2"
+                                style={{ 
+                                  backgroundColor: teamColors[result.team] || '#404040',
+                                  color: lightTeams.includes(result.team) ? 'black' : 'white',
+                                  borderColor: lightTeams.includes(result.team) ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.2)'
+                                }}
+                              >
+                                {result.team}
+                              </Badge>
+                            </td>
+                            <td className="p-4">
+                              <span className={cn(
+                                "font-bold",
+                                ['DNF', 'DNS', 'DSQ'].includes(result.gap) ? "text-red-400" : 
+                                result.gap === 'Winner' ? "text-cyan-400" :
+                                "text-neutral-300"
+                              )}>
+                                {result.gap}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <span className={cn(
+                                "font-bold",
+                                result.isFastestLap ? "text-purple-400" : "text-neutral-400"
+                              )}>
+                                {result.fastestLap}
+                              </span>
+                            </td>
+                            <td className="p-4 text-center">
+                              {result.posChange !== 0 && (
+                                <span className={cn(
+                                  "font-bold",
+                                  result.posChange > 0 ? "text-green-400" : "text-red-400"
+                                )}>
+                                  {result.posChange > 0 ? `+${result.posChange}` : result.posChange}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 text-center">
+                              <span className="text-cyan-400 font-black text-lg">
+                                {result.points}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              {result.penalties && (
+                                <span className="text-red-400 font-bold">{result.penalties}</span>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex gap-1">
+                                {result.stints.map((stint, idx) => (
+                                  <TyreIndicator key={idx} compound={stint} />
+                                ))}
                               </div>
-                            )) : <span className="text-white">N/A</span>}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

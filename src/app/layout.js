@@ -25,31 +25,27 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-background font-sans antialiased overflow-hidden h-screen">
-      <ConsoleArt/>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {/* Sticky Header */}
-          <NewHeader />
-        
-          {/* Main Content - fills remaining space after header */}
-          <div className="min-h-screen overflow-y-auto">
+      <body className="bg-background font-sans antialiased">
+        <ConsoleArt/>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <NewHeader />
             {children}
-          </div>
-        </ThemeProvider>
-        
-        {/* React Query DevTools - only shows in development */}
-        <ReactQueryDevtools 
-          initialIsOpen={false} 
-          position="bottom-right"
-        />
-      </QueryClientProvider>
-    </body>
+          </ThemeProvider>
+          
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools 
+              initialIsOpen={false} 
+              position="bottom-right"
+            />
+          )}
+        </QueryClientProvider>
+      </body>
     </html>
   );
 }

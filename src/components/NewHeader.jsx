@@ -173,14 +173,15 @@ function PlaceholderLogo() {
   );
 }
 
+
+
 // Full-screen menu component
-// Full-screen menu component
-function FullScreenMenu({ isOpen, onClose, isRefreshing, onRefreshCache }) {
+function FullScreenMenu({ isOpen, onClose, isRefreshing, onRefreshCache, latestSeason }) {
   const [hoveredItem, setHoveredItem] = useState(null);
 
   const menuItems = [
     { label: 'Home', href: '/', icon: null },
-    { label: 'Standings', href: '/standings', icon: <BarChart2 size={24} /> },
+    { label: 'Seasons', href: `/seasons/${latestSeason}`, icon: <BarChart2 size={24} /> },
     { label: 'Results', href: '/results', icon: <Trophy size={24} /> },
     { label: 'Drivers', href: '/drivers', icon: <Users size={24} /> },
     { label: 'Teams', href: '/teams', icon: <UsersRound size={24} /> },
@@ -393,6 +394,7 @@ export default function NewHeader() {
   const [showRefreshSuccess, setShowRefreshSuccess] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [nextRace, setNextRace] = useState(null);
+  const [latestSeason, setLatestSeason] = useState(12);
 
   // Handle cache refresh
   const handleRefreshCache = async () => {
@@ -435,6 +437,24 @@ export default function NewHeader() {
     localStorage.setItem('raceNotificationDismissed', today);
     setShowNotification(false);
   };
+
+  // Fetch latest season on mount
+    useEffect(() => {
+    async function fetchLatestSeason() {
+        try {
+        const response = await fetch('/api/header-data');
+        const data = await response.json();
+        if (data.seasons && data.seasons.length > 0) {
+            // seasons array is ordered DESC, so [0] is the latest
+            setLatestSeason(data.seasons[0]);
+        }
+        } catch (error) {
+        console.error('Error fetching latest season:', error);
+        // Falls back to default value of 12
+        }
+    }
+    fetchLatestSeason();
+    }, []);
 
   // Fetch next race data
   useEffect(() => {
@@ -486,7 +506,7 @@ export default function NewHeader() {
                 </motion.h1>
             </Link>
 
-            {/* Center: Placeholder Logo */}
+            {/* Center: Placeholder Logo 
             <Link href="/" className="absolute left-1/2 transform -translate-x-1/2">
               <motion.div
                 whileHover={{ scale: 1.1, rotate: 5 }}
@@ -495,7 +515,7 @@ export default function NewHeader() {
               >
                 <PlaceholderLogo />
               </motion.div>
-            </Link>
+            </Link>*/}
 
             {/* Right: Menu Button */}
             <motion.button
@@ -519,6 +539,7 @@ export default function NewHeader() {
           onClose={() => setIsMenuOpen(false)}
           isRefreshing={isRefreshing}
           onRefreshCache={handleRefreshCache}
+          latestSeason={latestSeason}
         />
 
         {/* Race Notification */}
