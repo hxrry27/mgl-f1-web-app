@@ -14,18 +14,18 @@ export default function F1Card({
 }) {
   // Map F1 team colors
   const teamColors = {
-    'mercedes': 'bg-[#00D2BE] text-black',
-    'redbull': 'bg-[#0600EF] text-white',
-    'ferrari': 'bg-[#DC0000] text-white',
-    'mclaren': 'bg-[#FF8700] text-black',
-    'alpine': 'bg-[#0090FF] text-white',
-    'astonmartin': 'bg-[#006F62] text-white',
-    'alfaromeo': 'bg-[#900000] text-white',
-    'alphatauri': 'bg-[#2B4562] text-white',
-    'racingbulls': 'bg-[#2B4562] text-white',
-    'haas': 'bg-[#FFFFFF] text-black',
-    'williams': 'bg-[#005AFF] text-white',
-    'default': 'bg-gray-800 text-white'
+    'mercedes': 'bg-[#00D2BE]',
+    'redbull': 'bg-[#0600EF]',
+    'ferrari': 'bg-[#DC0000]',
+    'mclaren': 'bg-[#FF8700]',
+    'alpine': 'bg-[#0090FF]',
+    'astonmartin': 'bg-[#006F62]',
+    'alfaromeo': 'bg-[#900000]',
+    'alphatauri': 'bg-[#2B4562]',
+    'racingbulls': 'bg-[#2B4562]',
+    'haas': 'bg-[#FFFFFF]',
+    'williams': 'bg-[#005AFF]',
+    'default': 'bg-cyan-500'
   };
 
   const getTeamColor = () => {
@@ -34,23 +34,23 @@ export default function F1Card({
   };
 
   return (
-    <Card className="bg-gray-900/60 border-gray-800 overflow-hidden">
+    <Card className="relative bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50 rounded-3xl overflow-hidden">
       <div className={cn("h-1", getTeamColor())}></div>
-      <CardContent className="pt-4">
+      <CardContent className="pt-6 pb-6">
         {loading ? (
           <div className="animate-pulse">
-            <div className="h-3 w-16 bg-gray-700 rounded mb-3"></div>
-            <div className="h-5 w-32 bg-gray-700 rounded mb-2"></div>
-            {subValue && <div className="h-3 w-24 bg-gray-700 rounded"></div>}
+            <div className="h-3 w-20 bg-neutral-700 rounded mb-4"></div>
+            <div className="h-6 w-32 bg-neutral-700 rounded mb-2"></div>
+            {subValue && <div className="h-3 w-24 bg-neutral-700 rounded"></div>}
           </div>
         ) : (
           <>
-            <div className="flex justify-between items-start">
-              <div className="font-medium text-xs text-gray-400 uppercase tracking-wider mb-1">{title}</div>
-              {icon && <span className="text-blue-500">{icon}</span>}
+            <div className="flex justify-between items-start mb-2">
+              <div className="font-bold text-xs text-neutral-400 uppercase tracking-wider">{title}</div>
+              {icon && <span className="text-cyan-400">{icon}</span>}
             </div>
-            <div className="text-xl font-bold text-white">{value}</div>
-            {subValue && <div className="text-sm text-gray-400 mt-1">{subValue}</div>}
+            <div className="text-2xl font-black text-white">{value}</div>
+            {subValue && <div className="text-sm text-neutral-400 mt-1 font-medium">{subValue}</div>}
           </>
         )}
       </CardContent>

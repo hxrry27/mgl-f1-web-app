@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,8 @@ import { ArrowRight, Flag, Users, Trophy, ArrowLeft } from 'lucide-react';
 import NewHeader from '@/components/NewHeader';
 import { AuroraText } from "@/components/ui/aurora-text";
 import { BorderBeam } from "@/components/ui/border-beam";
+import { RippleButton } from "@/components/ui/ripple-button";
+import { teamColors } from '@/lib/data';
 
 // Subtle Background
 function SubtleBackground() {
@@ -51,20 +53,7 @@ function SubtleBackground() {
 }
 
 // Current Standings Box with Border Beam
-function StandingsBox() {
-  const topDrivers = [
-    { name: 'hxrry27', team: 'Mercedes', points: 286, color: 'bg-cyan-500' },
-    { name: 'Totsuka', team: 'VISA Cash App', points: 278, color: 'bg-purple-500' },
-    { name: 'MagicallyMichael', team: 'Aston Martin', points: 264, color: 'bg-green-500' },
-    { name: 'Kol_ri', team: 'McLaren', points: 251, color: 'bg-orange-500' },
-    { name: 'Evil Tactician', team: 'McLaren', points: 243, color: 'bg-orange-500' },
-    { name: 'Xerxes', team: 'VISA Cash App', points: 241, color: 'bg-purple-500' },
-    { name: 'Sainz', team: 'Ferrari', points: 198, color: 'bg-red-500' },
-    { name: 'Hamilton', team: 'Mercedes', points: 192, color: 'bg-cyan-500' },
-    { name: 'Alonso', team: 'Aston Martin', points: 190, color: 'bg-green-500' },
-    { name: 'Leclerc', team: 'Ferrari', points: 145, color: 'bg-red-500' }
-  ];
-
+function StandingsBox({ drivers }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 50 }}
@@ -86,7 +75,7 @@ function StandingsBox() {
 
       {/* Top 10 Drivers */}
       <div className="space-y-4">
-        {topDrivers.map((driver, index) => (
+        {drivers.map((driver, index) => (
           <motion.div
             key={driver.name}
             initial={{ opacity: 0, x: -20 }}
@@ -170,6 +159,79 @@ function StatsSection() {
 
 // Main Landing Page
 export default function NewLandingLayout() {
+  const [nextRace, setNextRace] = useState(null);
+  const [latestRace, setLatestRace] = useState(null);
+  const [standings, setStandings] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Team color mapping
+  const getTeamColor = (teamName) => {
+    const colorMap = {
+      'Mercedes': 'bg-cyan-500',
+      'Red Bull Racing': 'bg-blue-600',
+      'Ferrari': 'bg-red-500',
+      'McLaren': 'bg-orange-500',
+      'Aston Martin': 'bg-green-500',
+      'Alpine F1 Team': 'bg-blue-400',
+      'Williams': 'bg-blue-500',
+      'AlphaTauri': 'bg-blue-700',
+      'Alfa Romeo': 'bg-red-600',
+      'Haas F1 Team': 'bg-gray-400',
+      'VISA Cash App': 'bg-purple-500',
+    };
+    return colorMap[teamName] || 'bg-neutral-500';
+  };
+
+  // Fetch race data and standings on mount
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        // Fetch next race
+        const nextResponse = await fetch('/api/schedule/next-race');
+        if (nextResponse.ok) {
+          const nextData = await nextResponse.json();
+          if (nextData && (nextData.track || nextData.slug)) {
+            setNextRace({
+              season: nextData.season,
+              slug: nextData.track || nextData.slug,
+              date: nextData.date
+            });
+          }
+        }
+
+        // Fetch latest completed race
+        const latestResponse = await fetch('/api/schedule/last-race');
+        if (latestResponse.ok) {
+          const latestData = await latestResponse.json();
+          if (latestData && latestData.slug) {
+            setLatestRace({
+              season: latestData.season,
+              slug: latestData.slug,
+              date: latestData.date
+            });
+          }
+        }
+
+        // Fetch standings
+        const standingsResponse = await fetch('/api/standings?season=12&limit=10');
+        if (standingsResponse.ok) {
+          const standingsData = await standingsResponse.json();
+          const driversWithColors = standingsData.drivers.map(driver => ({
+            ...driver,
+            color: getTeamColor(driver.team)
+          }));
+          setStandings(driversWithColors);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+  }, []);
+
   return (
     <div className="relative min-h-screen bg-neutral-950 overflow-hidden">
       {/* Background */}
@@ -229,25 +291,69 @@ export default function NewLandingLayout() {
                 transition={{ delay: 0.7 }}
                 className="flex flex-wrap gap-4 mb-12"
               >
-                <Link href="/results">
-                  <motion.button
-                    className="px-8 py-4 bg-neutral-800/80 hover:bg-neutral-700/80 border border-neutral-700 text-white font-bold rounded-2xl flex items-center gap-3 transition-all backdrop-blur-sm"
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <ArrowLeft className="h-5 w-5" />Latest Race
-                  </motion.button>
-                </Link>
+                {/* Latest Race Button */}
+                {latestRace ? (
+                  <Link href={`/races/season/${latestRace.season}/${latestRace.slug}`}>
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <RippleButton
+                        rippleColor="#525252"
+                        className="px-8 py-4 bg-neutral-800/80 hover:bg-neutral-700/80 border border-neutral-700 text-white font-bold rounded-2xl flex items-center gap-3 transition-all backdrop-blur-sm"
+                      >
+                        <ArrowLeft className="h-5 w-5" />
+                        Latest Race
+                      </RippleButton>
+                    </motion.div>
+                  </Link>
+                ) : (
+                  <Link href="/races">
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <RippleButton
+                        rippleColor="#525252"
+                        className="px-8 py-4 bg-neutral-800/80 hover:bg-neutral-700/80 border border-neutral-700 text-white font-bold rounded-2xl flex items-center gap-3 transition-all backdrop-blur-sm"
+                      >
+                        <ArrowLeft className="h-5 w-5" />
+                        Latest Race
+                      </RippleButton>
+                    </motion.div>
+                  </Link>
+                )}
                 
-                <Link href="/schedule">
-                  <motion.button
-                    className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-teal-500 text-black font-bold rounded-2xl flex items-center gap-3 shadow-lg shadow-cyan-500/20 transition-all"
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Next Race <ArrowRight className="h-5 w-5" />
-                  </motion.button>
-                </Link>
+                {/* Next Race Button */}
+                {nextRace ? (
+                  <Link href={`/races/season/${nextRace.season}/${nextRace.slug}`}>
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <RippleButton
+                        rippleColor="#22d3ee"
+                        className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-teal-500 text-black font-bold rounded-2xl flex items-center gap-3 shadow-lg shadow-cyan-500/20 transition-all"
+                      >
+                        Next Race <ArrowRight className="h-5 w-5" />
+                      </RippleButton>
+                    </motion.div>
+                  </Link>
+                ) : (
+                  <Link href="/schedule">
+                    <motion.div
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <RippleButton
+                        rippleColor="#22d3ee"
+                        className="px-8 py-4 bg-gradient-to-r from-cyan-500 to-teal-500 text-black font-bold rounded-2xl flex items-center gap-3 shadow-lg shadow-cyan-500/20 transition-all"
+                      >
+                        Next Race <ArrowRight className="h-5 w-5" />
+                      </RippleButton>
+                    </motion.div>
+                  </Link>
+                )}
               </motion.div>
 
               {/* Stats */}
@@ -255,7 +361,7 @@ export default function NewLandingLayout() {
             </div>
 
             {/* Right Side - Standings Box */}
-            <StandingsBox />
+            <StandingsBox drivers={standings} />
           </div>
         </div>
       </div>

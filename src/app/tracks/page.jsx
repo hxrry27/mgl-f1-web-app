@@ -3,9 +3,9 @@
 import React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { Flag, Globe, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Flag, Globe } from 'lucide-react';
 
 // ============================================================================
 // TRACK DATA - All tracks organized by region
@@ -46,164 +46,162 @@ const allTracks = {
 };
 
 // ============================================================================
-// COMPONENT
+// REGION SECTION COMPONENT
 // ============================================================================
-export default function TracksPage() {
+function RegionSection({ title, tracks, icon, color, delay }) {
   const router = useRouter();
 
-  const handleTrackClick = (slug) => {
-    router.push(`/tracks/${slug}`);
-  };
-
   return (
-    <div className="flex flex-col min-h-screen bg-gray-900 bg-opacity-90 text-white">
-      <div className="flex-grow pt-6 pb-8">
-        <div className="container mx-auto px-4 max-w-7xl">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="mb-8"
+    >
+      <div className="relative bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden">
+        {/* Header */}
+        <div className="px-8 py-6 border-b border-neutral-800/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`${color}`}>
+                {icon}
+              </div>
+              <h2 className="text-2xl font-black text-white tracking-tight">{title}</h2>
+            </div>
+            <Badge className="bg-neutral-800/80 text-neutral-400 border-neutral-700/50">
+              {tracks.length} Circuits
+            </Badge>
+          </div>
+        </div>
+
+        {/* Track Grid */}
+        <div className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tracks.map((track, index) => (
+              <motion.button
+                key={track.slug}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: delay + 0.1 + index * 0.05 }}
+                whileHover={{ scale: 1.02, y: -4 }}
+                onClick={() => router.push(`/tracks/${track.slug}`)}
+                className="relative bg-neutral-800/50 rounded-2xl p-6 hover:bg-neutral-800 transition-all text-left group border border-neutral-700/30 hover:border-cyan-500/50"
+              >
+                {/* Track Info */}
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="relative w-12 h-8 flex-shrink-0">
+                    <Image
+                      src={`/images/flags/${track.flagFile}.png`}
+                      alt={`${track.country} Flag`}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-bold text-lg group-hover:text-cyan-400 transition-colors mb-1">
+                      {track.name}
+                    </div>
+                    <div className="text-neutral-400 text-sm truncate">
+                      {track.country}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="flex items-center gap-4 text-sm text-neutral-500">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" />
+                    <span>{track.length} km</span>
+                  </div>
+                  <span>•</span>
+                  <span>{track.corners} corners</span>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+export default function TracksPage() {
+  return (
+    <div className="relative min-h-screen bg-neutral-950">
+      {/* Content Container */}
+      <div className="relative z-10 px-8 lg:px-16 xl:px-24 py-8">
+        <div className="max-w-[1400px] mx-auto">
           
-          {/* Page Title */}
-          <h1 className="text-3xl font-bold text-white text-center mb-8 flex items-center justify-center gap-2">
-            <Flag className="h-7 w-7 text-blue-500" />
-            Formula 1 Circuits
-          </h1>
+          {/* Page Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-12"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <Flag className="h-10 w-10 text-cyan-400" />
+              <h1 className="text-5xl md:text-6xl font-black text-white tracking-tight">
+                Formula 1 Circuits
+              </h1>
+            </div>
+            <p className="text-xl text-neutral-400 max-w-3xl">
+              Explore the legendary circuits that define Formula 1 racing, from historic European tracks to cutting-edge street circuits around the globe.
+            </p>
+          </motion.div>
 
-          {/* European Tracks */}
-          <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl text-white flex items-center gap-2">
-            <Globe className="h-5 w-5 text-blue-400" />
-            European Tracks
-            <Badge variant="secondary" className="ml-auto">{allTracks.europe.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allTracks.europe.map((track) => (
-              <button
-                key={track.slug}
-                onClick={() => handleTrackClick(track.slug)}
-                className="bg-gray-800/50 rounded-lg p-4 hover:bg-gray-800 transition-colors text-left group border border-gray-700/50 hover:border-blue-500"
-              >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="relative w-10 h-7 flex-shrink-0">
-                    <Image
-                      src={`/images/flags/${track.flagFile}.png`}
-                      alt={`${track.country} Flag`}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-semibold text-base group-hover:text-blue-400 transition-colors">
-                      {track.name}
-                    </div>
-                    <div className="text-gray-400 text-sm truncate">
-                      {track.country}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>{track.length} km</span>
-                  <span>•</span>
-                  <span>{track.corners} corners</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          {/* Stats Row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex gap-12 mb-16"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+                <Globe className="h-5 w-5" />
+                <span className="text-sm uppercase tracking-wider">Total Circuits</span>
+              </div>
+              <span className="text-4xl font-black text-white">
+                {allTracks.europe.length + allTracks.americas.length + allTracks.asia_me.length}
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 text-neutral-500 mb-2">
+                <MapPin className="h-5 w-5" />
+                <span className="text-sm uppercase tracking-wider">Countries</span>
+              </div>
+              <span className="text-4xl font-black text-white">25</span>
+            </div>
+          </motion.div>
 
-      {/* Americas Tracks */}
-      <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl text-white flex items-center gap-2">
-            <Globe className="h-5 w-5 text-green-400" />
-            Americas Tracks
-            <Badge variant="secondary" className="ml-auto">{allTracks.americas.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allTracks.americas.map((track) => (
-              <button
-                key={track.slug}
-                onClick={() => handleTrackClick(track.slug)}
-                className="bg-gray-800/50 rounded-lg p-4 hover:bg-gray-800 transition-colors text-left group border border-gray-700/50 hover:border-blue-500"
-              >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="relative w-10 h-7 flex-shrink-0">
-                    <Image
-                      src={`/images/flags/${track.flagFile}.png`}
-                      alt={`${track.country} Flag`}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-semibold text-base group-hover:text-blue-400 transition-colors">
-                      {track.name}
-                    </div>
-                    <div className="text-gray-400 text-sm truncate">
-                      {track.country}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>{track.length} km</span>
-                  <span>•</span>
-                  <span>{track.corners} corners</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          {/* Region Sections */}
+          <RegionSection
+            title="European Tracks"
+            tracks={allTracks.europe}
+            icon={<Globe className="h-6 w-6" />}
+            color="text-cyan-400"
+            delay={0.6}
+          />
 
-      {/* Asia & Middle East Tracks */}
-      <Card className="bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden mb-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-xl text-white flex items-center gap-2">
-            <Globe className="h-5 w-5 text-purple-400" />
-            Asia & Middle East Tracks
-            <Badge variant="secondary" className="ml-auto">{allTracks.asia_me.length}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allTracks.asia_me.map((track) => (
-              <button
-                key={track.slug}
-                onClick={() => handleTrackClick(track.slug)}
-                className="bg-gray-800/50 rounded-lg p-4 hover:bg-gray-800 transition-colors text-left group border border-gray-700/50 hover:border-blue-500"
-              >
-                <div className="flex items-start gap-3 mb-3">
-                  <div className="relative w-10 h-7 flex-shrink-0">
-                    <Image
-                      src={`/images/flags/${track.flagFile}.png`}
-                      alt={`${track.country} Flag`}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-semibold text-base group-hover:text-blue-400 transition-colors">
-                      {track.name}
-                    </div>
-                    <div className="text-gray-400 text-sm truncate">
-                      {track.country}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>{track.length} km</span>
-                  <span>•</span>
-                  <span>{track.corners} corners</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+          <RegionSection
+            title="Americas Tracks"
+            tracks={allTracks.americas}
+            icon={<Globe className="h-6 w-6" />}
+            color="text-teal-400"
+            delay={0.8}
+          />
 
+          <RegionSection
+            title="Asia & Middle East Tracks"
+            tracks={allTracks.asia_me}
+            icon={<Globe className="h-6 w-6" />}
+            color="text-cyan-500"
+            delay={1.0}
+          />
         </div>
       </div>
     </div>

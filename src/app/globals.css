@@ -77,7 +77,7 @@
     --radius: 1.5rem;
 
     /* Menu overlay color test variable */
-    --color-test: rgba(94, 60, 60, 0.98);
+    --color-test: rgba(44, 67, 85, 0.98);
   }
   .theme {
     --animate-rippling: rippling var(--duration) ease-out;
@@ -189,6 +189,15 @@
 }
 
 @theme inline {
+  @keyframes rippling {
+  0% {
+    opacity: 1;
+    }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+    }
+  }
   @keyframes rippling {
   0% {
     opacity: 1;

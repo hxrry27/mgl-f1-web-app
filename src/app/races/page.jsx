@@ -112,8 +112,14 @@ export default function ResultsOverviewPage() {
   }, [selectedSeason]);
 
   const handleRaceClick = (raceSlug) => {
-    router.push(`/results/season/${selectedSeason}/${raceSlug}`);
+    router.push(`/races/season/${selectedSeason}/${raceSlug}`);
   };
+
+  // Find the next upcoming race (first race without a winner)
+  const nextRaceIndex = races.findIndex(race => {
+    const raceInfo = raceInfoMap[race.slug];
+    return !raceInfo?.winner?.name || raceInfo.winner.name === 'N/A';
+  });
 
   return (
     <div className="min-h-screen bg-neutral-950">
@@ -126,9 +132,9 @@ export default function ResultsOverviewPage() {
         >
           <h1 className="text-5xl font-black text-white mb-2 flex items-center gap-3">
             <Trophy className="h-10 w-10 text-cyan-400" />
-            Race Results
+            Races
           </h1>
-          <p className="text-neutral-400 text-lg">View all race results by season</p>
+          <p className="text-neutral-400 text-lg">View all races by season</p>
         </motion.div>
 
         {/* Season Selector */}
@@ -172,7 +178,7 @@ export default function ResultsOverviewPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50 overflow-hidden">
+          <Card className="bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50 rounded-3xl overflow-hidden">
             <CardContent className="p-0">
               {loading ? (
                 <div className="flex items-center justify-center py-20">
@@ -188,7 +194,7 @@ export default function ResultsOverviewPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-neutral-800">
-                        <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs w-12">#</th>
+                        <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs w-24">#</th>
                         <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Track</th>
                         <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Date</th>
                         <th className="text-left p-4 text-neutral-400 font-bold uppercase tracking-wider text-xs">Winner</th>
@@ -201,6 +207,7 @@ export default function ResultsOverviewPage() {
                         const raceInfo = raceInfoMap[race.slug];
                         const trackInfo = trackData[race.slug] || { name: race.name, flag: '🏁' };
                         const hasWinner = raceInfo?.winner?.name && raceInfo.winner.name !== 'N/A';
+                        const isNextRace = index === nextRaceIndex && !hasWinner;
 
                         return (
                           <motion.tr
@@ -209,12 +216,25 @@ export default function ResultsOverviewPage() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 }}
                             onClick={() => handleRaceClick(race.slug)}
-                            className="border-b border-neutral-800/50 hover:bg-neutral-800/30 cursor-pointer transition-colors group"
+                            className={cn(
+                              "border-b border-neutral-800/50 hover:bg-neutral-800/30 cursor-pointer transition-colors group",
+                              isNextRace && "bg-amber-500/10 border-amber-500/50 hover:bg-amber-500/20"
+                            )}
                           >
                             <td className="p-4">
-                              <span className="text-neutral-500 font-bold text-sm">
-                                {race.race_number}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                
+                                <span className={cn(
+                                  "font-bold text-sm",
+                                  isNextRace ? "text-amber-400" : "text-neutral-500"
+                                )}>
+                                  {race.race_number}
+                                </span>{isNextRace && (
+                                  <span className="bg-amber-500 text-black px-2 py-0.5 rounded-full font-black text-xs uppercase">
+                                    Next
+                                  </span>
+                                )}
+                              </div>
                             </td>
                             <td className="p-4">
                               <div className="flex items-center gap-3">
@@ -226,13 +246,19 @@ export default function ResultsOverviewPage() {
                                     className="object-cover rounded-sm"
                                   />
                                 </div>
-                                <p className="text-white font-bold group-hover:text-cyan-400 transition-colors">
+                                <p className={cn(
+                                  "font-bold group-hover:text-cyan-400 transition-colors",
+                                  isNextRace ? "text-amber-400" : "text-white"
+                                )}>
                                   {trackInfo.name}
                                 </p>
                               </div>
                             </td>
                             <td className="p-4">
-                              <p className="text-neutral-400 text-sm">
+                              <p className={cn(
+                                "text-sm",
+                                isNextRace ? "text-amber-400 font-bold" : "text-neutral-400"
+                              )}>
                                 {race.date ? new Date(race.date).toLocaleDateString('en-GB', { 
                                   day: 'numeric', 
                                   month: 'short', 
@@ -244,7 +270,12 @@ export default function ResultsOverviewPage() {
                               {hasWinner ? (
                                 <p className="text-white font-bold">{raceInfo.winner.name}</p>
                               ) : (
-                                <span className="text-neutral-500 italic text-sm">Not yet raced</span>
+                                <span className={cn(
+                                  "italic text-sm",
+                                  isNextRace ? "text-amber-400 font-bold" : "text-neutral-500"
+                                )}>
+                                  Not yet raced
+                                </span>
                               )}
                             </td>
                             <td className="p-4">
@@ -269,8 +300,13 @@ export default function ResultsOverviewPage() {
                                   Completed
                                 </Badge>
                               ) : (
-                                <Badge className="bg-neutral-700/50 text-neutral-400 border-neutral-600/30 font-bold px-3 py-1 text-xs uppercase">
-                                  Upcoming
+                                <Badge className={cn(
+                                  "font-bold px-3 py-1 text-xs uppercase",
+                                  isNextRace 
+                                    ? "bg-amber-500/20 text-amber-400 border-amber-500/30" 
+                                    : "bg-neutral-700/50 text-neutral-400 border-neutral-600/30"
+                                )}>
+                                  {isNextRace ? "Next Race" : "Upcoming"}
                                 </Badge>
                               )}
                             </td>

@@ -182,7 +182,7 @@ function FullScreenMenu({ isOpen, onClose, isRefreshing, onRefreshCache, latestS
   const menuItems = [
     { label: 'Home', href: '/', icon: null },
     { label: 'Seasons', href: `/seasons/${latestSeason}`, icon: <BarChart2 size={24} /> },
-    { label: 'Results', href: '/results', icon: <Trophy size={24} /> },
+    { label: 'Races', href: '/races', icon: <Trophy size={24} /> },
     { label: 'Drivers', href: '/drivers', icon: <Users size={24} /> },
     { label: 'Teams', href: '/teams', icon: <UsersRound size={24} /> },
     { label: 'Tracks', href: '/tracks', icon: <MapPin size={24} /> },
@@ -284,7 +284,7 @@ function FullScreenMenu({ isOpen, onClose, isRefreshing, onRefreshCache, latestS
               className="absolute bottom-8 text-center"
             >
               <p className="text-neutral-500 text-sm font-medium">
-                Season 11 • 2025
+                Season 12 • 2025
               </p>
             </motion.div>
           </div>
@@ -491,11 +491,11 @@ export default function NewHeader() {
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed top-0 left-0 right-0 z-[100] px-6 py-6"
+          className="fixed top-0 left-0 right-0 z-[100] px-6 py-6 pointer-events-none"
         >
           <div className="flex items-center justify-between w-full">
             {/* Left: MGLF1 Logo Text */}
-            <Link href="/" className="group">
+            <Link href="/" className="group pointer-events-auto">
                 <motion.h1
                     className="text-3xl md:text-4xl font-black leading-none tracking-tighter"
                     whileHover={{ scale: 1.05 }}
@@ -520,7 +520,7 @@ export default function NewHeader() {
             {/* Right: Menu Button */}
             <motion.button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-14 h-14 flex items-center justify-center bg-neutral-900/80 backdrop-blur-xl hover:bg-neutral-800 transition-all rounded-2xl border border-neutral-800"
+              className="w-14 h-14 flex items-center justify-center bg-neutral-900/80 backdrop-blur-xl hover:bg-neutral-800 transition-all rounded-2xl border border-neutral-800 pointer-events-auto"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

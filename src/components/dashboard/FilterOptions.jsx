@@ -17,14 +17,14 @@ export default function FilterOptions({
   handleDeselectAll
 }) {
   return (
-    <div className="bg-gray-900/30 rounded-lg p-4 space-y-4 border border-gray-800">
-      <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-        <h3 className="font-semibold text-white">Display Options</h3>
+    <div className="bg-neutral-900/60 backdrop-blur-xl rounded-3xl p-6 space-y-4 border border-neutral-700/50">
+      <div className="flex justify-between items-center border-b border-neutral-700/50 pb-4">
+        <h3 className="font-black text-white">Display Options</h3>
         <div className="flex space-x-2">
           <Button 
             size="sm" 
             variant="outline" 
-            className="text-xs h-7 px-2 border-gray-700 hover:bg-gray-800"
+            className="text-xs h-8 px-3 border-neutral-700 hover:bg-neutral-800 text-white font-bold rounded-xl"
             onClick={handleSelectAll}
           >
             All
@@ -32,7 +32,7 @@ export default function FilterOptions({
           <Button 
             size="sm" 
             variant="outline" 
-            className="text-xs h-7 px-2 border-gray-700 hover:bg-gray-800"
+            className="text-xs h-8 px-3 border-neutral-700 hover:bg-neutral-800 text-white font-bold rounded-xl"
             onClick={handleDeselectAll}
           >
             None
@@ -40,37 +40,37 @@ export default function FilterOptions({
         </div>
       </div>
       
-      <div className="space-y-3">
-        <div className="flex items-center space-x-2">
+      <div className="space-y-4">
+        <div className="flex items-center space-x-3">
           <Switch 
             id="display-mode" 
             checked={displayMode === 'compound'}
             onCheckedChange={handleDisplayModeToggle}
           />
-          <Label htmlFor="display-mode" className="cursor-pointer flex items-center gap-2">
-            <Palette size={16} className="text-gray-400" />
+          <Label htmlFor="display-mode" className="cursor-pointer flex items-center gap-2 text-white font-medium">
+            <Palette size={16} className="text-cyan-400" />
             {displayMode === 'team' ? 'Team Colors' : 'Compound Colors'}
           </Label>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <Switch 
             id="filter-outlaps" 
             checked={filterOutlaps}
             onCheckedChange={setFilterOutlaps}
           />
-          <Label htmlFor="filter-outlaps" className="cursor-pointer">
+          <Label htmlFor="filter-outlaps" className="cursor-pointer text-white font-medium">
             Filter Out Laps
           </Label>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-3">
           <Switch 
             id="filter-inlaps" 
             checked={filterInlaps}
             onCheckedChange={setFilterInlaps}
           />
-          <Label htmlFor="filter-inlaps" className="cursor-pointer">
+          <Label htmlFor="filter-inlaps" className="cursor-pointer text-white font-medium">
             Filter In Laps
           </Label>
         </div>

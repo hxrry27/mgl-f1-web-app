@@ -196,7 +196,7 @@ function parseStints(stintsRaw) {
 
 // Map status to display format
 function mapStatus(status) {
-  if (!status) return null;
+  if (!status || status === 'OK' || status === 'Ok' || status === 'ok' || status === 'Finished') return null;
   const statusMap = { 'Dnf': 'DNF', 'Dsq': 'DSQ', 'Dns': 'DNS' };
   return statusMap[status] || status;
 }
@@ -278,13 +278,15 @@ export default async function RaceResultsPage({ params }) {
 
       const fastestLapTime = Math.min(...resultsRes.rows.map(r => r.fastest_lap_time_int || Infinity).filter(t => t !== Infinity));
       let leaderTime = resultsRes.rows[0]?.time_int || 0;
+      console.log('Fastest lap time:', fastestLapTime);
+      console.log('Fastest lap type:', typeof fastestLapTime);
 
       results = resultsRes.rows.map((row, idx) => {
         const displayPos = row.adjusted_position || row.position;
         let points = displayPos <= 10 ? pointsSystem[displayPos - 1] : 0;
         
         // Add fastest lap point (only for seasons < 12, and only if driver finished in top 10)
-        const hasFastestLap = row.fastest_lap_time_int === fastestLapTime;
+        const hasFastestLap = parseInt(row.fastest_lap_time_int) === fastestLapTime;
         if (parseInt(season) < 12 && hasFastestLap && displayPos <= 10) {
           points += 1;
         }

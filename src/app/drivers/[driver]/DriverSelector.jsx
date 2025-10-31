@@ -1,39 +1,50 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { drivers } from '@/lib/data';
 
-// Function to normalize driver names for URLs
 const normalizeDriverName = (name) => {
   return name.toLowerCase().replace(/\s+/g, '-');
 };
 
-// Function to get driver name from URL
-const getDriverFromUrl = (name) => {
-  return drivers.find(driver => normalizeDriverName(driver) === name) || name;
-};
-
 export default function DriverSelector({ currentDriver }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [isChanging, setIsChanging] = useState(false);
+  const [drivers, setDrivers] = useState([]);
+  const [currentDriverName, setCurrentDriverName] = useState('');
 
-  const handleDriverChange = async (newDriverUrl) => {
-    const newDriverName = getDriverFromUrl(newDriverUrl);
-    const currentDriverName = getDriverFromUrl(currentDriver);
-    
-    if (newDriverName === currentDriverName) return;
+  useEffect(() => {
+    async function fetchDrivers() {
+      try {
+        const response = await fetch('/api/drivers');
+        if (response.ok) {
+          const data = await response.json();
+          setDrivers(data);
+          
+          // Find current driver's display name
+          const normalized = data.map(d => ({ name: d, slug: normalizeDriverName(d) }));
+          const current = normalized.find(d => d.slug === currentDriver);
+          if (current) {
+            setCurrentDriverName(current.name);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching drivers:', error);
+      }
+    }
+    fetchDrivers();
+  }, [currentDriver]);
+
+  const handleDriverChange = async (newDriverSlug) => {
+    if (newDriverSlug === currentDriver) return;
     
     setIsChanging(true);
-    const newPath = `/drivers/${newDriverUrl}`;
-    router.push(newPath);
+    router.push(`/drivers/${newDriverSlug}`);
     
-    // Reset loading state after navigation
     setTimeout(() => setIsChanging(false), 300);
   };
 
@@ -57,62 +68,77 @@ export default function DriverSelector({ currentDriver }) {
   const canGoForward = drivers.map(normalizeDriverName).indexOf(currentDriver) < drivers.length - 1;
 
   return (
-    <div className="flex items-center gap-3 p-4 bg-gray-900/50 border border-gray-700/60 rounded-lg backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-gray-400">
+    <div className="flex items-center gap-3 p-4 bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl">
+      <div className="flex items-center gap-2 text-neutral-400">
         <User className="w-4 h-4" />
-        <span className="text-sm font-medium">Driver</span>
+        <span className="text-sm font-bold uppercase tracking-wider">Driver</span>
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Previous Driver Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigateToDriver('prev')}
           disabled={!canGoBack || isChanging}
-          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+          className={cn(
+            "h-10 w-10 p-0 rounded-xl transition-all",
+            "bg-neutral-800/80 hover:bg-neutral-700 hover:scale-110",
+            "text-neutral-400 hover:text-cyan-400",
+            "disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-neutral-800/80"
+          )}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        {/* Driver Selector */}
         <Select
           value={currentDriver}
           onValueChange={handleDriverChange}
           disabled={isChanging}
         >
           <SelectTrigger className={cn(
-            "w-48 h-8 bg-gray-800/60 border-gray-600 text-white text-center font-semibold",
-            isChanging && "opacity-50"
+            "w-48 h-10 bg-neutral-800/80 border-neutral-700 rounded-xl",
+            "text-white font-black text-center",
+            "hover:bg-neutral-700 hover:border-cyan-500/50 transition-all",
+            isChanging && "opacity-50 cursor-wait"
           )}>
             <SelectValue>
-              {getDriverFromUrl(currentDriver)}
+              {currentDriverName || 'Loading...'}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-600">
+          
+          <SelectContent className="bg-neutral-900 border-neutral-700 backdrop-blur-xl rounded-xl">
             {drivers.map((driver) => (
-              <SelectItem key={driver} value={normalizeDriverName(driver)} className="text-white">
+              <SelectItem 
+                key={driver} 
+                value={normalizeDriverName(driver)}
+                className="text-white font-medium hover:bg-neutral-800 focus:bg-neutral-800 rounded-lg cursor-pointer"
+              >
                 {driver}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Next Driver Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigateToDriver('next')}
           disabled={!canGoForward || isChanging}
-          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+          className={cn(
+            "h-10 w-10 p-0 rounded-xl transition-all",
+            "bg-neutral-800/80 hover:bg-neutral-700 hover:scale-110",
+            "text-neutral-400 hover:text-cyan-400",
+            "disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-neutral-800/80"
+          )}
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
       
       {isChanging && (
-        <div className="text-xs text-gray-400 animate-pulse">
-          Loading...
+        <div className="flex items-center gap-2 text-xs text-neutral-500 animate-pulse ml-2">
+          <div className="h-2 w-2 bg-cyan-400 rounded-full animate-ping" />
+          <span className="font-medium">Loading...</span>
         </div>
       )}
     </div>
