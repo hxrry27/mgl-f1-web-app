@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
   ResponsiveContainer, Cell
@@ -19,54 +20,24 @@ import {
   MousePointer2, X
 } from 'lucide-react';
 
-// Helper for formatting large numbers
-const formatNumber = (num) => {
-  return new Intl.NumberFormat().format(num);
-};
-
-// Helper for formatting ERS values as MJ
-const formatTotals = (value) => {
-  if (value === undefined || value === null) return 'Unavailable for this race';
-  return `${parseFloat(value).toFixed(1)} MJ`;
-};
-
-// Helper for formatting percentages
-const formatPercent = (num) => {
-  return `${num.toFixed(1)}%`;
-};
-
-// Helper for formatting time (MM:SS.mmm)
+// Helper functions
+const formatNumber = (num) => new Intl.NumberFormat().format(num);
+const formatTotals = (value) => value === undefined || value === null ? 'Unavailable for this race' : `${parseFloat(value).toFixed(1)} MJ`;
+const formatPercent = (num) => `${num.toFixed(1)}%`;
 const formatTime = (timeInSec) => {
   const minutes = Math.floor(timeInSec / 60);
   const seconds = (timeInSec % 60).toFixed(3);
   return `${minutes}:${seconds.padStart(6, '0')}`;
 };
+const formatSpeed = (speed) => `${speed} km/h`;
+const formatTemperature = (temp) => `${temp}°C`;
+const formatGForce = (g) => `${g.toFixed(2)}G`;
 
-// Helper to format speeds (in km/h)
-const formatSpeed = (speed) => {
-  return `${speed} km/h`;
-};
-
-// Helper to format temperature
-const formatTemperature = (temp) => {
-  return `${temp}°C`;
-};
-
-// Helper to format G-forces
-const formatGForce = (g) => {
-  return `${g.toFixed(2)}G`;
-};
-
-// Function to get team color with fallback logic
 const getTeamColor = (teamName) => {
-  if (!teamName) return '#6366f1';
+  if (!teamName) return '#22d3ee';
   
-  // Direct match first
-  if (teamColors[teamName]) {
-    return teamColors[teamName];
-  }
+  if (teamColors[teamName]) return teamColors[teamName];
   
-  // Try partial matches for flexible team name handling
   const normalizedTeamName = teamName.toLowerCase();
   
   if (normalizedTeamName.includes('mercedes')) return '#00D2BE';
@@ -80,156 +51,95 @@ const getTeamColor = (teamName) => {
   if (normalizedTeamName.includes('williams')) return '#005AFF';
   if (normalizedTeamName.includes('alphatauri') || normalizedTeamName.includes('racing bulls') || teamName === 'RB') return '#2B4562';
   
-  // Default fallback
-  return '#6366f1';
+  return '#22d3ee';
 };
+
 const teamColors = {
-  // Mercedes variations
-  'Mercedes': '#00D2BE',
-  'Mercedes-AMG PETRONAS F1 Team': '#00D2BE',
-  'Mercedes-AMG': '#00D2BE',
-  
-  // Red Bull variations  
-  'Red Bull Racing': '#0600EF',
-  'Red Bull Racing Honda RBPT': '#0600EF',
-  'Red Bull': '#0600EF',
-  'Oracle Red Bull Racing': '#0600EF',
-  
-  // Ferrari variations
-  'Ferrari': '#DC0000',
-  'Scuderia Ferrari': '#DC0000',
-  'Scuderia Ferrari HP': '#DC0000',
-  
-  // McLaren variations
-  'McLaren': '#FF8700',
-  'McLaren F1 Team': '#FF8700',
-  'Papaya United McLaren F1 Team': '#FF8700',
-  
-  // Alpine variations
-  'Alpine': '#0090FF',
-  'BWT Alpine F1 Team': '#0090FF',
-  'Alpine F1 Team': '#0090FF',
-  
-  // Aston Martin variations
-  'Aston Martin': '#006F62',
-  'Aston Martin Aramco Cognizant F1 Team': '#006F62',
-  'Aston Martin F1 Team': '#006F62',
-  
-  // Sauber/Kick Sauber variations
-  'Kick Sauber': '#900000',
-  'Sauber': '#900000',
-  'Alfa Romeo': '#900000',
-  'Alfa Romeo F1 Team ORLEN': '#900000',
-  'Stake F1 Team Kick Sauber': '#900000',
-  
-  // RB/AlphaTauri/Racing Bulls variations
-  'RB': '#2B4562',
-  'AlphaTauri': '#2B4562',
-  'Scuderia AlphaTauri': '#2B4562',
-  'Racing Bulls': '#2B4562',
-  'Visa Cash App RB F1 Team': '#2B4562',
-  
-  // Haas variations
-  'Haas F1 Team': '#FFFFFF',
-  'Haas': '#FFFFFF',
-  'MoneyGram Haas F1 Team': '#FFFFFF',
-  
-  // Williams variations
-  'Williams': '#005AFF',
-  'Williams Racing': '#005AFF',
-  'Williams F1 Team': '#005AFF',
+  'Mercedes': '#00D2BE', 'Mercedes-AMG PETRONAS F1 Team': '#00D2BE', 'Mercedes-AMG': '#00D2BE',
+  'Red Bull Racing': '#0600EF', 'Red Bull Racing Honda RBPT': '#0600EF', 'Red Bull': '#0600EF', 'Oracle Red Bull Racing': '#0600EF',
+  'Ferrari': '#DC0000', 'Scuderia Ferrari': '#DC0000', 'Scuderia Ferrari HP': '#DC0000',
+  'McLaren': '#FF8700', 'McLaren F1 Team': '#FF8700', 'Papaya United McLaren F1 Team': '#FF8700',
+  'Alpine': '#0090FF', 'BWT Alpine F1 Team': '#0090FF', 'Alpine F1 Team': '#0090FF',
+  'Aston Martin': '#006F62', 'Aston Martin Aramco Cognizant F1 Team': '#006F62', 'Aston Martin F1 Team': '#006F62',
+  'Kick Sauber': '#900000', 'Sauber': '#900000', 'Alfa Romeo': '#900000', 'Alfa Romeo F1 Team ORLEN': '#900000', 'Stake F1 Team Kick Sauber': '#900000',
+  'RB': '#2B4562', 'AlphaTauri': '#2B4562', 'Scuderia AlphaTauri': '#2B4562', 'Racing Bulls': '#2B4562', 'Visa Cash App RB F1 Team': '#2B4562',
+  'Haas F1 Team': '#FFFFFF', 'Haas': '#FFFFFF', 'MoneyGram Haas F1 Team': '#FFFFFF',
+  'Williams': '#005AFF', 'Williams Racing': '#005AFF', 'Williams F1 Team': '#005AFF',
 };
 
-// Enhanced stat card component with click functionality
 const ClickableStatCard = ({ 
-  title, 
-  value, 
-  icon: Icon, 
-  color = "text-blue-500", 
-  tooltip, 
-  className,
-  onClick,
-  chartData = [],
-  chartTitle,
-  dataKey = "value",
-  formatValue
+  title, value, icon: Icon, color = "text-cyan-500", tooltip, className,
+  onClick, chartData = [], chartTitle, dataKey = "value", formatValue
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleClick = () => {
-    if (chartData && Array.isArray(chartData) && chartData.length > 0) {
-      setIsOpen(true);
-    }
-  };
-
   return (
     <>
-      <Card 
-        className={cn(
-          "bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden cursor-pointer transition-all duration-200 hover:border-gray-600 hover:shadow-lg hover:shadow-blue-500/10",
-          className
-        )}
-        onClick={handleClick}
-      >
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-400 mb-1">{title}</p>
-              <p className="text-2xl font-semibold text-white">{value}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={cn("rounded-full p-2", color.replace("text-", "bg-").replace("500", "500/20"))}>
-                <Icon className={cn("w-5 h-5", color)} />
-              </div>
-            <div className="flex items-center gap-2">
-              {chartData && Array.isArray(chartData) && chartData.length > 0 && (
-                <MousePointer2 className="w-4 h-4 text-gray-400" />
-              )}
-            </div>
-            </div>
-          </div>
-          {tooltip && (
-            <p className="text-xs text-gray-500 mt-2">{tooltip}</p>
+      <motion.div whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.98 }}>
+        <Card 
+          className={cn(
+            "bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10",
+            className
           )}
-        </CardContent>
-      </Card>
+          onClick={() => chartData?.length > 0 && setIsOpen(true)}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-2">{title}</p>
+                <p className="text-3xl font-black text-white">{value}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={cn("rounded-full p-3", color.replace("text-", "bg-").replace("500", "500/20"))}>
+                  <Icon className={cn("w-6 h-6", color)} />
+                </div>
+                {chartData?.length > 0 && (
+                  <MousePointer2 className="w-4 h-4 text-neutral-500" />
+                )}
+              </div>
+            </div>
+            {tooltip && (
+              <p className="text-xs text-neutral-500 mt-3">{tooltip}</p>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      {/* Chart Modal */}
-      {chartData && Array.isArray(chartData) && chartData.length > 0 && (
+      {chartData?.length > 0 && (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="max-w-4xl bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="max-w-4xl bg-neutral-900/95 backdrop-blur-xl border-neutral-700/50 text-white rounded-3xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Icon className={cn("w-5 h-5", color)} />
+              <DialogTitle className="flex items-center gap-3 text-2xl font-black">
+                <Icon className={cn("w-6 h-6", color)} />
                 {chartTitle || title}
               </DialogTitle>
             </DialogHeader>
             <div className="h-96 mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.3)" />
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(64, 64, 64, 0.3)" />
                   <XAxis 
                     dataKey="name" 
-                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }} 
                     angle={-45}
                     textAnchor="end"
                     height={80}
+                    stroke="rgba(115, 115, 115, 0.5)"
                   />
                   <YAxis 
-                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }} 
                     tickFormatter={formatValue}
+                    stroke="rgba(115, 115, 115, 0.5)"
                   />
                   <RechartsTooltip
                     contentStyle={{ 
-                      backgroundColor: 'rgba(17, 24, 39, 0.95)', 
-                      borderColor: 'rgba(75, 85, 99, 0.5)',
-                      borderRadius: '8px',
-                      color: 'white'
+                      backgroundColor: 'rgba(23, 23, 23, 0.95)', 
+                      borderColor: 'rgba(64, 64, 64, 0.5)',
+                      borderRadius: '16px',
+                      color: 'white',
+                      backdropFilter: 'blur(12px)'
                     }}
-                    labelStyle={{ color: 'white' }}
+                    labelStyle={{ color: '#22d3ee', fontWeight: 'bold' }}
                     itemStyle={{ color: 'white' }}
                     formatter={(value, name, props) => [
                       formatValue ? formatValue(value) : value,
@@ -237,17 +147,14 @@ const ClickableStatCard = ({
                     ]}
                     labelFormatter={(label) => `${label} (${chartData.find(d => d.name === label)?.team || 'Unknown Team'})`}
                   />
-                  <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, index) => {
-                      const teamColor = getTeamColor(entry.team);
-                      return (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={teamColor}
-                          fillOpacity={0.8}
-                        />
-                      );
-                    })}
+                  <Bar dataKey={dataKey} radius={[8, 8, 0, 0]}>
+                    {chartData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={getTeamColor(entry.team)}
+                        fillOpacity={0.9}
+                      />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -259,102 +166,86 @@ const ClickableStatCard = ({
   );
 };
 
-// Driver stat card with click functionality
 const ClickableDriverStatCard = ({ 
-  driver, 
-  team, 
-  value, 
-  title, 
-  icon: Icon, 
-  color = "text-blue-500", 
-  tooltip, 
-  className,
-  chartData = [],
-  chartTitle,
-  dataKey = "value",
-  formatValue
+  driver, team, value, title, icon: Icon, color = "text-cyan-500", tooltip, className,
+  chartData = [], chartTitle, dataKey = "value", formatValue
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleClick = () => {
-    if (chartData && Array.isArray(chartData) && chartData.length > 0) {
-      setIsOpen(true);
-    }
-  };
-
   return (
     <>
-      <Card 
-        className={cn(
-          "bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden cursor-pointer transition-all duration-200 hover:border-gray-600 hover:shadow-lg hover:shadow-blue-500/10",
-          className
-        )}
-        onClick={handleClick}
-      >
-        <CardContent className="p-4">
-          <div className="flex items-center mb-3">
-            <div className="w-8 h-8 rounded-full overflow-hidden mr-3 bg-gray-800 flex items-center justify-center">
-              <Users className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="flex-grow">
-              <p className="font-medium text-white">{driver}</p>
-              <p className="text-xs text-gray-400">{team}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={cn("rounded-full p-2", color.replace("text-", "bg-").replace("500", "500/20"))}>
-                <Icon className={cn("w-5 h-5", color)} />
+      <motion.div whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.98 }}>
+        <Card 
+          className={cn(
+            "bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:border-cyan-400/50 hover:shadow-lg hover:shadow-cyan-500/10",
+            className
+          )}
+          onClick={() => chartData?.length > 0 && setIsOpen(true)}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center mb-4">
+              <div className="w-10 h-10 rounded-full overflow-hidden mr-3 bg-neutral-800 flex items-center justify-center">
+                <Users className="w-6 h-6 text-neutral-400" />
               </div>
-              {chartData && Array.isArray(chartData) && chartData.length > 0 && (
-                <MousePointer2 className="w-4 h-4 text-gray-400" />
+              <div className="flex-grow">
+                <p className="font-bold text-white">{driver}</p>
+                <p className="text-xs text-neutral-400">{team}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={cn("rounded-full p-2", color.replace("text-", "bg-").replace("500", "500/20"))}>
+                  <Icon className={cn("w-5 h-5", color)} />
+                </div>
+                {chartData?.length > 0 && (
+                  <MousePointer2 className="w-4 h-4 text-neutral-500" />
+                )}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-1">{title}</p>
+              <p className="text-2xl font-black text-white">{value}</p>
+              {tooltip && (
+                <p className="text-xs text-neutral-500 mt-2">{tooltip}</p>
               )}
             </div>
-          </div>
-          <div>
-            <p className="text-xs text-gray-400 mb-1">{title}</p>
-            <p className="text-xl font-semibold text-white">{value}</p>
-            {tooltip && (
-              <p className="text-xs text-gray-500 mt-2">{tooltip}</p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      {/* Chart Modal */}
-      {chartData && Array.isArray(chartData) && chartData.length > 0 && (
+      {chartData?.length > 0 && (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogContent className="max-w-4xl bg-gray-900 border-gray-700 text-white">
+          <DialogContent className="max-w-4xl bg-neutral-900/95 backdrop-blur-xl border-neutral-700/50 text-white rounded-3xl">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Icon className={cn("w-5 h-5", color)} />
+              <DialogTitle className="flex items-center gap-3 text-2xl font-black">
+                <Icon className={cn("w-6 h-6", color)} />
                 {chartTitle || title}
               </DialogTitle>
             </DialogHeader>
             <div className="h-96 mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.3)" />
+                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(64, 64, 64, 0.3)" />
                   <XAxis 
                     dataKey="name" 
-                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }} 
                     angle={-45}
                     textAnchor="end"
                     height={80}
+                    stroke="rgba(115, 115, 115, 0.5)"
                   />
                   <YAxis 
-                    tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }} 
+                    tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }} 
                     tickFormatter={formatValue}
+                    stroke="rgba(115, 115, 115, 0.5)"
                   />
                   <RechartsTooltip
                     contentStyle={{ 
-                      backgroundColor: 'rgba(17, 24, 39, 0.95)', 
-                      borderColor: 'rgba(75, 85, 99, 0.5)',
-                      borderRadius: '8px',
-                      color: 'white'
+                      backgroundColor: 'rgba(23, 23, 23, 0.95)', 
+                      borderColor: 'rgba(64, 64, 64, 0.5)',
+                      borderRadius: '16px',
+                      color: 'white',
+                      backdropFilter: 'blur(12px)'
                     }}
-                    labelStyle={{ color: 'white' }}
+                    labelStyle={{ color: '#22d3ee', fontWeight: 'bold' }}
                     itemStyle={{ color: 'white' }}
                     formatter={(value, name, props) => [
                       formatValue ? formatValue(value) : value,
@@ -362,17 +253,14 @@ const ClickableDriverStatCard = ({
                     ]}
                     labelFormatter={(label) => `${label} (${chartData.find(d => d.name === label)?.team || 'Unknown Team'})`}
                   />
-                  <Bar dataKey={dataKey} radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, index) => {
-                      const teamColor = getTeamColor(entry.team);
-                      return (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={teamColor}
-                          fillOpacity={0.8}
-                        />
-                      );
-                    })}
+                  <Bar dataKey={dataKey} radius={[8, 8, 0, 0]}>
+                    {chartData.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={getTeamColor(entry.team)}
+                        fillOpacity={0.9}
+                      />
+                    ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -384,31 +272,30 @@ const ClickableDriverStatCard = ({
   );
 };
 
-// Surface group card component (kept the same)
 const SurfaceGroupCard = ({ surfaceType, data, className }) => {
   return (
-    <Card className={cn("bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden", className)}>
-      <CardHeader className="pb-2">
+    <Card className={cn("bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl overflow-hidden", className)}>
+      <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
-          <Navigation className="w-5 h-5 text-blue-500" />
-          <CardTitle className="text-md font-semibold text-white">Most Time on {surfaceType}</CardTitle>
+          <Navigation className="w-5 h-5 text-cyan-400" />
+          <CardTitle className="text-lg font-black text-white">Most Time on {surfaceType}</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="grid gap-3">
           {data.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between border-b border-gray-800 pb-2 last:border-0">
+            <div key={idx} className="flex items-center justify-between border-b border-neutral-800 pb-3 last:border-0">
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center">
-                  <span className="text-xs font-bold text-gray-300">{idx + 1}</span>
+                <div className="w-7 h-7 rounded-full bg-neutral-800 flex items-center justify-center">
+                  <span className="text-xs font-black text-cyan-400">{idx + 1}</span>
                 </div>
                 <div>
-                  <p className="font-medium text-white">{item.driver}</p>
-                  <p className="text-xs text-gray-400">{item.team}</p>
+                  <p className="font-bold text-white">{item.driver}</p>
+                  <p className="text-xs text-neutral-400">{item.team}</p>
                 </div>
               </div>
               <div>
-                <p className="text-lg font-semibold text-white">{item.time.toFixed(1)}s</p>
+                <p className="text-xl font-black text-white">{item.time.toFixed(1)}s</p>
               </div>
             </div>
           ))}
@@ -427,7 +314,6 @@ export default function GeneralStatsChart({
   selectedStat,
   setSelectedStat
 }) {
-  // Use a placeholder object if stats aren't loaded yet
   const stats = generalStats || {
     ers: {
       mostDeployed: { driver: "Lewis Hamilton", team: "Mercedes", value: 46.2 },
@@ -487,34 +373,17 @@ export default function GeneralStatsChart({
     }
   };
   
-  // State for active tab
   const [activeTab, setActiveTab] = useState("overview");
-  
-  // State for derived data from API response
   const [derivedData, setDerivedData] = useState({
-    topSpeeds: [],
-    ersDeployment: [],
-    ersHarvesting: [],
-    totalErsDeployment: [],
-    totalErsHarvesting: [],
-    deltaToNext: [],
-    gearShifts: [],
-    maxBrakeTemps: [],
-    minBrakeTemps: [],
-    maxTyreTemps: [],
-    minTyreTemps: [],
-    gForces: [],
-    tyreWear: []
+    topSpeeds: [], ersDeployment: [], ersHarvesting: [], totalErsDeployment: [], totalErsHarvesting: [],
+    deltaToNext: [], gearShifts: [], maxBrakeTemps: [], minBrakeTemps: [], maxTyreTemps: [], minTyreTemps: [],
+    gForces: [], tyreWear: []
   });
-  
-  // State for processed surface data
   const [surfaceGroups, setSurfaceGroups] = useState({});
   
-  // Prepare data from API for charts
   useEffect(() => {
     if (generalStats) {
       const chartData = {
-        // Map API data directly to chart format
         topSpeeds: generalStats.speed?.allDriversTopSpeeds || [],
         ersDeployment: generalStats.ers?.allDriversDeployment || [],
         ersHarvesting: generalStats.ers?.allDriversHarvesting || [],
@@ -526,34 +395,27 @@ export default function GeneralStatsChart({
         minBrakeTemps: generalStats.temperatures?.allDriversMinBrakeTemps || [],
         maxTyreTemps: generalStats.temperatures?.allDriversTyreTemps || [],
         minTyreTemps: generalStats.temperatures?.allDriversMinTyreTemps || [],
-        gForces: generalStats.forces?.allDriversGForce || [], // Note: singular "allDriversGForce" not plural
+        gForces: generalStats.forces?.allDriversGForce || [],
         tyreWear: generalStats.tyres?.allDriversTyreWear || []
       };
       
-      // Process data for charts - format for display
       for (const key in chartData) {
-        // Make sure each driver entry has a name property for the chart
         chartData[key] = chartData[key].map(item => ({
           name: item.driver || "Unknown",
           value: item.value || 0,
           team: item.team || "Unknown Team",
-          ...item // Keep any other properties
+          ...item
         }));
       }
       
-      // Set chart data
       setDerivedData(chartData);
-      
-      // Process surface data
       processSurfaceData(generalStats.surfaces?.timeBySurface || stats.surfaces.timeBySurface);
     } else {
       processSurfaceData(stats.surfaces.timeBySurface);
     }
   }, [generalStats]);
   
-  // Process surface data to group by surface type and get top 3 for each
   const processSurfaceData = (surfaceData) => {
-    // Group by surface type
     const groupedBySurface = {};
     
     surfaceData.forEach(item => {
@@ -563,7 +425,6 @@ export default function GeneralStatsChart({
       groupedBySurface[item.surface].push(item);
     });
     
-    // Sort each group by time (descending) and take top 3
     const result = {};
     for (const surface in groupedBySurface) {
       result[surface] = groupedBySurface[surface]
@@ -574,323 +435,322 @@ export default function GeneralStatsChart({
     setSurfaceGroups(result);
   };
   
-  // Function to render loading state
   const renderLoading = () => (
-    <div className="w-full h-full flex items-center justify-center bg-gray-900/50 rounded-lg p-10">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    <div className="w-full h-full flex items-center justify-center bg-neutral-900/50 backdrop-blur-xl rounded-3xl p-10">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
     </div>
   );
   
   return (
-    <Card 
-      className={cn("chart-container bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-full flex flex-col", className)}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className={cn("h-full", className)}
     >
-      <CardHeader className="pb-2">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-lg font-semibold text-white">Race Statistics</CardTitle>
-            <div className="text-xs text-gray-400 bg-gray-800/60 px-2 py-1 rounded-md">
-              Click cards to view detailed charts
+      <Card className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden h-full flex flex-col">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-2xl font-black text-white tracking-tight">Race Statistics</CardTitle>
+              <div className="text-xs text-neutral-400 bg-neutral-800/60 backdrop-blur-xl px-3 py-1.5 rounded-full font-medium">
+                Click cards to view charts
+              </div>
             </div>
-          </div>
-          
-          <div className="flex flex-wrap gap-2">
+            
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="h-9 bg-gray-800/80 hover:bg-gray-700 text-gray-200 border border-gray-700 flex items-center gap-2"
-                    onClick={() => {/* Add download functionality */}}
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Export</span>
-                  </Button>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="h-10 px-6 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-black font-bold rounded-2xl flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all border-0"
+                      onClick={() => {}}
+                    >
+                      <Download className="w-4 h-4" />
+                      Export
+                    </Button>
+                  </motion.div>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="bg-neutral-900 border-neutral-700/50 text-white rounded-xl">
                   <p>Export statistics as CSV</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 flex-grow overflow-auto">
-        {isLoading ? (
-          renderLoading()
-        ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="bg-gray-800/60 border border-gray-700/60 mb-4">
-              <TabsTrigger value="overview" className="data-[state=active]:bg-gray-700">Overview</TabsTrigger>
-              <TabsTrigger value="ers" className="data-[state=active]:bg-gray-700">ERS</TabsTrigger>
-              <TabsTrigger value="performance" className="data-[state=active]:bg-gray-700">Performance</TabsTrigger>
-              <TabsTrigger value="temperature" className="data-[state=active]:bg-gray-700">Temperature</TabsTrigger>
-              <TabsTrigger value="surfaces" className="data-[state=active]:bg-gray-700">Surfaces</TabsTrigger>
-            </TabsList>
-            
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <ClickableDriverStatCard 
-                  driver={stats.ers.mostDeployed.driver}
-                  team={stats.ers.mostDeployed.team}
-                  title="Most ERS Deployed"
-                  value={`${stats.ers.mostDeployed.value} MJ`}
-                  icon={Battery}
-                  color="text-green-500"
-                  chartData={derivedData.ersDeployment}
-                  chartTitle="ERS Deployment - All Drivers"
-                  formatValue={(val) => `${val.toFixed(1)} MJ`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.speed.topSpeed.driver}
-                  team={stats.speed.topSpeed.team}
-                  title="Highest Top Speed"
-                  value={formatSpeed(stats.speed.topSpeed.value)}
-                  icon={Gauge}
-                  color="text-red-500"
-                  chartData={derivedData.topSpeeds}
-                  chartTitle="Top Speeds - All Drivers"
-                  formatValue={(val) => `${val} km/h`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.forces.highestG.driver}
-                  team={stats.forces.highestG.team}
-                  title="Highest G-Force"
-                  value={formatGForce(stats.forces.highestG.value)}
-                  icon={Activity}
-                  color="text-purple-500"
-                  tooltip={`Recorded at ${stats.forces.highestG.corner}`}
-                  chartData={derivedData.gForces}
-                  chartTitle="G-Forces - All Drivers"
-                  formatValue={(val) => `${val.toFixed(2)}G`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.events.mostOvertakes.driver}
-                  team={stats.events.mostOvertakes.team}
-                  title="Most Overtakes"
-                  value={stats.events.mostOvertakes.value}
-                  icon={GitBranch}
-                  color="text-blue-500"
-                />
-                <ClickableStatCard 
-                  title="Total Overtakes"
-                  value={stats.events.totalOvertakes}
-                  icon={Car}
-                  color="text-cyan-500"
-                />
-                <ClickableStatCard 
-                  title="Fastest Laps Set"
-                  value={stats.events.fastestLapsSet}
-                  icon={Timer}
-                  color="text-amber-500"
-                />
-              </div>
-            </TabsContent>
-            
-            {/* ERS Tab */}
-            <TabsContent value="ers" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <ClickableDriverStatCard 
-                  driver={stats.ers.mostDeployed?.driver || "No Data"}
-                  team={stats.ers.mostDeployed?.team || "No Team"}
-                  title="Highest Single-Lap ERS Deploy"
-                  value={formatTotals(stats.ers.mostDeployed?.value)}
-                  icon={Battery}
-                  color="text-green-500"
-                  chartData={derivedData.ersDeployment}
-                  chartTitle="ERS Deployment - All Drivers"
-                  formatValue={(val) => `${val.toFixed(1)} MJ`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.ers.mostHarvested?.driver || "No Data"}
-                  team={stats.ers.mostHarvested?.team || "No Team"}
-                  title="Highest Single-Lap ERS Harvest"
-                  value={formatTotals(stats.ers.mostHarvested?.value)}
-                  icon={Zap}
-                  color="text-blue-500"
-                  chartData={derivedData.ersHarvesting}
-                  chartTitle="ERS Harvesting - All Drivers"
-                  formatValue={(val) => `${val.toFixed(1)} MJ`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.ers.mostTotalDeployed?.driver || "No Data"}
-                  team={stats.ers.mostTotalDeployed?.team || "No Team"}
-                  title="Most Race Total ERS Deploy"
-                  value={formatTotals(stats.ers.mostTotalDeployed?.value)}
-                  icon={Battery}
-                  color="text-emerald-500"
-                  tooltip="Total amount deployed during the race"
-                  chartData={derivedData.totalErsDeployment}
-                  chartTitle="Total ERS Deployment - All Drivers"
-                  formatValue={(val) => `${val.toFixed(1)} MJ`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.ers.mostTotalHarvested?.driver || "No Data"}
-                  team={stats.ers.mostTotalHarvested?.team || "No Team"}
-                  title="Most Race Total ERS Harvest"
-                  value={formatTotals(stats.ers.mostTotalHarvested?.value)}
-                  icon={Zap}
-                  color="text-indigo-500"
-                  tooltip="Total amount harvested during the race"
-                  chartData={derivedData.totalErsHarvesting}
-                  chartTitle="Total ERS Harvesting - All Drivers"
-                  formatValue={(val) => `${val.toFixed(1)} MJ`}
-                />
-              </div>
-            </TabsContent>
-            
-            {/* Performance Tab */}
-            <TabsContent value="performance" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <ClickableDriverStatCard 
-                  driver={stats.speed.topSpeed.driver}
-                  team={stats.speed.topSpeed.team}
-                  title="Highest Top Speed"
-                  value={formatSpeed(stats.speed.topSpeed.value)}
-                  icon={Gauge}
-                  color="text-red-500"
-                  chartData={derivedData.topSpeeds}
-                  chartTitle="Top Speeds - All Drivers"
-                  formatValue={(val) => `${val} km/h`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.speed.mostGearShifts.driver}
-                  team={stats.speed.mostGearShifts.team}
-                  title="Most Gear Shifts"
-                  value={formatNumber(stats.speed.mostGearShifts.value)}
-                  icon={GitBranch}
-                  color="text-indigo-500"
-                  chartData={derivedData.gearShifts}
-                  chartTitle="Gear Shifts - All Drivers"
-                  formatValue={(val) => formatNumber(val)}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.speed.leastGearShifts.driver}
-                  team={stats.speed.leastGearShifts.team}
-                  title="Least Gear Shifts"
-                  value={formatNumber(stats.speed.leastGearShifts.value)}
-                  icon={GitBranch}
-                  color="text-teal-500"
-                  chartData={derivedData.gearShifts}
-                  chartTitle="Gear Shifts - All Drivers"
-                  formatValue={(val) => formatNumber(val)}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.stints.fastest.driver}
-                  team={stats.stints.fastest.team}
-                  title="Fastest Stint Pace"
-                  value={formatTime(stats.stints.fastest.value)}
-                  icon={Clock}
-                  color="text-emerald-500"
-                  tooltip={`On ${stats.stints.fastest.compound} tyres`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.stints.slowest.driver}
-                  team={stats.stints.slowest.team}
-                  title="Slowest Stint Pace"
-                  value={formatTime(stats.stints.slowest.value)}
-                  icon={Clock}
-                  color="text-amber-500"
-                  tooltip={`On ${stats.stints.slowest.compound} tyres`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.forces.highestG.driver}
-                  team={stats.forces.highestG.team}
-                  title="Highest G-Force"
-                  value={formatGForce(stats.forces.highestG.value)}
-                  icon={Activity}
-                  color="text-purple-500"
-                  tooltip={`Recorded at ${stats.forces.highestG.corner}`}
-                  chartData={derivedData.gForces}
-                  chartTitle="G-Forces - All Drivers"
-                  formatValue={(val) => `${val.toFixed(2)}G`}
-                />
-              </div>
-            </TabsContent>
-            
-            {/* Temperature Tab */}
-            <TabsContent value="temperature" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <ClickableDriverStatCard 
-                  driver={stats.temperatures.highestBrakeTemp.driver}
-                  team={stats.temperatures.highestBrakeTemp.team}
-                  title="Highest Brake Temp"
-                  value={formatTemperature(stats.temperatures.highestBrakeTemp.value)}
-                  icon={Flame}
-                  color="text-red-500"
-                  tooltip={`${stats.temperatures.highestBrakeTemp.location} brake`}
-                  chartData={derivedData.maxBrakeTemps}
-                  chartTitle="Maximum Brake Temperatures - All Drivers"
-                  formatValue={(val) => `${val}°C`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.temperatures.lowestBrakeTemp.driver}
-                  team={stats.temperatures.lowestBrakeTemp.team}
-                  title="Lowest Brake Temp"
-                  value={formatTemperature(stats.temperatures.lowestBrakeTemp.value)}
-                  icon={Flame}
-                  color="text-cyan-500"
-                  tooltip={`${stats.temperatures.lowestBrakeTemp.location} brake`}
-                  chartData={derivedData.minBrakeTemps}
-                  chartTitle="Minimum Brake Temperatures - All Drivers"
-                  formatValue={(val) => `${val}°C`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.temperatures.highestTyreTemp.driver}
-                  team={stats.temperatures.highestTyreTemp.team}
-                  title="Highest Tyre Temp"
-                  value={formatTemperature(stats.temperatures.highestTyreTemp.value)}
-                  icon={ThermometerSun}
-                  color="text-orange-500"
-                  tooltip={`${stats.temperatures.highestTyreTemp.location} tyre`}
-                  chartData={derivedData.maxTyreTemps}
-                  chartTitle="Maximum Tyre Temperatures - All Drivers"
-                  formatValue={(val) => `${val}°C`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.temperatures.lowestTyreTemp.driver}
-                  team={stats.temperatures.lowestTyreTemp.team}
-                  title="Lowest Tyre Temp"
-                  value={formatTemperature(stats.temperatures.lowestTyreTemp.value)}
-                  icon={ThermometerSun}
-                  color="text-blue-500"
-                  tooltip={`${stats.temperatures.lowestTyreTemp.location} tyre`}
-                  chartData={derivedData.minTyreTemps}
-                  chartTitle="Minimum Tyre Temperatures - All Drivers"
-                  formatValue={(val) => `${val}°C`}
-                />
-                <ClickableDriverStatCard 
-                  driver={stats.tyres.highestWear.driver}
-                  team={stats.tyres.highestWear.team}
-                  title="Highest Tyre Wear"
-                  value={formatPercent(stats.tyres.highestWear.value / 100)}
-                  icon={AlertTriangle}
-                  color="text-yellow-500"
-                  tooltip={`${stats.tyres.highestWear.tyre} tyre`}
-                  chartData={derivedData.tyreWear}
-                  chartTitle="Tyre Wear - All Drivers"
-                  formatValue={(val) => `${(val / 100).toFixed(1)}%`}
-                />
-              </div>
-            </TabsContent>
-            
-            {/* Surfaces Tab - Keep the same as before since these work well */}
-            <TabsContent value="surfaces" className="mt-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(surfaceGroups).map(([surfaceType, data], index) => (
-                  <SurfaceGroupCard 
-                    key={surfaceType}
-                    surfaceType={surfaceType}
-                    data={data}
+        </CardHeader>
+        <CardContent className="pt-0 flex-grow overflow-auto p-8">
+          {isLoading ? (
+            renderLoading()
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="bg-neutral-800/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl mb-6 p-1">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">Overview</TabsTrigger>
+                <TabsTrigger value="ers" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">ERS</TabsTrigger>
+                <TabsTrigger value="performance" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">Performance</TabsTrigger>
+                <TabsTrigger value="temperature" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">Temperature</TabsTrigger>
+                <TabsTrigger value="surfaces" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">Surfaces</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <ClickableDriverStatCard 
+                    driver={stats.ers.mostDeployed.driver}
+                    team={stats.ers.mostDeployed.team}
+                    title="Most ERS Deployed"
+                    value={`${stats.ers.mostDeployed.value} MJ`}
+                    icon={Battery}
+                    color="text-emerald-400"
+                    chartData={derivedData.ersDeployment}
+                    chartTitle="ERS Deployment - All Drivers"
+                    formatValue={(val) => `${val.toFixed(1)} MJ`}
                   />
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-        )}
-      </CardContent>
-    </Card>
+                  <ClickableDriverStatCard 
+                    driver={stats.speed.topSpeed.driver}
+                    team={stats.speed.topSpeed.team}
+                    title="Highest Top Speed"
+                    value={formatSpeed(stats.speed.topSpeed.value)}
+                    icon={Gauge}
+                    color="text-red-400"
+                    chartData={derivedData.topSpeeds}
+                    chartTitle="Top Speeds - All Drivers"
+                    formatValue={(val) => `${val} km/h`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.forces.highestG.driver}
+                    team={stats.forces.highestG.team}
+                    title="Highest G-Force"
+                    value={formatGForce(stats.forces.highestG.value)}
+                    icon={Activity}
+                    color="text-purple-400"
+                    tooltip={`Recorded at ${stats.forces.highestG.corner}`}
+                    chartData={derivedData.gForces}
+                    chartTitle="G-Forces - All Drivers"
+                    formatValue={(val) => `${val.toFixed(2)}G`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.events.mostOvertakes.driver}
+                    team={stats.events.mostOvertakes.team}
+                    title="Most Overtakes"
+                    value={stats.events.mostOvertakes.value}
+                    icon={GitBranch}
+                    color="text-cyan-400"
+                  />
+                  <ClickableStatCard 
+                    title="Total Overtakes"
+                    value={stats.events.totalOvertakes}
+                    icon={Car}
+                    color="text-teal-400"
+                  />
+                  <ClickableStatCard 
+                    title="Fastest Laps Set"
+                    value={stats.events.fastestLapsSet}
+                    icon={Timer}
+                    color="text-amber-400"
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="ers" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <ClickableDriverStatCard 
+                    driver={stats.ers.mostDeployed?.driver || "No Data"}
+                    team={stats.ers.mostDeployed?.team || "No Team"}
+                    title="Highest Single-Lap ERS Deploy"
+                    value={formatTotals(stats.ers.mostDeployed?.value)}
+                    icon={Battery}
+                    color="text-emerald-400"
+                    chartData={derivedData.ersDeployment}
+                    chartTitle="ERS Deployment - All Drivers"
+                    formatValue={(val) => `${val.toFixed(1)} MJ`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.ers.mostHarvested?.driver || "No Data"}
+                    team={stats.ers.mostHarvested?.team || "No Team"}
+                    title="Highest Single-Lap ERS Harvest"
+                    value={formatTotals(stats.ers.mostHarvested?.value)}
+                    icon={Zap}
+                    color="text-cyan-400"
+                    chartData={derivedData.ersHarvesting}
+                    chartTitle="ERS Harvesting - All Drivers"
+                    formatValue={(val) => `${val.toFixed(1)} MJ`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.ers.mostTotalDeployed?.driver || "No Data"}
+                    team={stats.ers.mostTotalDeployed?.team || "No Team"}
+                    title="Most Race Total ERS Deploy"
+                    value={formatTotals(stats.ers.mostTotalDeployed?.value)}
+                    icon={Battery}
+                    color="text-teal-400"
+                    tooltip="Total amount deployed during the race"
+                    chartData={derivedData.totalErsDeployment}
+                    chartTitle="Total ERS Deployment - All Drivers"
+                    formatValue={(val) => `${val.toFixed(1)} MJ`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.ers.mostTotalHarvested?.driver || "No Data"}
+                    team={stats.ers.mostTotalHarvested?.team || "No Team"}
+                    title="Most Race Total ERS Harvest"
+                    value={formatTotals(stats.ers.mostTotalHarvested?.value)}
+                    icon={Zap}
+                    color="text-blue-400"
+                    tooltip="Total amount harvested during the race"
+                    chartData={derivedData.totalErsHarvesting}
+                    chartTitle="Total ERS Harvesting - All Drivers"
+                    formatValue={(val) => `${val.toFixed(1)} MJ`}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="performance" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <ClickableDriverStatCard 
+                    driver={stats.speed.topSpeed.driver}
+                    team={stats.speed.topSpeed.team}
+                    title="Highest Top Speed"
+                    value={formatSpeed(stats.speed.topSpeed.value)}
+                    icon={Gauge}
+                    color="text-red-400"
+                    chartData={derivedData.topSpeeds}
+                    chartTitle="Top Speeds - All Drivers"
+                    formatValue={(val) => `${val} km/h`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.speed.mostGearShifts.driver}
+                    team={stats.speed.mostGearShifts.team}
+                    title="Most Gear Shifts"
+                    value={formatNumber(stats.speed.mostGearShifts.value)}
+                    icon={GitBranch}
+                    color="text-blue-400"
+                    chartData={derivedData.gearShifts}
+                    chartTitle="Gear Shifts - All Drivers"
+                    formatValue={(val) => formatNumber(val)}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.speed.leastGearShifts.driver}
+                    team={stats.speed.leastGearShifts.team}
+                    title="Least Gear Shifts"
+                    value={formatNumber(stats.speed.leastGearShifts.value)}
+                    icon={GitBranch}
+                    color="text-teal-400"
+                    chartData={derivedData.gearShifts}
+                    chartTitle="Gear Shifts - All Drivers"
+                    formatValue={(val) => formatNumber(val)}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.stints.fastest.driver}
+                    team={stats.stints.fastest.team}
+                    title="Fastest Stint Pace"
+                    value={formatTime(stats.stints.fastest.value)}
+                    icon={Clock}
+                    color="text-emerald-400"
+                    tooltip={`On ${stats.stints.fastest.compound} tyres`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.stints.slowest.driver}
+                    team={stats.stints.slowest.team}
+                    title="Slowest Stint Pace"
+                    value={formatTime(stats.stints.slowest.value)}
+                    icon={Clock}
+                    color="text-amber-400"
+                    tooltip={`On ${stats.stints.slowest.compound} tyres`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.forces.highestG.driver}
+                    team={stats.forces.highestG.team}
+                    title="Highest G-Force"
+                    value={formatGForce(stats.forces.highestG.value)}
+                    icon={Activity}
+                    color="text-purple-400"
+                    tooltip={`Recorded at ${stats.forces.highestG.corner}`}
+                    chartData={derivedData.gForces}
+                    chartTitle="G-Forces - All Drivers"
+                    formatValue={(val) => `${val.toFixed(2)}G`}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="temperature" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <ClickableDriverStatCard 
+                    driver={stats.temperatures.highestBrakeTemp.driver}
+                    team={stats.temperatures.highestBrakeTemp.team}
+                    title="Highest Brake Temp"
+                    value={formatTemperature(stats.temperatures.highestBrakeTemp.value)}
+                    icon={Flame}
+                    color="text-red-400"
+                    tooltip={`${stats.temperatures.highestBrakeTemp.location} brake`}
+                    chartData={derivedData.maxBrakeTemps}
+                    chartTitle="Maximum Brake Temperatures - All Drivers"
+                    formatValue={(val) => `${val}°C`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.temperatures.lowestBrakeTemp.driver}
+                    team={stats.temperatures.lowestBrakeTemp.team}
+                    title="Lowest Brake Temp"
+                    value={formatTemperature(stats.temperatures.lowestBrakeTemp.value)}
+                    icon={Flame}
+                    color="text-cyan-400"
+                    tooltip={`${stats.temperatures.lowestBrakeTemp.location} brake`}
+                    chartData={derivedData.minBrakeTemps}
+                    chartTitle="Minimum Brake Temperatures - All Drivers"
+                    formatValue={(val) => `${val}°C`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.temperatures.highestTyreTemp.driver}
+                    team={stats.temperatures.highestTyreTemp.team}
+                    title="Highest Tyre Temp"
+                    value={formatTemperature(stats.temperatures.highestTyreTemp.value)}
+                    icon={ThermometerSun}
+                    color="text-orange-400"
+                    tooltip={`${stats.temperatures.highestTyreTemp.location} tyre`}
+                    chartData={derivedData.maxTyreTemps}
+                    chartTitle="Maximum Tyre Temperatures - All Drivers"
+                    formatValue={(val) => `${val}°C`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.temperatures.lowestTyreTemp.driver}
+                    team={stats.temperatures.lowestTyreTemp.team}
+                    title="Lowest Tyre Temp"
+                    value={formatTemperature(stats.temperatures.lowestTyreTemp.value)}
+                    icon={ThermometerSun}
+                    color="text-blue-400"
+                    tooltip={`${stats.temperatures.lowestTyreTemp.location} tyre`}
+                    chartData={derivedData.minTyreTemps}
+                    chartTitle="Minimum Tyre Temperatures - All Drivers"
+                    formatValue={(val) => `${val}°C`}
+                  />
+                  <ClickableDriverStatCard 
+                    driver={stats.tyres.highestWear.driver}
+                    team={stats.tyres.highestWear.team}
+                    title="Highest Tyre Wear"
+                    value={formatPercent(stats.tyres.highestWear.value / 100)}
+                    icon={AlertTriangle}
+                    color="text-amber-400"
+                    tooltip={`${stats.tyres.highestWear.tyre} tyre`}
+                    chartData={derivedData.tyreWear}
+                    chartTitle="Tyre Wear - All Drivers"
+                    formatValue={(val) => `${(val / 100).toFixed(1)}%`}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="surfaces" className="mt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {Object.entries(surfaceGroups).map(([surfaceType, data]) => (
+                    <SurfaceGroupCard 
+                      key={surfaceType}
+                      surfaceType={surfaceType}
+                      data={data}
+                    />
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

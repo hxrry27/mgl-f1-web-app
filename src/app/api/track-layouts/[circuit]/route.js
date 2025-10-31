@@ -1,9 +1,10 @@
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { NextResponse } from 'next/server';
 
-export default async function handler(req, res) {
-  const { circuit } = req.query;
+export async function GET(request, { params }) {
+  const { circuit } = params;
   
   // Check cache first
   const cacheDir = path.join(process.cwd(), 'cache', 'tracks');
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
     
     if (cacheAge < maxAge) {
       const data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-      return res.status(200).json(data);
+      return NextResponse.json(data);
     }
   }
   
@@ -30,55 +31,47 @@ export default async function handler(req, res) {
   try {
     const scriptPath = path.join(process.cwd(), 'scripts', 'get_track_layout.py');
     
-    // Execute Python script
-    exec(`python ${scriptPath} ${circuit}`, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error running script: ${error.message}`);
-        // Try to use fallback data
-        return useFallbackData(circuit, res);
-      }
-      
-      if (stderr) {
-        console.error(`Script error: ${stderr}`);
-        return useFallbackData(circuit, res);
-      }
-      
-      try {
-        // Parse the output from Python
-        const data = JSON.parse(stdout);
-        
-        // Cache the result
-        fs.writeFileSync(cacheFile, JSON.stringify(data));
-        
-        return res.status(200).json(data);
-      } catch (e) {
-        console.error('Error parsing Python output:', e);
-        return useFallbackData(circuit, res);
-      }
+    // Promisify exec
+    const result = await new Promise((resolve, reject) => {
+      exec(`python ${scriptPath} ${circuit}`, (error, stdout, stderr) => {
+        if (error || stderr) {
+          reject(error || new Error(stderr));
+        } else {
+          resolve(stdout);
+        }
+      });
     });
+    
+    // Parse the output from Python
+    const data = JSON.parse(result);
+    
+    // Cache the result
+    fs.writeFileSync(cacheFile, JSON.stringify(data));
+    
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Error executing Python script:', error);
-    return useFallbackData(circuit, res);
+    return getFallbackData(circuit);
   }
 }
 
 // Fallback function to use static data when Python/FastF1 fails
-function useFallbackData(circuit, res) {
+function getFallbackData(circuit) {
   try {
     // Try to use pre-generated fallback data
     const fallbackPath = path.join(process.cwd(), 'data', 'track-layouts.json');
     const fallbackData = JSON.parse(fs.readFileSync(fallbackPath, 'utf8'));
     
     if (fallbackData[circuit]) {
-      return res.status(200).json({
+      return NextResponse.json({
         circuit,
         circuitLayout: fallbackData[circuit],
         fromFallback: true
       });
     } else {
-      return res.status(404).json({ error: 'Track layout not found' });
+      return NextResponse.json({ error: 'Track layout not found' }, { status: 404 });
     }
   } catch (e) {
-    return res.status(500).json({ error: 'Could not retrieve track layout data' });
+    return NextResponse.json({ error: 'Could not retrieve track layout data' }, { status: 500 });
   }
 }
