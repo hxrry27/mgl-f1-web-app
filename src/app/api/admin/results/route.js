@@ -43,7 +43,7 @@ export async function GET(req) {
 
     return NextResponse.json({ results: resultsRes.rows, raceName: raceData.name });
   } catch (err) {
-    console.error('Error fetching race results:', err);
+    //DEBUG: console.error('Error fetching race results:', err);
     return NextResponse.json({ error: 'Failed to load results' }, { status: 500 });
   }
 }
@@ -62,7 +62,7 @@ export async function POST(req) {
       }
       return NextResponse.json({ success: true });
     } catch (err) {
-      console.error('Error saving changes:', err);
+      //DEBUG: console.error('Error saving changes:', err);
       return NextResponse.json({ error: 'Failed to save changes' }, { status: 500 });
     }
   }

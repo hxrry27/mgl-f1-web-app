@@ -17,9 +17,9 @@ export async function GET(request) {
       );
     }
 
-    console.log(`Fetching damage data for season ${season}, race ${raceSlug}, session type ${sessionType}`);
+    //DEBUG: console.log(`Fetching damage data for season ${season}, race ${raceSlug}, session type ${sessionType}`);
     if (specificDriver) {
-      console.log(`Filtering for driver: ${specificDriver}`);
+      //DEBUG: console.log(`Filtering for driver: ${specificDriver}`);
     }
 
     // 1. Get the race_id by joining races with tracks to find by track slug
@@ -38,7 +38,7 @@ export async function GET(request) {
     }
 
     const raceId = raceResult.rows[0].id;
-    console.log(`Found race ID: ${raceId}`);
+    //DEBUG: console.log(`Found race ID: ${raceId}`);
 
     // 2. Get all session_uids for this race from the mapping table
     const sessionResult = await pool.query(
@@ -55,7 +55,7 @@ export async function GET(request) {
 
     // Get the list of all available sessions
     const sessionUids = sessionResult.rows.map(row => row.session_uid);
-    console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
+    //DEBUG: console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
 
     // Select the appropriate session based on session type
     let sessionUid;
@@ -67,7 +67,7 @@ export async function GET(request) {
       sessionUid = sessionUids[sessionUids.length - 1];
     }
 
-    console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
+    //DEBUG: console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
 
     // 3. Get the driver info from participants table
     const driversResult = await pool.query(`
@@ -86,7 +86,7 @@ export async function GET(request) {
         p.car_index
     `, [sessionUid]);
 
-    console.log(`Found ${driversResult.rows.length} drivers`);
+    //DEBUG: console.log(`Found ${driversResult.rows.length} drivers`);
 
     // Create driver mapping
     const driverMap = {};
@@ -141,7 +141,7 @@ export async function GET(request) {
       }
     });
     
-    console.log(`Found ${driversWithDamage.length} drivers with damage`);
+    //DEBUG: console.log(`Found ${driversWithDamage.length} drivers with damage`);
 
     // 4. Get damage data - filter by driver if specified
     let damageQuery = `
@@ -183,7 +183,7 @@ export async function GET(request) {
     damageQuery += ` ORDER BY car_index, session_time`;
     const damageResult = await pool.query(damageQuery, queryParams);
     
-    console.log(`Found ${damageResult.rows.length} damage data entries`);
+    //DEBUG: console.log(`Found ${damageResult.rows.length} damage data entries`);
 
     // Process damage data and add driver information
     const damageData = damageResult.rows.map(row => {
@@ -200,7 +200,7 @@ export async function GET(request) {
       driversWithDamage // Include this new list in the response
     });
   } catch (error) {
-    console.error('Error fetching damage data:', error);
+    //DEBUG: console.error('Error fetching damage data:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error.message }, 
       { status: 500 }

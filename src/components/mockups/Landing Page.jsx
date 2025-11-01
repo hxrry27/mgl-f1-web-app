@@ -15,7 +15,7 @@ import { teamColors } from '@/lib/data';
 function SubtleBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute inset-0 bg-neutral-950" />
+      <div className="absolute inset-0 bg-primary" />
       
       <motion.div
         className="absolute top-1/3 left-1/3 w-[600px] h-[600px] rounded-full blur-3xl opacity-20"
@@ -125,10 +125,40 @@ function StandingsBox({ drivers }) {
 
 // Stats Section
 function StatsSection() {
+  const [raceStats, setRaceStats] = useState({ formatted: '0/0' });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRaceStats = async () => {
+      try {
+        const response = await fetch('/api/season-races?season=12');
+        if (response.ok) {
+          const data = await response.json();
+          const races = data.races || [];
+          const now = new Date();
+          
+          const completed = races.filter(race => 
+            race.date && new Date(race.date) <= now
+          ).length;
+          
+          setRaceStats({ 
+            formatted: `${completed}/${races.length}`,
+            completed,
+            total: races.length
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching race stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRaceStats();
+  }, []);
+
   const stats = [
-    { value: '24', label: 'Active Drivers', icon: <Users className="h-5 w-5" /> },
-    { value: '8/23', label: 'Races Complete', icon: <Flag className="h-5 w-5" /> },
-    { value: '10', label: 'Teams', icon: <Trophy className="h-5 w-5" /> },
+    { value: '6', label: 'Active Drivers', icon: <Users className="h-5 w-5" /> },
+    { value: loading ? '...' : raceStats.formatted, label: 'Races Complete', icon: <Flag className="h-5 w-5" /> },
   ];
 
   return (
@@ -168,7 +198,7 @@ export default function NewLandingLayout() {
   const getTeamColor = (teamName) => {
     const colorMap = {
       'Mercedes': 'bg-cyan-500',
-      'Red Bull Racing': 'bg-blue-600',
+      'Red Bull': 'bg-blue-600',
       'Ferrari': 'bg-red-500',
       'McLaren': 'bg-orange-500',
       'Aston Martin': 'bg-green-500',
@@ -177,7 +207,7 @@ export default function NewLandingLayout() {
       'AlphaTauri': 'bg-blue-700',
       'Alfa Romeo': 'bg-red-600',
       'Haas F1 Team': 'bg-gray-400',
-      'VISA Cash App': 'bg-purple-500',
+      'Racing Bulls': 'bg-purple-500',
     };
     return colorMap[teamName] || 'bg-neutral-500';
   };
@@ -233,7 +263,7 @@ export default function NewLandingLayout() {
   }, []);
 
   return (
-    <div className="relative min-h-screen bg-neutral-950 overflow-hidden">
+    <div className="relative min-h-screen bg-primary overflow-hidden">
       {/* Background */}
       <SubtleBackground />
 

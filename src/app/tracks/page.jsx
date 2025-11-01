@@ -58,7 +58,7 @@ function RegionSection({ title, tracks, icon, color, delay }) {
       transition={{ delay }}
       className="mb-8"
     >
-      <div className="relative bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden">
+      <div className="relative card-glass overflow-hidden">
         {/* Header */}
         <div className="px-8 py-6 border-b border-neutral-800/50">
           <div className="flex items-center justify-between">
@@ -130,7 +130,7 @@ function RegionSection({ title, tracks, icon, color, delay }) {
 // ============================================================================
 export default function TracksPage() {
   return (
-    <div className="relative min-h-screen bg-neutral-950">
+    <div className="relative min-h-screen bg-primary">
       {/* Content Container */}
       <div className="relative z-10 px-8 lg:px-16 xl:px-24 py-8">
         <div className="max-w-[1400px] mx-auto">

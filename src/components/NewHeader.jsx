@@ -186,7 +186,6 @@ function FullScreenMenu({ isOpen, onClose, isRefreshing, onRefreshCache, latestS
     { label: 'Drivers', href: '/drivers', icon: <Users size={24} /> },
     { label: 'Teams', href: '/teams', icon: <UsersRound size={24} /> },
     { label: 'Tracks', href: '/tracks', icon: <MapPin size={24} /> },
-    { label: 'Calendar', href: '/schedule', icon: <Calendar size={24} /> },
     { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard size={24} /> },
   ];
 

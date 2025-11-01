@@ -38,7 +38,7 @@ export async function GET(request) {
     
     return Response.json({ drivers });
   } catch (error) {
-    console.error('Error fetching season drivers:', error);
+    //DEBUG: console.error('Error fetching season drivers:', error);
     return Response.json({ error: 'Failed to fetch drivers' }, { status: 500 });
   }
 }

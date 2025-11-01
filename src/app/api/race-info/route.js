@@ -111,7 +111,7 @@ export async function GET(request) {
     );
 
   } catch (error) {
-    console.error('Error fetching race info:', error);
+    //DEBUG: console.error('Error fetching race info:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error.message },
       { status: 500 }

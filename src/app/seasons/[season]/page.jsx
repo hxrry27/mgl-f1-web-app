@@ -294,7 +294,7 @@ export default async function SeasonsPage({ params }) {
   }
 
   return (
-    <div className="bg-neutral-950">
+    <div className="bg-primary">
       <div className="max-w-[1400px] mx-auto px-6 py-8 pb-12">
         <SeasonTabs
           season={seasonNum || 'overall'}

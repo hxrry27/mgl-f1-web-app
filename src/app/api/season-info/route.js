@@ -57,7 +57,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('Error in season info API:', error);
+    //DEBUG: console.error('Error in season info API:', error);
     return NextResponse.json(
       { error: 'Failed to fetch season info', details: error.message },
       { status: 500 }

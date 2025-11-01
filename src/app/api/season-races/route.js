@@ -7,7 +7,7 @@ const pool = require('../../../lib/db');
 
 // Move computation logic to separate function
 async function computeSeasonRacesFromDatabase(season) {
-  console.log(`Computing races for season ${season}`);
+  //DEBUG: console.log(`Computing races for season ${season}`);
  
   // Get season ID first
   const seasonResult = await pool.query(
@@ -52,16 +52,16 @@ async function computeSeasonRacesFromDatabase(season) {
       r.race_number ASC
   `, [seasonId]);
 
-  console.log(`🔍 Database query returned ${racesResult.rows.length} races:`);
-  console.log('Race details:', racesResult.rows.map(r => ({ 
-    race_number: r.race_number, 
-    name: r.name, 
-    slug: r.slug,
-    has_results: r.has_results
-  })));
+  //DEBUG: console.log(`🔍 Database query returned ${racesResult.rows.length} races:`);
+  //DEBUG: console.log('Race details:', racesResult.rows.map(r => ({ 
+    //DEBUG: race_number: r.race_number, 
+    //DEBUG: name: r.name, 
+    //DEBUG: slug: r.slug,
+    //DEBUG: has_results: r.has_results
+ //DEBUG:  })));
  
   if (racesResult.rows.length === 0) {
-    console.log(`No races found for season ${season}`);
+    //DEBUG: console.log(`No races found for season ${season}`);
    
     return {
       races: [],
@@ -69,7 +69,7 @@ async function computeSeasonRacesFromDatabase(season) {
     };
   }
  
-  console.log(`Found ${racesResult.rows.length} races for season ${season}`);
+  //DEBUG: console.log(`Found ${racesResult.rows.length} races for season ${season}`);
  
   return {
     races: racesResult.rows
@@ -78,7 +78,7 @@ async function computeSeasonRacesFromDatabase(season) {
 
 // Main API route with caching
 export async function GET(request) {
-  console.log('🚨🚨🚨 SEASON RACES API CALLED! 🚨🚨🚨');
+  //DEBUG: console.log('🚨🚨🚨 SEASON RACES API CALLED! 🚨🚨🚨');
   try {
     // Get search params from the URL
     const { searchParams } = new URL(request.url);
@@ -107,7 +107,7 @@ export async function GET(request) {
     // );
 
   } catch (error) {
-    console.error('Error in season races API:', error);
+    //DEBUG: console.error('Error in season races API:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error.message },
       { status: 500 }

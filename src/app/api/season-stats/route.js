@@ -654,13 +654,13 @@ async function calculateSeasonStats(season) {
         const enhancedDriverStats = driverStatsRes.rows.map(driver => {
           // Debug logging for problematic drivers
           if (driver.driver && driver.driver.toLowerCase().includes('max')) {
-            console.log(`DEBUG - Max driver stats:`, {
-              driver: driver.driver,
-              dnfs: driver.dnfs,
-              avg_position: driver.avg_position,
-              avg_grid_position: driver.avg_grid_position,
-              status: typeof driver.dnfs
-            });
+            //DEBUG: console.log(`DEBUG - Max driver stats:`, {
+              //DEBUG: driver: driver.driver,
+              //DEBUG: dnfs: driver.dnfs,
+              //DEBUG: avg_position: driver.avg_position,
+              //DEBUG: avg_grid_position: driver.avg_grid_position,
+              //DEBUG: status: typeof driver.dnfs
+            //DEBUG: });
           }
           
           const streaks = streakMap.get(driver.driver) || { finish_streak: 0, points_streak: 0 };
@@ -698,7 +698,7 @@ async function calculateSeasonStats(season) {
       }
     }
   } catch (error) {
-    console.error('Error calculating season stats:', error);
+    //DEBUG: console.error('Error calculating season stats:', error);
     throw new Error(`Failed to calculate season stats: ${error.message}`);
   }
 }
@@ -716,7 +716,7 @@ export async function GET(request) {
       }
     });
   } catch (error) {
-    console.error('Error in season stats API:', error);
+    //DEBUG: console.error('Error in season stats API:', error);
     return NextResponse.json(
       { error: 'Failed to fetch season statistics', details: error.message },
       { status: 500 }

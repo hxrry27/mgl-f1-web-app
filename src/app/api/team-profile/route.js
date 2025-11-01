@@ -38,7 +38,7 @@ export async function GET(request) {
     
     return Response.json({ teams });
   } catch (error) {
-    console.error('Error fetching season teams:', error);
+    //DEBUG: console.error('Error fetching season teams:', error);
     return Response.json({ error: 'Failed to fetch teams' }, { status: 500 });
   }
 }

@@ -58,7 +58,7 @@ function getTeamColor(teamId, teamName) {
 
 // Keep your fetchLapTimesData function exactly the same
 async function fetchLapTimesData(raceId) {
-  console.log(`Fetching lap_times data for race ID: ${raceId}`);
+  //DEBUG: console.log(`Fetching lap_times data for race ID: ${raceId}`);
   
   try {
     // ... keep ALL your existing logic exactly the same
@@ -78,7 +78,7 @@ async function fetchLapTimesData(raceId) {
         lt.race_id = $1
     `, [raceId]);
     
-    console.log(`Found ${driversResult.rows.length} drivers in lap_times`);
+    //DEBUG: console.log(`Found ${driversResult.rows.length} drivers in lap_times`);
     
     if (driversResult.rows.length === 0) {
       return null;
@@ -110,7 +110,7 @@ async function fetchLapTimesData(raceId) {
         lt.lap_number, lt.driver_id
     `, [raceId]);
     
-    console.log(`Found ${lapDataResult.rows.length} lap data entries in lap_times`);
+    //DEBUG: console.log(`Found ${lapDataResult.rows.length} lap data entries in lap_times`);
     
     if (lapDataResult.rows.length === 0) {
       return null;
@@ -199,14 +199,14 @@ async function fetchLapTimesData(raceId) {
     };
     
   } catch (error) {
-    console.error('Error fetching lap_times data:', error);
+    //DEBUG: console.error('Error fetching lap_times data:', error);
     return null;
   }
 }
 
 // NEW: Move your main logic to a separate function
 async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSource) {
-  console.log(`Computing lap data for season ${season}, race ${raceSlug}, session type ${sessionType}, data source ${dataSource}`);
+  //DEBUG: console.log(`Computing lap data for season ${season}, race ${raceSlug}, session type ${sessionType}, data source ${dataSource}`);
 
   // 1. Get the race_id by joining races with tracks to find by track slug
   const raceResult = await pool.query(`
@@ -221,7 +221,7 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
   }
 
   const raceId = raceResult.rows[0].id;
-  console.log(`Found race ID: ${raceId}`);
+  //DEBUG: console.log(`Found race ID: ${raceId}`);
 
   // 2. Get all session_uids for this race from the mapping table
   const sessionResult = await pool.query(
@@ -231,7 +231,7 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
 
   // If no sessions found, try lap_times table as fallback
   if (sessionResult.rows.length === 0) {
-    console.log('No telemetry session found. Trying lap_times table as fallback...');
+    //DEBUG: console.log('No telemetry session found. Trying lap_times table as fallback...');
     
     const lapTimesData = await fetchLapTimesData(raceId);
     
@@ -257,7 +257,7 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
 
   // ... keep ALL your existing session selection logic
   const sessionUids = sessionResult.rows.map(row => row.session_uid);
-  console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
+  //DEBUG: console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
 
   let sessionUid;
   if (sessionType === 'qualifying' && sessionUids.length > 0) {
@@ -268,7 +268,7 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
     sessionUid = sessionUids[sessionUids.length - 1];
   }
 
-  console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
+  //DEBUG: console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
 
   // 3. Get the driver info and team data for this session
   const driversResult = await pool.query(`
@@ -287,7 +287,7 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
       p.car_index
   `, [sessionUid]);
 
-  console.log(`Found ${driversResult.rows.length} drivers`);
+  //DEBUG: console.log(`Found ${driversResult.rows.length} drivers`);
 
   // ... keep ALL your existing data source selection logic
   let lapDataResult;
@@ -316,12 +316,12 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
         lhbd.lap_number, lhbd.car_index
     `, [sessionUid]);
 
-    console.log(`Found ${bulkHistoryResult.rows.length} lap data entries in lap_history_bulk_data`);
+    //DEBUG: console.log(`Found ${bulkHistoryResult.rows.length} lap data entries in lap_history_bulk_data`);
     
     if (bulkHistoryResult.rows.length > 0) {
       lapDataResult = bulkHistoryResult;
       sourceTable = 'lap_history_bulk_data';
-      console.log("Using bulk history data (finalized data)");
+      //DEBUG: console.log("Using bulk history data (finalized data)");
     }
   }
   
@@ -350,12 +350,12 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
         sh.lap_number, sh.car_index
     `, [sessionUid]);
     
-    console.log(`Found ${sessionHistoryResult.rows.length} lap data entries in regular session_history`);
+    //DEBUG: console.log(`Found ${sessionHistoryResult.rows.length} lap data entries in regular session_history`);
     
     if (sessionHistoryResult.rows.length > 0) {
       lapDataResult = sessionHistoryResult;
       sourceTable = 'session_history';
-      console.log("Using regular session history data");
+      //DEBUG: console.log("Using regular session history data");
     }
   }
   
@@ -387,16 +387,16 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
         ld.lap_number, ld.car_index
     `, [sessionUid]);
     
-    console.log(`Found ${lapDataTableResult.rows.length} lap data entries in lap_data`);
+    //DEBUG: console.log(`Found ${lapDataTableResult.rows.length} lap data entries in lap_data`);
     
     if (lapDataTableResult.rows.length > 0) {
       lapDataResult = lapDataTableResult;
       sourceTable = 'lap_data';
-      console.log("Using lap_data table as fallback");
+      //DEBUG: console.log("Using lap_data table as fallback");
     } else {
       lapDataResult = { rows: [] };
       sourceTable = 'none';
-      console.log("No lap data found in any table");
+      //DEBUG: console.log("No lap data found in any table");
     }
   }
 
@@ -416,7 +416,7 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
       AND r.stints_raw != ''
   `, [raceId]);
 
-  console.log(`Found ${stintDataResult.rows.length} stint data entries`);
+  //DEBUG: console.log(`Found ${stintDataResult.rows.length} stint data entries`);
 
   // ... keep ALL your existing data processing logic
   const driverMap = {};
@@ -504,7 +504,7 @@ async function computeLapDataFromDatabase(season, raceSlug, sessionType, dataSou
     { type: 'race', label: 'Race', uid: sessionUids.length > 1 ? sessionUids[1] : null }
   ].filter(s => s.uid !== null);
 
-  console.log(`Successfully processed all data from ${sourceTable}`);
+  //DEBUG: console.log(`Successfully processed all data from ${sourceTable}`);
 
   let maxLapNumber = 0;
   for (const lap of processedLapData) {
@@ -559,7 +559,7 @@ export async function GET(request) {
     );
 
   } catch (error) {
-    console.error('Error in lap data API:', error);
+    //DEBUG: console.error('Error in lap data API:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error.message }, 
       { status: 500 }

@@ -1389,6 +1389,7 @@ export default function DashboardContainer() {
           team={raceInfo.winner.team}
           icon={<Trophy size={20} />}
           loading={isRaceInfoLoading} // Use separate loading state
+          cardType="winner"
         />
         <F1Card
           title="Pole Position"
@@ -1397,6 +1398,7 @@ export default function DashboardContainer() {
           team={raceInfo.poleSitter.team}
           icon={<Zap size={20} />}
           loading={isRaceInfoLoading} // Use separate loading state
+          cardType="pole"
         />
         <F1Card
           title="Fastest Lap"
@@ -1405,11 +1407,12 @@ export default function DashboardContainer() {
           team={raceInfo.fastestLap.team}
           icon={<Clock size={20} />}
           loading={isRaceInfoLoading} // Use separate loading state
+          cardType="fastestLap"
         />
       </div>
       
       {/* Main Content Area */}
-      <div className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl p-6">
+      <div className="card-glass p-6">
         {/* Render the appropriate analysis component based on selected type */}
         {analysisType === 'lap-analysis' && (
           <Tabs defaultValue="race-time" className="w-full">

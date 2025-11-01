@@ -31,7 +31,7 @@ function formatTime(ms) {
 // Stat Card Component
 function StatCard({ icon: Icon, title, children, delay = 0, iconColor = "text-cyan-400", fillHeight = true }) {
   return (
-    <div className={`relative bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden p-6 ${fillHeight ? 'h-full flex flex-col' : ''}`}>
+    <div className={`relative card-glass overflow-hidden p-6 ${fillHeight ? 'h-full flex flex-col' : ''}`}>
       <div className="flex items-center gap-3 mb-4">
         <Icon className={`h-5 w-5 ${iconColor}`} />
         <h3 className="text-lg font-bold text-white">{title}</h3>
@@ -468,7 +468,7 @@ export default async function TrackPage({ params }) {
   const flagCountry = countryFlagMap[trackInfo.country] || trackInfo.country.toLowerCase().replace(/\s+/g, '');
 
   return (
-    <div className="min-h-screen bg-neutral-950">
+    <div className="min-h-screen bg-primary">
       <div className="max-w-[1400px] mx-auto px-6 py-8">
 
           {/* Header Row - Selector + Track Info */}
@@ -496,7 +496,7 @@ export default async function TrackPage({ params }) {
           {/* Track Info Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-16">
             {/* Circuit Information Card */}
-            <div className="relative bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden p-8">
+            <div className="relative card-glass overflow-hidden p-8">
               <div className="flex items-center gap-3 mb-6">
                 <MapPin className="h-5 w-5 text-cyan-400" />
                 <h2 className="text-xl font-black text-white tracking-tight">Circuit Information</h2>
@@ -522,7 +522,7 @@ export default async function TrackPage({ params }) {
             </div>
             
             {/* Track Map */}
-            <div className="relative aspect-video bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden p-4">
+            <div className="relative aspect-video card-glass overflow-hidden p-4">
               <div className="relative w-full h-full">
                 <Image
                   src={`/images/tracks/${track}.png`}

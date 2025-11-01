@@ -30,7 +30,7 @@ export async function GET() {
       time: race.time
     });
   } catch (error) {
-    console.error('Error fetching latest race:', error);
+    //DEBUG: console.error('Error fetching latest race:', error);
     return NextResponse.json({ error: 'Failed to fetch latest race' }, { status: 500 });
   }
 }

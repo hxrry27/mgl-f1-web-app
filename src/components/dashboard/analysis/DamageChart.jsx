@@ -319,7 +319,7 @@ export default function DamageChart(props) {
     
     if (!processedDamageData || processedDamageData.length === 0) {
       return (
-        <div className="w-full h-full bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl flex flex-col items-center justify-center text-neutral-400">
+        <div className="w-full h-full card-glass flex flex-col items-center justify-center text-neutral-400">
           <AlertCircle className="w-10 h-10 mb-3 text-neutral-500" />
           <p className="font-bold text-white">No damage data available</p>
           <p className="text-xs text-neutral-500 mt-1">
@@ -511,7 +511,7 @@ export default function DamageChart(props) {
     >
       <Card 
         ref={chartRef} 
-        className="relative bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden h-full flex flex-col"
+        className="relative card-glass overflow-hidden h-full flex flex-col"
       >
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">

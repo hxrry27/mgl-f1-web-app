@@ -210,7 +210,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('Error in all-time stats API:', error);
+    //DEBUG: console.error('Error in all-time stats API:', error);
     return NextResponse.json(
       { error: 'Failed to fetch all-time statistics', details: error.message },
       { status: 500 }

@@ -68,7 +68,7 @@ export default function DriversPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950">
+    <div className="min-h-screen bg-primary">
       <div className="max-w-[1400px] mx-auto px-6 py-8">
         {/* Header */}
         <motion.div

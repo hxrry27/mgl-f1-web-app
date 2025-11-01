@@ -448,7 +448,7 @@ export default function GeneralStatsChart({
       transition={{ duration: 0.5, delay: 0.2 }}
       className={cn("h-full", className)}
     >
-      <Card className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-3xl overflow-hidden h-full flex flex-col">
+      <Card className="card-glass overflow-hidden h-full flex flex-col">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
             <div className="flex items-center gap-3">
@@ -557,10 +557,11 @@ export default function GeneralStatsChart({
                   <ClickableDriverStatCard 
                     driver={stats.ers.mostDeployed?.driver || "No Data"}
                     team={stats.ers.mostDeployed?.team || "No Team"}
-                    title="Highest Single-Lap ERS Deploy"
+                    title="Single-Lap Deployment"
                     value={formatTotals(stats.ers.mostDeployed?.value)}
                     icon={Battery}
                     color="text-emerald-400"
+                    tooltip="The highest single lap deployment"
                     chartData={derivedData.ersDeployment}
                     chartTitle="ERS Deployment - All Drivers"
                     formatValue={(val) => `${val.toFixed(1)} MJ`}
@@ -568,10 +569,11 @@ export default function GeneralStatsChart({
                   <ClickableDriverStatCard 
                     driver={stats.ers.mostHarvested?.driver || "No Data"}
                     team={stats.ers.mostHarvested?.team || "No Team"}
-                    title="Highest Single-Lap ERS Harvest"
+                    title="Single-lap Harvest"
                     value={formatTotals(stats.ers.mostHarvested?.value)}
                     icon={Zap}
                     color="text-cyan-400"
+                    tooltip="The highest single lap harvest"
                     chartData={derivedData.ersHarvesting}
                     chartTitle="ERS Harvesting - All Drivers"
                     formatValue={(val) => `${val.toFixed(1)} MJ`}
@@ -579,7 +581,7 @@ export default function GeneralStatsChart({
                   <ClickableDriverStatCard 
                     driver={stats.ers.mostTotalDeployed?.driver || "No Data"}
                     team={stats.ers.mostTotalDeployed?.team || "No Team"}
-                    title="Most Race Total ERS Deploy"
+                    title="Total Deployment"
                     value={formatTotals(stats.ers.mostTotalDeployed?.value)}
                     icon={Battery}
                     color="text-teal-400"
@@ -591,7 +593,7 @@ export default function GeneralStatsChart({
                   <ClickableDriverStatCard 
                     driver={stats.ers.mostTotalHarvested?.driver || "No Data"}
                     team={stats.ers.mostTotalHarvested?.team || "No Team"}
-                    title="Most Race Total ERS Harvest"
+                    title="Total Harvest"
                     value={formatTotals(stats.ers.mostTotalHarvested?.value)}
                     icon={Zap}
                     color="text-blue-400"

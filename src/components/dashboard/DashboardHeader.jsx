@@ -84,34 +84,7 @@ export default function DashboardHeader({
       {/* Analysis Type Tabs */}
       <Tabs value={analysisType} onValueChange={(value) => handleAnalysisTypeChange({ target: { value } }, value)} className="w-full">
         <TabsList className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl p-1 h-auto flex-wrap">
-          <TabsTrigger 
-            value="lap-analysis" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
-          >
-            <Clock size={16} />
-            Lap Analysis
-          </TabsTrigger>
-          <TabsTrigger 
-            value="team-pace" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
-          >
-            <BarChart2 size={16} />
-            Team Pace
-          </TabsTrigger>
-          <TabsTrigger 
-            value="damage" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
-          >
-            <Activity size={16} />
-            Damage
-          </TabsTrigger>
-          <TabsTrigger 
-            value="tyre-wear" 
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
-          >
-            <Droplets size={16} />
-            Tyre Wear
-          </TabsTrigger>
+          
           <TabsTrigger 
             value="general-stats" 
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
@@ -119,6 +92,31 @@ export default function DashboardHeader({
             <Gauge size={16} />
             General Stats
           </TabsTrigger>
+          
+          <TabsTrigger 
+            value="lap-analysis" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <Clock size={16} />
+            Lap Analysis
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="damage" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <Activity size={16} />
+            Damage
+          </TabsTrigger>          
+          
+          <TabsTrigger 
+            value="tyre-wear" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <Droplets size={16} />
+            Tyre Wear
+          </TabsTrigger>
+          
           <TabsTrigger 
             value="track-dominance" 
             className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
@@ -126,6 +124,16 @@ export default function DashboardHeader({
             <LineChart size={16} />
             Track Dominance
           </TabsTrigger>
+          
+          <TabsTrigger 
+            value="team-pace" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <BarChart2 size={16} />
+            Team Pace
+          </TabsTrigger>
+
+
         </TabsList>
       </Tabs>
     </div>

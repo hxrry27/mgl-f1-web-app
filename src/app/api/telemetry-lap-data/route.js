@@ -6,7 +6,7 @@ const pool = require('@/lib/db');
 
 // Move your entire computation logic to this function
 async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, driverName) {
-  console.log(`Computing telemetry data for season ${season}, race ${raceSlug}, session type ${sessionType}, lap ${lap}, driver ${driverName}`);
+  //DEBUG: console.log(`Computing telemetry data for season ${season}, race ${raceSlug}, session type ${sessionType}, lap ${lap}, driver ${driverName}`);
 
   // 1. Common setup code - Get race information
   const raceResult = await pool.query(`
@@ -21,7 +21,7 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
   }
 
   const raceId = raceResult.rows[0].id;
-  console.log(`Found race ID: ${raceId}`);
+  //DEBUG: console.log(`Found race ID: ${raceId}`);
 
   // 2. Get session information
   const sessionResult = await pool.query(
@@ -34,7 +34,7 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
   }
 
   const sessionUids = sessionResult.rows.map(row => row.session_uid);
-  console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
+  //DEBUG: console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
 
   let sessionUid;
   if (sessionType === 'qualifying' && sessionUids.length > 0) {
@@ -56,20 +56,20 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
     ORDER BY p.car_index
   `, [sessionUid]);
 
-  console.log(`Found ${driversResult.rows.length} drivers`);
+  //DEBUG: console.log(`Found ${driversResult.rows.length} drivers`);
 
   let carIndex = null;
   if (driverName) {
     const driverRecord = driversResult.rows.find(d => d.driver_name.toUpperCase() === driverName.toUpperCase());
     if (driverRecord) {
       carIndex = driverRecord.car_index;
-      console.log(`Found car index ${carIndex} for driver ${driverName}`);
+      //DEBUG: console.log(`Found car index ${carIndex} for driver ${driverName}`);
     }
   }
 
   if (carIndex === null && driversResult.rows.length > 0) {
     carIndex = driversResult.rows[0].car_index;
-    console.log(`Using default car index ${carIndex}`);
+    //DEBUG: console.log(`Using default car index ${carIndex}`);
   }
 
   if (carIndex === null) {
@@ -88,10 +88,10 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
     
     if (trackResult.rows.length > 0 && trackResult.rows[0].length) {
       trackLength = (trackResult.rows[0].length) * 1000;
-      console.log(`Using actual track length: ${trackLength}m`);
+      //DEBUG: console.log(`Using actual track length: ${trackLength}m`);
     }
   } catch (error) {
-    console.warn('Could not fetch track length, using default 5000m:', error);
+    //DEBUG: console.warn('Could not fetch track length, using default 5000m:', error);
   }
 
   // 5. CHECK IF FRAME_IDENTIFIER IS AVAILABLE FOR THIS RACE ID
@@ -106,14 +106,14 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
   const hasFrameIdentifier = frameIdentifierCheck.rows.length > 0 && 
                              frameIdentifierCheck.rows[0].has_frames > 0;
   
-  console.log(`Race ID ${raceId} ${hasFrameIdentifier ? 'HAS' : 'DOES NOT HAVE'} frame_identifier data`);
+  //DEBUG: console.log(`Race ID ${raceId} ${hasFrameIdentifier ? 'HAS' : 'DOES NOT HAVE'} frame_identifier data`);
 
   let lapTelemetry;
   
   // 6. BRANCH INTO APPROPRIATE DATA PROCESSING METHOD
   if (hasFrameIdentifier) {
     // ====== NEW METHOD: USING FRAME_IDENTIFIER ======
-    console.log("Using frame_identifier-based mapping for this race");
+    //DEBUG: console.log("Using frame_identifier-based mapping for this race");
     
     // Get lap data for the requested lap
     const lapDataQuery = `
@@ -135,9 +135,9 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
     const frameIds = lapDataResult.rows.map(row => row.frame_identifier).filter(id => id !== null);
     
     if (frameIds.length === 0) {
-      console.log("No valid frame identifiers found, falling back to timestamp method");
+      //DEBUG: console.log("No valid frame identifiers found, falling back to timestamp method");
       // Fall back to timestamp method if no valid frame IDs
-      return useLegacyTimestampMethod();
+      return getLegacyTimestampMethod();
     }
     
     // Get telemetry data matching these frame identifiers
@@ -153,12 +153,12 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
     const telemetryParams = [sessionUid, carIndex, ...frameIds];
     const telemetryResult = await pool.query(telemetryQuery, telemetryParams);
     
-    console.log(`Found ${telemetryResult.rows.length} telemetry data points for lap ${lap} using frame_identifier`);
+    //DEBUG: console.log(`Found ${telemetryResult.rows.length} telemetry data points for lap ${lap} using frame_identifier`);
     
     if (telemetryResult.rows.length === 0) {
-      console.log("No telemetry data found with frame identifiers, falling back to timestamp method");
+      //DEBUG: console.log("No telemetry data found with frame identifiers, falling back to timestamp method");
       // Fall back to timestamp method if no telemetry data found
-      return useLegacyTimestampMethod();
+      return getLegacyTimestampMethod();
     }
     
     // Process telemetry data to add normalized distance
@@ -186,20 +186,20 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
     }
     
     // Log the boundaries
-    console.log(`====== LAP BOUNDARY DETAILS (FRAME IDENTIFIER) ======`);
-    console.log(`Lap ${lap} has ${frameIds.length} frame identifiers`);
-    console.log(`Lap ${lap} time boundaries: ${new Date(startTime).toISOString()} to ${new Date(endTime).toISOString()}`);
-    console.log(`================================================`);
+    //DEBUG: console.log(`====== LAP BOUNDARY DETAILS (FRAME IDENTIFIER) ======`);
+    //DEBUG: console.log(`Lap ${lap} has ${frameIds.length} frame identifiers`);
+    //DEBUG: console.log(`Lap ${lap} time boundaries: ${new Date(startTime).toISOString()} to ${new Date(endTime).toISOString()}`);
+    //DEBUG: console.log(`================================================`);
     
   } else {
     // Call the legacy timestamp method
-    return useLegacyTimestampMethod();
+    return getLegacyTimestampMethod();
   }
   
   // Internal function for the legacy timestamp method
-  async function useLegacyTimestampMethod() {
+  async function getLegacyTimestampMethod() {
     // ====== LEGACY METHOD: USING TIMESTAMPS ======
-    console.log("Using timestamp-based mapping for this race (legacy method)");
+    //DEBUG: console.log("Using timestamp-based mapping for this race (legacy method)");
     
     // Get all lap data for this driver
     const lapDataQuery = `
@@ -255,10 +255,10 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
       throw new Error(`No entries found for lap ${lap}`);
     }
 
-    console.log(`====== LAP BOUNDARY DETAILS (TIMESTAMP) ======`);
-    console.log(`Lap ${lap} start: ${startBoundary.toISOString()}`);
-    console.log(`Lap ${lap} end: ${endBoundary.toISOString()}`);
-    console.log(`============================================`);
+    //DEBUG: console.log(`====== LAP BOUNDARY DETAILS (TIMESTAMP) ======`);
+    //DEBUG: console.log(`Lap ${lap} start: ${startBoundary.toISOString()}`);
+    //DEBUG: console.log(`Lap ${lap} end: ${endBoundary.toISOString()}`);
+    //DEBUG: console.log(`============================================`);
 
     // Get telemetry data within these lap boundaries
     const telemetryQuery = `
@@ -292,7 +292,7 @@ async function computeTelemetryFromDatabase(season, raceSlug, sessionType, lap, 
       endBoundary 
     ]);
     
-    console.log(`Found ${telemetryResult.rows.length} telemetry data points for lap ${lap} using timestamp method`);
+    //DEBUG: console.log(`Found ${telemetryResult.rows.length} telemetry data points for lap ${lap} using timestamp method`);
     
     // Process telemetry data to add normalized distance
     lapTelemetry = telemetryResult.rows.map((point, index, array) => {
@@ -372,7 +372,7 @@ export async function GET(request) {
     );
 
   } catch (error) {
-    console.error('Error in telemetry API:', error);
+    //DEBUG: console.error('Error in telemetry API:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error.message }, 
       { status: 500 }

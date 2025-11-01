@@ -81,6 +81,7 @@
   }
   .theme {
     --animate-rippling: rippling var(--duration) ease-out;
+    --animate-shine: shine var(--duration) infinite linear;
   }
 }
 
@@ -120,6 +121,21 @@
   background-size: 200% 200%;
 }
 
+@keyframes shine-border {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg);
+  }
+}
+
+.animate-shine-border {
+  animation: shine-border var(--duration, 14s) linear infinite;
+}
+
+
+
 /* ============================================
    UTILITY CLASSES
    ============================================ */
@@ -139,6 +155,24 @@
 
   .badge-pill {
     @apply bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-6 py-3 text-sm font-bold uppercase tracking-wider backdrop-blur-sm rounded-full;
+  }
+}
+
+@layer utilities {
+  .bg-primary {
+    background-color: var(--color-primary);
+  }
+  .bg-secondary {
+    background-color: var(--color-secondary);
+  }
+  .bg-tertiary {
+    background-color: var(--color-tertiary);
+  }
+  .bg-secondary\/60 {
+    background-color: rgba(23, 23, 23, 0.6);
+  }
+  .bg-tertiary\/60 {
+    background-color: rgba(38, 38, 38, 0.6);
   }
 }
 
@@ -205,6 +239,17 @@
   100% {
     transform: scale(2);
     opacity: 0;
+    }
+  }
+  @keyframes shine {
+  0% {
+    background-position: 0% 0%;
+    }
+  50% {
+    background-position: 100% 100%;
+    }
+  to {
+    background-position: 0% 0%;
     }
   }
 }

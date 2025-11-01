@@ -18,7 +18,7 @@ export async function GET(request) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error("Error querying carmotiondata:", error);
+    //DEBUG: console.error("Error querying carmotiondata:", error);
     return new Response(
       JSON.stringify({ error: "Failed to fetch car motion data" }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

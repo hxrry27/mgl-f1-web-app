@@ -4,14 +4,20 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer
 } from 'recharts';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { 
-  Box, Typography, FormControl, InputLabel, Select, MenuItem, 
-  CircularProgress, Button, Alert
-} from '@mui/material';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import DownloadIcon from '@mui/icons-material/Download';
-import PersonIcon from '@mui/icons-material/Person';
-import TimerIcon from '@mui/icons-material/Timer';
+  BarChart3, Download, User, Timer, AlertCircle, Loader2
+} from 'lucide-react';
 
 // API functions
 const fetchLapNumbers = async (year, event, session, driver) => {
@@ -46,7 +52,6 @@ const fetchSpeedData = async (year, event, session, driver, lap) => {
 const exportChartAsImage = (chartRef, filename = 'chart') => {
   if (!chartRef.current) return;
   
-  // Create a canvas from the SVG
   const svgElement = chartRef.current.querySelector('.recharts-wrapper svg');
   if (!svgElement) return;
   
@@ -60,7 +65,6 @@ const exportChartAsImage = (chartRef, filename = 'chart') => {
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
     
-    // Convert to data URL and download
     const dataUrl = canvas.toDataURL('image/png');
     const link = document.createElement('a');
     link.download = `${filename}.png`;
@@ -101,7 +105,7 @@ const SpeedChart = ({
     () => fetchLapNumbers(year, event, session, selectedDriver),
     {
       enabled: !!year && !!event && !!session && !!selectedDriver,
-      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+      staleTime: 1000 * 60 * 5,
     }
   );
 
@@ -118,13 +122,12 @@ const SpeedChart = ({
     () => fetchSpeedData(year, event, session, selectedDriver, selectedLap),
     {
       enabled: !!year && !!event && !!session && !!selectedDriver && !!selectedLap && shouldLoadChart,
-      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+      staleTime: 1000 * 60 * 5,
     }
   );
 
   // Handle driver selection change
-  const handleDriverChange = (event) => {
-    const driver = event.target.value;
+  const handleDriverChange = (driver) => {
     setSelectedDriver(driver);
     setSelectedLap('fastest');
     if (shouldLoadChart) {
@@ -134,8 +137,8 @@ const SpeedChart = ({
   };
 
   // Handle lap selection change
-  const handleLapChange = (event) => {
-    setSelectedLap(event.target.value);
+  const handleLapChange = (lap) => {
+    setSelectedLap(lap);
   };
 
   // Handle chart download
@@ -157,95 +160,56 @@ const SpeedChart = ({
     ? `${selectedDriver}'s ${selectedLap === 'fastest' ? 'Fastest Lap' : `Lap ${selectedLap}`} Speed Trace`
     : "Speed Trace";
   
-  const driverColor = selectedDriver ? getDriverColor(selectedDriver) : '#ff4444';
+  const driverColor = selectedDriver ? getDriverColor(selectedDriver) : '#06b6d4';
 
   // Render chart content based on state
   const renderContent = () => {
     // Show load button if chart hasn't been loaded yet
     if (!shouldLoadChart) {
       return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          flexDirection: 'column',
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(10, 14, 39, 0.5)', 
-          borderRadius: 2,
-          gap: 4
-        }}>
-          <Typography variant="body2" color="text.secondary">
+        <div className="w-full h-[280px] flex flex-col items-center justify-center bg-neutral-900/50 rounded-3xl gap-4">
+          <p className="text-neutral-400 text-sm">
             Select a driver and click load to view speed data
-          </Typography>
+          </p>
           <Button
-            variant="contained"
-            startIcon={<BarChartIcon />}
             onClick={() => setShouldLoadChart(true)}
             disabled={!selectedDriver}
-            sx={{ bgcolor: '#1a1f3b', '&:hover': { bgcolor: '#2d355b' } }}
+            className="bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-xl"
           >
+            <BarChart3 className="w-4 h-4 mr-2" />
             Load Chart
           </Button>
-        </Box>
+        </div>
       );
     }
     
     // Show loading spinner
     if (isLoadingSpeedData) {
       return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(10, 14, 39, 0.5)',
-          borderRadius: 2 
-        }}>
-          <CircularProgress />
-        </Box>
+        <div className="w-full h-[280px] flex items-center justify-center bg-neutral-900/50 rounded-3xl">
+          <Loader2 className="h-12 w-12 text-cyan-500 animate-spin" />
+        </div>
       );
     }
     
     // Show error message
     if (speedDataError) {
       return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          flexDirection: 'column',
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(10, 14, 39, 0.5)',
-          border: '1px solid rgba(255, 0, 0, 0.3)',
-          borderRadius: 2, 
-          p: 2
-        }}>
-          <Alert severity="error" sx={{ bgcolor: 'transparent', color: '#ff6b6b' }}>
+        <div className="w-full h-[280px] flex flex-col items-center justify-center bg-neutral-900/50 border border-red-500/30 rounded-3xl p-4">
+          <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
+          <p className="text-red-400 text-sm">
             {speedDataError.message || 'Error loading speed data'}
-          </Alert>
-        </Box>
+          </p>
+        </div>
       );
     }
     
     // Show no data message
     if (!speedData || speedData.length === 0) {
       return (
-        <Box sx={{ 
-          width: '100%', 
-          height: '280px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          bgcolor: 'rgba(10, 14, 39, 0.5)',
-          border: '1px solid rgba(100, 100, 100, 0.5)',
-          borderRadius: 2, 
-          color: 'text.secondary' 
-        }}>
+        <div className="w-full h-[280px] flex items-center justify-center bg-neutral-900/50 border border-neutral-700/50 rounded-3xl text-neutral-400">
           No speed telemetry data found for {selectedDriver} lap {selectedLap}.
-        </Box>
+        </div>
       );
     }
 
@@ -256,18 +220,18 @@ const SpeedChart = ({
           data={speedData}
           margin={{ top: 0, right: 10, left: -15, bottom: 5 }}
         >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(100, 116, 139, 0.3)" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(115, 115, 115, 0.2)" />
           <XAxis
             dataKey="Distance"
-            stroke="rgba(156, 163, 175, 0.7)"
-            tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }}
+            stroke="rgba(163, 163, 163, 0.5)"
+            tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }}
             tickFormatter={(value) => `${Math.round(value)}m`}
             domain={['dataMin', 'dataMax']}
           />
           <YAxis
             dataKey="Speed"
-            stroke="rgba(156, 163, 175, 0.7)"
-            tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }}
+            stroke="rgba(163, 163, 163, 0.5)"
+            tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }}
             domain={['auto', 'dataMax + 10']}
             tickFormatter={(value) => `${value} km/h`}
             width={50}
@@ -276,10 +240,11 @@ const SpeedChart = ({
             formatter={(value) => [`${value} km/h`, 'Speed']}
             labelFormatter={(label) => `Distance: ${label.toFixed(2)}m`}
             contentStyle={{
-              backgroundColor: 'rgba(31, 41, 55, 0.9)',
-              borderColor: 'rgba(100, 116, 139, 0.5)',
-              color: '#E5E7EB',
-              borderRadius: 1
+              backgroundColor: 'rgba(23, 23, 23, 0.95)',
+              borderColor: 'rgba(64, 64, 64, 0.5)',
+              color: '#ffffff',
+              borderRadius: '16px',
+              backdropFilter: 'blur(12px)'
             }}
           />
           <Line
@@ -298,113 +263,107 @@ const SpeedChart = ({
   };
 
   return (
-    <Box ref={chartRef} sx={{ 
-      width: '100%', 
-      bgcolor: 'rgba(10, 14, 39, 0.7)', 
-      border: '1px solid rgba(68, 68, 68, 0.8)', 
-      borderRadius: 3, 
-      p: 2, 
-      backdropFilter: 'blur(4px)',
-      overflow: 'hidden' 
-    }}>
+    <Card ref={chartRef} className="bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50 rounded-3xl overflow-hidden">
       {/* Header with title and controls */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: 'space-between', 
-        alignItems: { xs: 'flex-start', sm: 'center' }, 
-        mb: 2, 
-        gap: 2 
-      }}>
-        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 'bold' }}>
-          {chartTitle}
-        </Typography>
-        
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-          <FormControl sx={{ minWidth: 150 }} size="small">
-            <InputLabel id="driver-select-label" sx={{ color: '#fff' }}>Driver</InputLabel>
-            <Select
-              labelId="driver-select-label"
-              value={selectedDriver}
-              onChange={handleDriverChange}
-              label="Driver"
-              startAdornment={<PersonIcon sx={{ mr: 1, opacity: 0.7, color: '#fff' }} />}
-              sx={{ 
-                color: '#fff', 
-                bgcolor: '#1a1f3b', 
-                '& .MuiSvgIcon-root': { color: '#fff' } 
-              }}
-            >
-              {availableDrivers.map((driver) => (
-                <MenuItem key={driver.code || driver} value={driver.code || driver}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Box 
-                      sx={{ 
-                        width: 12, 
-                        height: 12, 
-                        borderRadius: '50%', 
-                        bgcolor: getDriverColor(driver.code || driver), 
-                        mr: 1 
-                      }} 
-                    />
-                    {driver.code || driver} {driverTeams[driver.code || driver] ? `(${driverTeams[driver.code || driver]})` : ''}
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+      <CardHeader className="pb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-cyan-400" />
+            <CardTitle className="text-xl font-black text-white">
+              {chartTitle}
+            </CardTitle>
+          </div>
           
-          <FormControl sx={{ minWidth: 120 }} size="small">
-            <InputLabel id="lap-select-label" sx={{ color: '#fff' }}>Lap</InputLabel>
-            <Select
-              labelId="lap-select-label"
-              value={selectedLap}
-              onChange={handleLapChange}
-              label="Lap"
-              startAdornment={<TimerIcon sx={{ mr: 1, opacity: 0.7, color: '#fff' }} />}
-              disabled={isLoadingLapNumbers || lapOptions.length <= 1}
-              sx={{ 
-                color: '#fff', 
-                bgcolor: '#1a1f3b', 
-                '& .MuiSvgIcon-root': { color: '#fff' } 
-              }}
-            >
-              {lapOptions.map((lap) => (
-                <MenuItem key={lap} value={lap}>
-                  {lap === 'fastest' ? 'Fastest' : lap}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      </Box>
+          <div className="flex flex-wrap gap-3">
+            {/* Driver Select */}
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs text-neutral-400 uppercase tracking-wider font-bold">Driver</Label>
+              <Select value={selectedDriver} onValueChange={handleDriverChange}>
+                <SelectTrigger className="w-[180px] h-10 bg-neutral-800/80 border-neutral-700 rounded-xl text-white font-bold">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-neutral-500" />
+                    <SelectValue placeholder="Select driver" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-neutral-900 backdrop-blur-xl border-neutral-700 rounded-2xl">
+                  {availableDrivers.map((driver) => (
+                    <SelectItem 
+                      key={driver.code || driver} 
+                      value={driver.code || driver}
+                      className="text-white hover:bg-neutral-800 focus:bg-neutral-800 rounded-xl cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: getDriverColor(driver.code || driver) }}
+                        />
+                        <span className="font-medium">
+                          {driver.code || driver} 
+                          {driverTeams[driver.code || driver] && (
+                            <span className="text-neutral-400 ml-1">
+                              ({driverTeams[driver.code || driver]})
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Lap Select */}
+            <div className="flex flex-col gap-2">
+              <Label className="text-xs text-neutral-400 uppercase tracking-wider font-bold">Lap</Label>
+              <Select 
+                value={selectedLap} 
+                onValueChange={handleLapChange}
+                disabled={isLoadingLapNumbers || lapOptions.length <= 1}
+              >
+                <SelectTrigger className="w-[140px] h-10 bg-neutral-800/80 border-neutral-700 rounded-xl text-white font-bold">
+                  <div className="flex items-center gap-2">
+                    <Timer className="w-4 h-4 text-neutral-500" />
+                    <SelectValue />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-neutral-900 backdrop-blur-xl border-neutral-700 rounded-2xl">
+                  {lapOptions.map((lap) => (
+                    <SelectItem 
+                      key={lap} 
+                      value={lap}
+                      className="text-white hover:bg-neutral-800 focus:bg-neutral-800 rounded-xl cursor-pointer font-medium"
+                    >
+                      {lap === 'fastest' ? 'Fastest' : lap}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
       
       {/* Chart content */}
-      {renderContent()}
-      
-      {/* Download button */}
-      {shouldLoadChart && !isLoadingSpeedData && speedData && speedData.length > 0 && (
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<DownloadIcon />}
-            onClick={handleDownload}
-            disabled={isExporting}
-            sx={{ 
-              color: '#fff', 
-              borderColor: 'rgba(255, 255, 255, 0.3)',
-              '&:hover': { 
-                borderColor: '#fff', 
-                bgcolor: 'rgba(255, 255, 255, 0.1)' 
-              }
-            }}
-          >
-            {isExporting ? "Exporting..." : "Download Chart"}
-          </Button>
-        </Box>
-      )}
-    </Box>
+      <CardContent className="pt-0">
+        {renderContent()}
+        
+        {/* Download button */}
+        {shouldLoadChart && !isLoadingSpeedData && speedData && speedData.length > 0 && (
+          <div className="mt-4 flex justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              disabled={isExporting}
+              className="bg-neutral-800/80 hover:bg-neutral-700 text-white border-neutral-700 rounded-xl font-bold"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isExporting ? "Exporting..." : "Download Chart"}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

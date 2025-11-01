@@ -50,7 +50,7 @@ export async function GET(request, { params }) {
     
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error executing Python script:', error);
+    //DEBUG: console.error('Error executing Python script:', error);
     return getFallbackData(circuit);
   }
 }

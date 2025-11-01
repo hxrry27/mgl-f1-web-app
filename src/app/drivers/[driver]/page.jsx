@@ -263,7 +263,7 @@ export default async function DriverPage({ params }) {
     driverId = driverData.id;
   } catch (error) {
     return (
-      <div className="min-h-screen bg-neutral-950">
+      <div className="min-h-screen bg-primary">
         <div className="max-w-[1400px] mx-auto px-6 py-8">
           <Card className="bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50 rounded-3xl">
             <CardContent className="flex flex-col items-center justify-center py-20 text-neutral-500">
@@ -611,7 +611,7 @@ export default async function DriverPage({ params }) {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950">
+    <div className="min-h-screen bg-primary">
       <div className="max-w-[1400px] mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
