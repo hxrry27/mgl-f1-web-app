@@ -33,7 +33,7 @@ export default function DashboardHeader({
     <div className="mb-6">
       {/* Season & Race Selectors */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold">F1 Telemetry Dashboard</h1>
+        <h1 className="text-4xl font-black text-white tracking-tight">Telemetry Dashboard</h1>
         
         <div className="flex flex-col sm:flex-row gap-2">
           {/* Season Selector */}
@@ -41,12 +41,16 @@ export default function DashboardHeader({
             value={selectedSeason} 
             onValueChange={(value) => handleSeasonChange({ target: { value } })}
           >
-            <SelectTrigger className="w-[180px] bg-gray-800/70 border-gray-700">
+            <SelectTrigger className="w-[180px] bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50 text-white rounded-2xl">
               <SelectValue placeholder="Select Season" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
+            <SelectContent className="bg-neutral-900 border-neutral-700/50 rounded-2xl">
               {seasons.map((season) => (
-                <SelectItem key={season} value={season} className="hover:bg-gray-800">
+                <SelectItem 
+                  key={season} 
+                  value={season} 
+                  className="hover:bg-neutral-800 text-white focus:bg-neutral-800 focus:text-white"
+                >
                   Season {season}
                 </SelectItem>
               ))}
@@ -59,12 +63,16 @@ export default function DashboardHeader({
             onValueChange={(value) => handleRaceChange({ target: { value } })}
             disabled={!selectedSeason}
           >
-            <SelectTrigger className="w-[180px] bg-gray-800/70 border-gray-700">
+            <SelectTrigger className="w-[200px] bg-neutral-900/60 backdrop-blur-xl border-neutral-700/50 text-white rounded-2xl">
               <SelectValue placeholder="Select Race" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700">
+            <SelectContent className="bg-neutral-900 border-neutral-700/50 rounded-2xl">
               {races.map((race) => (
-                <SelectItem key={race.slug} value={race.slug} className="hover:bg-gray-800">
+                <SelectItem 
+                  key={race.slug} 
+                  value={race.slug} 
+                  className="hover:bg-neutral-800 text-white focus:bg-neutral-800 focus:text-white"
+                >
                   {race.name}
                 </SelectItem>
               ))}
@@ -72,72 +80,62 @@ export default function DashboardHeader({
           </Select>
         </div>
       </div>
-      
+
       {/* Analysis Type Tabs */}
-      <div className="bg-gray-900/50 rounded-lg p-1 border border-gray-800 backdrop-blur-sm">
-        <Tabs 
-          value={analysisType} 
-          onValueChange={(value) => handleAnalysisTypeChange({ target: { value } }, value)}
-          className="w-full"
-        >
-          <TabsList className="grid grid-cols-2 md:grid-cols-5 gap-1 bg-transparent h-auto w-full">
-            <TabsTrigger 
-              value="general-stats" 
-              className={cn(
-                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
-                "hover:bg-gray-800 transition-colors"
-              )}
-            >
-              <BarChart2 className="h-4 w-4" />
-              <span className="hidden md:inline">General Stats</span>
-              <span className="inline md:hidden">Stats</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="lap-analysis" 
-              className={cn(
-                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
-                "hover:bg-gray-800 transition-colors"
-              )}
-            >
-              <Clock className="h-4 w-4" />
-              <span className="hidden md:inline">Lap Analysis</span>
-              <span className="inline md:hidden">Time</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="tyre-wear" 
-              className={cn(
-                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
-                "hover:bg-gray-800 transition-colors"
-              )}
-            >
-              <Droplets className="h-4 w-4" />
-              <span className="hidden md:inline">Tyre Wear</span>
-              <span className="inline md:hidden">Tyres</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="damage" 
-              className={cn(
-                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
-                "hover:bg-gray-800 transition-colors"
-              )}
-            >
-              <Activity className="h-4 w-4" />
-              <span>Damage</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="track-dominance" 
-              className={cn(
-                "flex items-center gap-2 py-2 px-3 rounded-md data-[state=active]:bg-blue-600 data-[state=active]:text-white",
-                "hover:bg-gray-800 transition-colors"
-              )}
-            >
-              <LineChart className="h-4 w-4" />
-              <span className="hidden md:inline">Track Dominance</span>
-              <span className="inline md:hidden">Lap</span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+      <Tabs value={analysisType} onValueChange={(value) => handleAnalysisTypeChange({ target: { value } }, value)} className="w-full">
+        <TabsList className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl p-1 h-auto flex-wrap">
+          
+          <TabsTrigger 
+            value="general-stats" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <Gauge size={16} />
+            General Stats
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="lap-analysis" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <Clock size={16} />
+            Lap Analysis
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="damage" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <Activity size={16} />
+            Damage
+          </TabsTrigger>          
+          
+          <TabsTrigger 
+            value="tyre-wear" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <Droplets size={16} />
+            Tyre Wear
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="track-dominance" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <LineChart size={16} />
+            Track Dominance
+          </TabsTrigger>
+          
+          <TabsTrigger 
+            value="team-pace" 
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl flex items-center gap-2"
+          >
+            <BarChart2 size={16} />
+            Team Pace
+          </TabsTrigger>
+
+
+        </TabsList>
+      </Tabs>
     </div>
   );
 }

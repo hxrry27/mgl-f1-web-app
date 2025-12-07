@@ -4,7 +4,7 @@ import pool from '@/lib/db';
 
 // Move computation logic to separate function
 async function computeAvailableSeasonsFromDatabase() {
-  console.log('🔍 Computing available seasons from database');
+  //DEBUG: console.log('🔍 Computing available seasons from database');
   
   const seasonsRes = await pool.query(`
     SELECT
@@ -22,7 +22,7 @@ async function computeAvailableSeasonsFromDatabase() {
  
   const seasons = seasonsRes.rows.map(row => row.season);
  
-  console.log(`✅ Found ${seasons.length} seasons:`, seasons);
+  //DEBUG: console.log(`✅ Found ${seasons.length} seasons:`, seasons);
  
   return { seasons };
 }
@@ -30,7 +30,7 @@ async function computeAvailableSeasonsFromDatabase() {
 // Main API route - NO CACHING
 export async function GET(request) {
   try {
-    console.log('📡 Available seasons API called');
+    //DEBUG: console.log('📡 Available seasons API called');
     const result = await computeAvailableSeasonsFromDatabase();
     
     return NextResponse.json(result, {
@@ -42,7 +42,7 @@ export async function GET(request) {
     });
 
   } catch (error) {
-    console.error('❌ Error in available seasons API:', error);
+    //DEBUG: console.error('❌ Error in available seasons API:', error);
     return NextResponse.json(
       { error: 'Failed to load seasons' },
       { status: 500 }

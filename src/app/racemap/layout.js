@@ -1,18 +1,13 @@
 'use client';
 
-import * as React from 'react';
-import { Box } from '@mui/material';
+import React from 'react';
 
 export default function RacemapLayout({ children }) {
   return (
-    <Box sx={{ 
-      backgroundColor: '#0a0e27', 
-      color: 'white',
-      height: '100%',
-      overflowY: 'auto',
-      p: 2,
-    }}>
-      {children}
-    </Box>
+    <div className="min-h-screen bg-primary text-white overflow-y-auto">
+      <div className="p-8 pt-24">
+        {children}
+      </div>
+    </div>
   );
 }

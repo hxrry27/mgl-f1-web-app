@@ -3,9 +3,10 @@
 import "./globals.css";
 import React, { useState } from 'react';
 import { ThemeProvider } from "@/components/theme-provider";
-import Header from '@/components/Header';
+import NewHeader from '@/components/NewHeader';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { ConsoleArt } from './console-art';
 
 const createQueryClient = () => new QueryClient({
   defaultOptions: {
@@ -24,30 +25,27 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-background font-sans antialiased overflow-hidden h-screen">
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {/* Sticky Header */}
-          <Header />
-        
-          {/* Main Content - fills remaining space after header */}
-          <div className="h-[calc(100vh-4rem)] overflow-y-auto">
+      <body className="bg-background font-sans antialiased">
+        <ConsoleArt/>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <NewHeader />
             {children}
-          </div>
-        </ThemeProvider>
-        
-        {/* React Query DevTools - only shows in development */}
-        <ReactQueryDevtools 
-          initialIsOpen={false} 
-          position="bottom-right"
-        />
-      </QueryClientProvider>
-    </body>
+          </ThemeProvider>
+          
+          {process.env.NODE_ENV === 'development' && (
+            <ReactQueryDevtools 
+              initialIsOpen={false} 
+              position="bottom-right"
+            />
+          )}
+        </QueryClientProvider>
+      </body>
     </html>
   );
 }

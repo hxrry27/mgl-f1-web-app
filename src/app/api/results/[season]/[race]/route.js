@@ -40,7 +40,7 @@ export async function GET(req, { params }) {
     //console.log('API Response:', formattedResults.slice(0, 3)); // Log top 3
     return new Response(JSON.stringify(formattedResults), { status: 200 });
   } catch (error) {
-    console.error('Results fetch error:', error);
+    //DEBUG: console.error('Results fetch error:', error);
     return new Response(JSON.stringify({ message: 'Failed to fetch results' }), { status: 500 });
   }
 }

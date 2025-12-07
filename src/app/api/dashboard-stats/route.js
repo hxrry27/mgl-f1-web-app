@@ -75,7 +75,7 @@ export async function GET(request) {
       );
       currentSeason = seasonRes.rows[0]?.season || '11';
     }
-    console.log('Current season with results:', currentSeason);
+    //DEBUG: console.log('Current season with results:', currentSeason);
 
     if (allDrivers) {
       const racesRes = await pool.query(
@@ -90,14 +90,14 @@ export async function GET(request) {
         name: trackNames[row.slug] || row.slug.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
         date: row.date.toISOString().split('T')[0],
       }));
-      console.log('Processed races:', races);
+      //DEBUG: console.log('Processed races:', races);
 
       const raceQuery = raceSlug
         ? 'SELECT r.id AS race_id, t.slug, r.date FROM races r JOIN tracks t ON r.track_id = t.id WHERE r.season_id = (SELECT id FROM seasons WHERE season = $1) AND t.slug = $2'
         : 'SELECT r.id AS race_id, t.slug, r.date FROM races r JOIN tracks t ON r.track_id = t.id WHERE r.season_id = (SELECT id FROM seasons WHERE season = $1) ORDER BY r.date DESC LIMIT 1';
       const latestRaceRes = await pool.query(raceQuery, raceSlug ? [currentSeason, raceSlug] : [currentSeason]);
       const selectedRace = latestRaceRes.rows[0];
-      console.log('Selected race for all drivers:', selectedRace);
+      //DEBUG: console.log('Selected race for all drivers:', selectedRace);
 
       const tyreStratRes = await pool.query(
         'WITH selected_race AS (' +
@@ -149,7 +149,7 @@ export async function GET(request) {
     }
 
     // User-specific logic
-    console.log('Fetching stats for username:', username);
+    //DEBUG: console.log('Fetching stats for username:', username);
 
     const winsRes = await pool.query(
       'SELECT d.name AS driver, COUNT(*) AS wins ' +
@@ -338,7 +338,7 @@ export async function GET(request) {
       season: currentSeason,
     });
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
+    //DEBUG: console.error('Error fetching dashboard stats:', error);
     return new Response(JSON.stringify({ error: 'Failed to load stats' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

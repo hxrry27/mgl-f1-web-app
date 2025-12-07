@@ -83,7 +83,7 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error('Error clearing cache:', error);
+    //DEBUG: console.error('Error clearing cache:', error);
     return NextResponse.json(
       { success: false, message: 'Failed to clear cache', error: error.message },
       { status: 500 }
@@ -112,7 +112,7 @@ export async function GET(request) {
       });
     }
   } catch (error) {
-    console.error('Error getting cache info:', error);
+    //DEBUG: console.error('Error getting cache info:', error);
     return NextResponse.json(
       { error: 'Failed to get cache info', message: error.message },
       { status: 500 }

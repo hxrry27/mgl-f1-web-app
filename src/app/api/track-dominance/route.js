@@ -7,7 +7,7 @@ import { trackSlugToName } from '@/constants/f1Constants';
 
 // Move your ENTIRE computation logic to this function
 async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) {
-  console.log(`Computing track dominance for: ${season}/${raceSlug}/${sessionType}`);
+  //DEBUG: console.log(`Computing track dominance for: ${season}/${raceSlug}/${sessionType}`);
   
   // First, find the race ID using the same approach as your telemetry API
   const raceResult = await pool.query(`
@@ -22,12 +22,12 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
 
   if (raceResult.rows.length === 0) {
     // Try the secondary lookup if direct slug lookup fails
-    console.log(`No race found with direct slug lookup, trying mapped name lookup`);
+    //DEBUG: console.log(`No race found with direct slug lookup, trying mapped name lookup`);
     
     // Try to map the slug to a known track name
     let trackName = trackSlugToName[raceSlug];
     if (!trackName) {
-      console.log(`No mapping found for slug: ${raceSlug}`);
+      //DEBUG: console.log(`No mapping found for slug: ${raceSlug}`);
       throw new Error('Race not found');
     }
     
@@ -53,7 +53,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
     raceId = raceResult.rows[0].id;
   }
   
-  console.log(`Found race ID: ${raceId}`);
+  //DEBUG: console.log(`Found race ID: ${raceId}`);
   
   // Get session UID using the same approach as your telemetry API
   const sessionResult = await pool.query(
@@ -66,7 +66,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
   }
 
   const sessionUids = sessionResult.rows.map(row => row.session_uid);
-  console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
+  //DEBUG: console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
 
   let sessionUid;
   if (sessionType === 'qualifying' && sessionUids.length > 0) {
@@ -77,7 +77,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
     sessionUid = sessionUids[sessionUids.length - 1];
   }
   
-  console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
+  //DEBUG: console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
   
   // Get driver information
   const driversResult = await pool.query(`
@@ -88,7 +88,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
     ORDER BY p.car_index
   `, [sessionUid]);
 
-  console.log(`Found ${driversResult.rows.length} drivers`);
+  //DEBUG: console.log(`Found ${driversResult.rows.length} drivers`);
   
   const driverMap = {};
   driversResult.rows.forEach(row => {
@@ -117,7 +117,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
       }
     }
   } catch (error) {
-    console.warn('Could not fetch track length, using default 5000m:', error);
+    //DEBUG: console.warn('Could not fetch track length, using default 5000m:', error);
   }
   
   // Check available columns in car_motion_data (REDUCED LOGGING)
@@ -169,7 +169,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
   const hasFrameIdentifier = frameIdentifierCheck.rows.length > 0 && 
                              parseInt(frameIdentifierCheck.rows[0].has_frames) > 0;
   
-  console.log(`Race ID ${raceId} ${hasFrameIdentifier ? 'HAS' : 'DOES NOT HAVE'} frame_identifier data`);
+  //DEBUG: console.log(`Race ID ${raceId} ${hasFrameIdentifier ? 'HAS' : 'DOES NOT HAVE'} frame_identifier data`);
   
   // Get lap data for all drivers
   const lapDataQuery = `
@@ -227,7 +227,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
     }
   });
   
-  console.log(`Found best laps for ${Object.keys(bestLapsByDriver).length} drivers`);
+  //DEBUG: console.log(`Found best laps for ${Object.keys(bestLapsByDriver).length} drivers`);
   
   // Get telemetry/motion data for the best laps
   const motionDataByDriver = {};
@@ -369,7 +369,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
   
   // Wait for all motion data queries to complete
   await Promise.all(motionDataPromises);
-  console.log(`Completed fetching motion data for ${Object.keys(motionDataByDriver).length} drivers`);
+  //DEBUG: console.log(`Completed fetching motion data for ${Object.keys(motionDataByDriver).length} drivers`);
   
   // Format track layout data
   const trackLayout = trackLayoutResult.rows.map(row => ({
@@ -525,7 +525,7 @@ async function computeTrackDominanceFromDatabase(season, raceSlug, sessionType) 
     }
   });
   
-  console.log('Successfully processed track dominance data');
+  //DEBUG: console.log('Successfully processed track dominance data');
   
   return {
     success: true,
@@ -576,7 +576,7 @@ export async function GET(request) {
     );
 
   } catch (error) {
-    console.error('Track dominance API error:', error);
+    //DEBUG: console.error('Track dominance API error:', error);
     
     // Return detailed error information for debugging
     return NextResponse.json(

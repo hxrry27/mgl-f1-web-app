@@ -21,10 +21,10 @@ export async function GET() {
         country: row.country.toUpperCase(),
       })),
     };
-    //console.log('API Response:', data); // Debug
+    //DEBUG: console.log('API Response:', data); // Debug
     return Response.json(data);
   } catch (error) {
-    console.error('API Error:', error);
+    //DEBUG: console.error('API Error:', error);
     return Response.json({ seasons: [], drivers: [], teams: [], tracks: [] }, { status: 500 });
   }
 }

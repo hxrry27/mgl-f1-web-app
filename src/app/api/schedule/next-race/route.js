@@ -48,7 +48,7 @@ export async function GET() {
       }
     }
   } catch (error) {
-    console.error('Database error:', error);
+    //DEBUG: console.error('Database error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

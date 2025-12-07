@@ -1,4 +1,7 @@
+'use client';
+
 import React, { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, 
   Legend, ResponsiveContainer 
@@ -32,7 +35,6 @@ export default function DamageChart(props) {
     fetchDriverDamageData
   } = props;
   
-  // Set default for driversWithDamage
   const driversWithDamage = props.driversWithDamage || [];
   
   const chartRef = useRef(null);
@@ -40,11 +42,8 @@ export default function DamageChart(props) {
   
   // State for additional drivers (limited to 2 more, for a total of 3)
   const [additionalDrivers, setAdditionalDrivers] = useState([]);
-  // State to store damage data for additional drivers
   const [additionalDamageData, setAdditionalDamageData] = useState({});
-  // State for merged data
   const [mergedData, setMergedData] = useState([]);
-  // State to track drivers with damage
 
   const driversWithDamageList = driversWithDamage || [];
 
@@ -242,12 +241,12 @@ export default function DamageChart(props) {
     });
     
     return (
-      <div className="bg-gray-900/90 text-gray-200 p-3 rounded border border-gray-700/80 shadow-lg">
-        <p className="font-semibold mb-2">Lap {label}</p>
+      <div className="bg-neutral-900/95 backdrop-blur-xl text-white p-4 rounded-2xl border border-neutral-700/50 shadow-xl">
+        <p className="font-black text-sm mb-3 text-cyan-400">Lap {label}</p>
         
         {Object.entries(driverGroups).map(([driver, items], driverIndex) => (
-          <div key={driver} className="mb-2">
-            <p className="text-sm font-medium border-b border-gray-700 pb-1 mb-1">{driver}</p>
+          <div key={driver} className={driverIndex > 0 ? "mt-3 pt-3 border-t border-neutral-700/50" : ""}>
+            <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">{driver}</p>
             {items.map((item, index) => {
               // Only show damage components that exist in the data
               if (item.value === undefined || item.value === null) return null;
@@ -261,14 +260,17 @@ export default function DamageChart(props) {
               if (damageTypeName === 'sidepod') damageTypeName = 'Sidepod';
               
               return (
-                <div key={index} className="flex items-center mb-1">
-                  <div 
-                    className="w-3 h-3 rounded-full mr-2" 
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="text-sm">
-                    {damageTypeName}: {Math.round(item.value)}%
-                  </span>
+                <div key={index} className="flex items-center justify-between mb-1">
+                  <div className="flex items-center">
+                    <div 
+                      className="w-2.5 h-2.5 rounded-full mr-2" 
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-neutral-300">
+                      {damageTypeName}
+                    </span>
+                  </div>
+                  <span className="text-sm font-bold ml-3">{Math.round(item.value)}%</span>
                 </div>
               );
             })}
@@ -309,18 +311,18 @@ export default function DamageChart(props) {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="w-full h-full flex items-center justify-center bg-gray-900/50 rounded-lg">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="w-full h-full flex items-center justify-center bg-neutral-900/50 backdrop-blur-xl rounded-3xl">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
         </div>
       );
     }
     
     if (!processedDamageData || processedDamageData.length === 0) {
       return (
-        <div className="w-full h-full bg-gray-900/80 border border-gray-700/50 rounded-lg flex flex-col items-center justify-center text-gray-400">
-          <AlertCircle className="w-10 h-10 mb-2" />
-          <p className="font-semibold">No damage data available</p>
-          <p className="text-xs text-gray-500 mt-1">
+        <div className="w-full h-full card-glass flex flex-col items-center justify-center text-neutral-400">
+          <AlertCircle className="w-10 h-10 mb-3 text-neutral-500" />
+          <p className="font-bold text-white">No damage data available</p>
+          <p className="text-xs text-neutral-500 mt-1">
             No data found for {selectedDriver || 'this session or driver'}
           </p>
         </div>
@@ -330,13 +332,13 @@ export default function DamageChart(props) {
     // Get all drivers that will be displayed
     const allDrivers = [selectedDriver, ...additionalDrivers].filter(Boolean);
     
-    // Damage component colors
+    // Damage component colors - updated to match new design
     const damageColors = {
-      frontWing: "#ff0000",
-      rearWing: "#00ff00",
-      diffuser: "#0088ff",
-      floor: "#ff00ff",
-      sidepod: "#ffff00"
+      frontWing: "#ef4444",  // Red
+      rearWing: "#22c55e",   // Green
+      diffuser: "#3b82f6",   // Blue
+      floor: "#a855f7",      // Purple
+      sidepod: "#eab308"     // Yellow
     };
     
     // Generate lines for all drivers
@@ -353,7 +355,7 @@ export default function DamageChart(props) {
               dataKey={component} 
               name={component} 
               stroke={color} 
-              strokeWidth={2} 
+              strokeWidth={2.5} 
               dot={false} 
               isAnimationActive={false}
               connectNulls={true}
@@ -375,7 +377,7 @@ export default function DamageChart(props) {
               dataKey={`${driver}_${component}`} 
               name={`${driver}_${component}`} 
               stroke={color} 
-              strokeWidth={2} 
+              strokeWidth={2.5} 
               strokeDasharray={strokeDasharray}
               dot={false} 
               isAnimationActive={false}
@@ -393,33 +395,32 @@ export default function DamageChart(props) {
         <ResponsiveContainer width="100%" height={500}>
           <LineChart
             data={mergedData.length > 0 ? mergedData : processedDamageData}
-            margin={{ top: 10, right: 30, bottom: 50, left: 10 }} // Increased bottom margin
+            margin={{ top: 10, right: 30, bottom: 50, left: 10 }}
           >
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(100, 116, 139, 0.3)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(64, 64, 64, 0.3)" />
             <XAxis 
               dataKey="lap" 
-              label={{ value: 'Lap Number', position: 'insideBottom', offset: -25, fill: '#ccc' }}
-              tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }}
-              stroke="rgba(156, 163, 175, 0.7)"
+              label={{ value: 'Lap Number', position: 'insideBottom', offset: -25, fill: '#a3a3a3' }}
+              tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }}
+              stroke="rgba(115, 115, 115, 0.5)"
               type="number"
               domain={['dataMin', 'dataMax']}
               ticks={Array.from({ length: maxLapNumber }, (_, i) => i + 1)}
             />
             <YAxis 
-              label={{ value: 'Damage %', angle: -90, position: 'insideLeft', offset: -5, fill: '#ccc' }}
+              label={{ value: 'Damage %', angle: -90, position: 'insideLeft', offset: -5, fill: '#a3a3a3' }}
               domain={[0, 100]}
-              tick={{ fill: 'rgba(156, 163, 175, 0.9)', fontSize: 12 }}
-              stroke="rgba(156, 163, 175, 0.7)"
+              tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }}
+              stroke="rgba(115, 115, 115, 0.5)"
             />
             <RechartsTooltip content={<DamageTooltip />} />
             <Legend 
               wrapperStyle={{ 
-                color: 'rgba(156, 163, 175, 0.9)',
-                paddingTop: 20 // Add padding to push it down
+                color: 'rgba(163, 163, 163, 0.9)',
+                paddingTop: 20
               }} 
               verticalAlign="bottom"
               height={36}
-              // Custom legend renderer to show different line styles
               content={(props) => {
                 const { payload } = props;
                 if (!payload || payload.length === 0) return null;
@@ -438,10 +439,8 @@ export default function DamageChart(props) {
                 payload.forEach(entry => {
                   const key = entry.dataKey;
                   if (key.includes('_')) {
-                    // Additional driver format: "Driver_componentType"
                     drivers.add(key.split('_')[0]);
                   } else {
-                    // Main driver components are not prefixed
                     drivers.add(selectedDriver);
                   }
                 });
@@ -459,7 +458,7 @@ export default function DamageChart(props) {
                               borderStyle: "solid"
                             }} 
                           />
-                          <span className="text-xs text-gray-300">{item.label}</span>
+                          <span className="text-xs text-neutral-300 font-medium">{item.label}</span>
                         </div>
                       ))}
                     </div>
@@ -478,7 +477,7 @@ export default function DamageChart(props) {
                                   borderStyle: lineStyle
                                 }} 
                               />
-                              <span className="text-xs text-gray-300">{driver}</span>
+                              <span className="text-xs text-neutral-300 font-medium">{driver}</span>
                             </div>
                           );
                         })}
@@ -504,80 +503,45 @@ export default function DamageChart(props) {
     : `Car Damage % Over Race Distance ${selectedDriver ? `- ${selectedDriver}` : ''}`;
 
   return (
-    <Card 
-      ref={chartRef} 
-      className={cn("chart-container bg-gray-900/70 border border-gray-700/80 backdrop-blur-sm overflow-hidden h-full flex flex-col", className)}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.2 }}
+      className={cn("h-full", className)}
     >
-      <CardHeader className="pb-2">
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-lg font-semibold text-white">{chartTitle}</CardTitle>
+      <Card 
+        ref={chartRef} 
+        className="relative card-glass overflow-hidden h-full flex flex-col"
+      >
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+            <CardTitle className="text-xl font-black tracking-tight text-white">
+              {chartTitle}
+            </CardTitle>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0 flex-grow flex flex-col">
-        <div className="flex flex-wrap gap-2 mb-4">
-          {/* Main driver selection */}
-          <Select
-            value={selectedDriver || ''}
-            onValueChange={onDriverSelect}
-            disabled={isLoading}
-          >
-            <SelectTrigger className="w-full sm:w-[180px] bg-gray-800/80 border-gray-700 text-gray-200 text-sm h-9">
-              <User className="w-4 h-4 mr-2 opacity-70"/>
-              <SelectValue placeholder="Select Driver" />
-            </SelectTrigger>
-            <SelectContent className="bg-gray-900 border-gray-700 text-gray-200 max-h-[300px]">
-              {Object.entries(teamGroups).map(([team, teamDrivers]) => (
-                teamDrivers.length > 0 && (
-                  <SelectGroup key={team}>
-                    <SelectLabel className="text-xs text-gray-500">{team}</SelectLabel>
-                    {teamDrivers.map(driver => (
-                      <SelectItem key={driver} value={driver} className="text-sm">
-                        <div className="flex items-center">
-                          <div 
-                            className="w-3 h-3 rounded-full mr-2" 
-                            style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
-                          />
-                          {driver}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                )
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Add driver dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="h-9 bg-gray-800/80 hover:bg-gray-700 text-gray-200 border border-gray-700"
-                disabled={isLoading || additionalDrivers.length >= 2}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {additionalDrivers.length >= 2 ? 'Max Drivers' : 'Add Driver'}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="bg-gray-900 border border-gray-700 text-gray-200">
-              <DropdownMenuLabel className="text-xs text-gray-500">Add Driver to Comparison</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-gray-700" />
-              
-              {/* Group by teams */}
-              {Object.entries(teamGroups).map(([team, teamDrivers]) => (
-                teamDrivers.length > 0 && (
-                  <React.Fragment key={team}>
-                    <DropdownMenuLabel className="text-xs text-gray-500">{team}</DropdownMenuLabel>
-                    {teamDrivers.map(driver => (
-                      // Only show drivers not already selected
-                      !additionalDrivers.includes(driver) && driver !== selectedDriver && (
-                        <DropdownMenuItem 
+        </CardHeader>
+        <CardContent className="pt-0 flex-grow flex flex-col p-8">
+          <div className="flex flex-wrap gap-3 mb-6">
+            {/* Main driver selection */}
+            <Select
+              value={selectedDriver || ''}
+              onValueChange={onDriverSelect}
+              disabled={isLoading}
+            >
+              <SelectTrigger className="w-full sm:w-[200px] bg-neutral-800/80 backdrop-blur-xl hover:bg-neutral-700/80 border-neutral-700/50 text-white font-medium rounded-xl h-10 transition-all">
+                <User className="w-4 h-4 mr-2 text-neutral-400"/>
+                <SelectValue placeholder="Select Driver" />
+              </SelectTrigger>
+              <SelectContent className="bg-neutral-900 backdrop-blur-xl border-neutral-700/50 text-white rounded-xl max-h-[300px]">
+                {Object.entries(teamGroups).map(([team, teamDrivers]) => (
+                  teamDrivers.length > 0 && (
+                    <SelectGroup key={team}>
+                      <SelectLabel className="text-xs text-neutral-500 uppercase tracking-wider font-bold">{team}</SelectLabel>
+                      {teamDrivers.map(driver => (
+                        <SelectItem 
                           key={driver} 
-                          onClick={() => addDriver(driver)}
-                          className="cursor-pointer"
+                          value={driver} 
+                          className="text-sm font-medium hover:bg-neutral-800 cursor-pointer rounded-lg"
                         >
                           <div className="flex items-center">
                             <div 
@@ -586,71 +550,129 @@ export default function DamageChart(props) {
                             />
                             {driver}
                           </div>
-                        </DropdownMenuItem>
-                      )
-                    ))}
-                  </React.Fragment>
-                )
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        
-        {/* Additional drivers badges - show which drivers are being compared */}
-        {additionalDrivers.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {additionalDrivers.map((driver, index) => {
-              const lineStyle = getLineStyleForDriver(driver);
-              return (
-                <Badge 
-                  key={driver}
-                  className="bg-gray-800 hover:bg-gray-700 pl-2 pr-1 py-1 flex items-center gap-1"
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Add driver dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="h-10 px-4 bg-neutral-800/80 backdrop-blur-xl hover:bg-neutral-700/80 text-white border border-neutral-700/50 rounded-xl font-medium transition-all"
+                  disabled={isLoading || additionalDrivers.length >= 2}
                 >
-                  <div className="flex items-center">
-                    <div 
-                      className="w-2 h-2 rounded-full mr-1" 
-                      style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
-                    />
-                    <span className="mr-1">{driver}</span>
-                    <span className="mx-1 text-xs text-gray-400">
-                      ({lineStyle === "dashed" ? "dashed" : "dotted"})
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-4 w-4 p-0 rounded-full hover:bg-gray-600"
-                    onClick={() => removeDriver(driver)}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
-              );
-            })}
+                  <Plus className="w-4 h-4 mr-2" />
+                  {additionalDrivers.length >= 2 ? 'Max Drivers' : 'Add Driver'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="bg-neutral-900 backdrop-blur-xl border border-neutral-700/50 text-white rounded-xl">
+                <DropdownMenuLabel className="text-xs text-neutral-500 uppercase tracking-wider font-bold">
+                  Add Driver to Comparison
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-neutral-700/50" />
+                
+                {/* Group by teams */}
+                {Object.entries(teamGroups).map(([team, teamDrivers]) => (
+                  teamDrivers.length > 0 && (
+                    <React.Fragment key={team}>
+                      <DropdownMenuLabel className="text-xs text-neutral-500 uppercase tracking-wider font-bold">
+                        {team}
+                      </DropdownMenuLabel>
+                      {teamDrivers.map(driver => (
+                        !additionalDrivers.includes(driver) && driver !== selectedDriver && (
+                          <DropdownMenuItem 
+                            key={driver} 
+                            onClick={() => addDriver(driver)}
+                            className="cursor-pointer hover:bg-neutral-800 rounded-lg font-medium"
+                          >
+                            <div className="flex items-center">
+                              <div 
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
+                              />
+                              {driver}
+                            </div>
+                          </DropdownMenuItem>
+                        )
+                      ))}
+                    </React.Fragment>
+                  )
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        )}
-        
-        {/* Chart content */}
-        <div className="flex-grow" style={{ minHeight: '280px', height: 'calc(100% - 60px)' }}>
-          {renderContent()}
-        </div>
-        
-        {/* Download button */}
-        {processedDamageData && processedDamageData.length > 0 && (
-          <div className="mt-4 flex justify-end">
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="h-7 px-2.5 text-xs bg-gray-800 hover:bg-gray-700 text-white flex items-center gap-1.5 border border-gray-700"
-              onClick={handleDownload}
-              disabled={isExporting}
+          
+          {/* Additional drivers badges */}
+          {additionalDrivers.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-wrap gap-2 mb-6"
             >
-              <Download className="h-3.5 w-3.5" />
-              {isExporting ? "Exporting..." : "Download Chart"}
-            </Button>
+              {additionalDrivers.map((driver, index) => {
+                const lineStyle = getLineStyleForDriver(driver);
+                return (
+                  <Badge 
+                    key={driver}
+                    className="bg-neutral-800/80 backdrop-blur-xl hover:bg-neutral-700/80 border border-neutral-700/50 text-white pl-3 pr-2 py-2 flex items-center gap-2 rounded-full font-medium"
+                  >
+                    <div className="flex items-center">
+                      <div 
+                        className="w-2 h-2 rounded-full mr-2" 
+                        style={{ backgroundColor: driverColorMap?.[driver] || '#888' }}
+                      />
+                      <span className="mr-1">{driver}</span>
+                      <span className="mx-1 text-xs text-neutral-400">
+                        ({lineStyle === "dashed" ? "dashed" : "dotted"})
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0 rounded-full hover:bg-neutral-600"
+                      onClick={() => removeDriver(driver)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </Badge>
+                );
+              })}
+            </motion.div>
+          )}
+          
+          {/* Chart content */}
+          <div className="flex-grow" style={{ minHeight: '280px', height: 'calc(100% - 60px)' }}>
+            {renderContent()}
           </div>
-        )}
-      </CardContent>
-    </Card>
+          
+          {/* Download button */}
+          {processedDamageData && processedDamageData.length > 0 && (
+            <div className="mt-6 flex justify-end">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="h-10 px-6 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-400 hover:to-teal-400 text-black font-bold rounded-2xl flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all"
+                  onClick={handleDownload}
+                  disabled={isExporting}
+                >
+                  <Download className="h-4 w-4" />
+                  {isExporting ? "Exporting..." : "Download Chart"}
+                </Button>
+              </motion.div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }

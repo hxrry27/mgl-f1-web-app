@@ -1389,6 +1389,7 @@ export default function DashboardContainer() {
           team={raceInfo.winner.team}
           icon={<Trophy size={20} />}
           loading={isRaceInfoLoading} // Use separate loading state
+          cardType="winner"
         />
         <F1Card
           title="Pole Position"
@@ -1397,6 +1398,7 @@ export default function DashboardContainer() {
           team={raceInfo.poleSitter.team}
           icon={<Zap size={20} />}
           loading={isRaceInfoLoading} // Use separate loading state
+          cardType="pole"
         />
         <F1Card
           title="Fastest Lap"
@@ -1405,25 +1407,26 @@ export default function DashboardContainer() {
           team={raceInfo.fastestLap.team}
           icon={<Clock size={20} />}
           loading={isRaceInfoLoading} // Use separate loading state
+          cardType="fastestLap"
         />
       </div>
       
       {/* Main Content Area */}
-      <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-4 sm:p-6">
+      <div className="card-glass p-6">
         {/* Render the appropriate analysis component based on selected type */}
         {analysisType === 'lap-analysis' && (
           <Tabs defaultValue="race-time" className="w-full">
-            <TabsList className="bg-gray-800/60 border border-gray-700/60 mb-4">
-              <TabsTrigger value="race-time" className="data-[state=active]:bg-gray-700">
+            <TabsList className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl mb-4">
+              <TabsTrigger value="race-time" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">
                 Total Race View
               </TabsTrigger>
-              <TabsTrigger value="individual-lap" className="data-[state=active]:bg-gray-700">
+              <TabsTrigger value="individual-lap" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">
                 Individual Lap Analysis
               </TabsTrigger>
-              <TabsTrigger value="team-pace" className="data-[state=active]:bg-gray-700">
+              <TabsTrigger value="team-pace" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">
                 Team Pace Ranking
               </TabsTrigger>
-              <TabsTrigger value="lap-distro" className="data-[state=active]:bg-gray-700">
+              <TabsTrigger value="lap-distro" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-cyan-500 data-[state=active]:to-teal-500 data-[state=active]:text-black font-bold rounded-xl">
                 Lap Distribution
               </TabsTrigger>
             </TabsList>

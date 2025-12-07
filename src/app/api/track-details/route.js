@@ -54,11 +54,11 @@ export async function GET(request) {
       track.length_meters = 5000;
     }
 
-    console.log(`Found track: ${track.name}, Length: ${track.length_meters}m`);
+    //DEBUG: console.log(`Found track: ${track.name}, Length: ${track.length_meters}m`);
 
     return NextResponse.json({ track });
   } catch (error) {
-    console.error('Error fetching track details:', error);
+    //DEBUG: console.error('Error fetching track details:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error.message }, 
       { status: 500 }

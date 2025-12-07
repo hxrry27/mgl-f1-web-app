@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock, Zap, TrendingUp, BarChart2, Map } from 'lucide-react';
+import { cn } from "@/lib/utils";
 import trackLayouts from '@/data/track-layouts.json';
 
 // Enhanced Track Visualization Component with hover interactions
@@ -108,7 +110,7 @@ const F1TrackViz = ({
   if (!trackPath) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-center text-gray-400">
+        <div className="text-center text-neutral-400">
           <Map className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p>Track layout not available for {trackSlug}</p>
         </div>
@@ -810,17 +812,22 @@ export default function TrackDominanceChart({
   if (isLoading || isDominanceLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
       </div>
     );
   }
   
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
+    >
       {/* Header with controls */}
-      <Card className="bg-gray-900/70 border border-gray-700/80">
+      <Card className="card-glass overflow-hidden">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-white font-black text-xl tracking-tight flex items-center gap-2">
             <Map className="w-5 h-5" />
             Track Dominance Analysis
           </CardTitle>
@@ -829,14 +836,14 @@ export default function TrackDominanceChart({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Primary Driver Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Primary Driver</label>
+              <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Primary Driver</label>
               <Select value={selectedDriver || ''} onValueChange={onDriverSelect}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                <SelectTrigger className="bg-neutral-800/80 backdrop-blur-xl hover:bg-neutral-700/80 border-neutral-700/50 text-white rounded-xl h-10 transition-all">
                   <SelectValue placeholder="Select driver" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-neutral-900 backdrop-blur-xl border-neutral-700/50 rounded-xl">
                   {drivers.map(driver => (
-                    <SelectItem key={driver} value={driver} className="text-white">
+                    <SelectItem key={driver} value={driver} className="text-white hover:bg-neutral-800 cursor-pointer rounded-lg">
                       {driver} ({driverTeams[driver] || 'Unknown'})
                     </SelectItem>
                   ))}
@@ -846,17 +853,17 @@ export default function TrackDominanceChart({
             
             {/* Primary Lap Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Primary Lap</label>
+              <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Primary Lap</label>
               <Select value={selectedLap.toString()} onValueChange={(value) => onLapSelect(value === 'fastest' ? 'fastest' : parseInt(value))}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                <SelectTrigger className="bg-neutral-800/80 backdrop-blur-xl hover:bg-neutral-700/80 border-neutral-700/50 text-white rounded-xl h-10 transition-all">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="fastest" className="text-white">
+                <SelectContent className="bg-neutral-900 backdrop-blur-xl border-neutral-700/50 rounded-xl">
+                  <SelectItem value="fastest" className="text-white hover:bg-neutral-800 cursor-pointer rounded-lg">
                     Fastest Lap
                   </SelectItem>
                   {Array.from({ length: maxLapNumber }, (_, i) => i + 1).map(lap => (
-                    <SelectItem key={lap} value={lap.toString()} className="text-white">
+                    <SelectItem key={lap} value={lap.toString()} className="text-white hover:bg-neutral-800 cursor-pointer rounded-lg">
                       Lap {lap}
                     </SelectItem>
                   ))}
@@ -866,15 +873,15 @@ export default function TrackDominanceChart({
             
             {/* Comparison Driver Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Comparison Driver</label>
+              <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Comparison Driver</label>
               <Select value={comparisonDriver} onValueChange={handleComparisonDriverChange}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                <SelectTrigger className="bg-neutral-800/80 backdrop-blur-xl hover:bg-neutral-700/80 border-neutral-700/50 text-white rounded-xl h-10 transition-all">
                   <SelectValue placeholder="Select comparison driver" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="none" className="text-white">None</SelectItem>
+                <SelectContent className="bg-neutral-900 backdrop-blur-xl border-neutral-700/50 rounded-xl">
+                  <SelectItem value="none" className="text-white hover:bg-neutral-800 cursor-pointer rounded-lg">None</SelectItem>
                   {availableDrivers.map(driver => (
-                    <SelectItem key={driver} value={driver} className="text-white">
+                    <SelectItem key={driver} value={driver} className="text-white hover:bg-neutral-800 cursor-pointer rounded-lg">
                       {driver} ({driverTeams[driver] || 'Unknown'})
                     </SelectItem>
                   ))}
@@ -884,21 +891,21 @@ export default function TrackDominanceChart({
             
             {/* Comparison Lap Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Comparison Lap</label>
+              <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Comparison Lap</label>
               <Select 
                 value={comparisonLap.toString()} 
                 onValueChange={handleComparisonLapChange}
                 disabled={comparisonDriver === 'none'}
               >
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                <SelectTrigger className="bg-neutral-800/80 backdrop-blur-xl hover:bg-neutral-700/80 border-neutral-700/50 text-white rounded-xl h-10 transition-all">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
-                  <SelectItem value="fastest" className="text-white">
+                <SelectContent className="bg-neutral-900 backdrop-blur-xl border-neutral-700/50 rounded-xl">
+                  <SelectItem value="fastest" className="text-white hover:bg-neutral-800 cursor-pointer rounded-lg">
                     Fastest Lap
                   </SelectItem>
                   {Array.from({ length: maxLapNumber }, (_, i) => i + 1).map(lap => (
-                    <SelectItem key={lap} value={lap.toString()} className="text-white">
+                    <SelectItem key={lap} value={lap.toString()} className="text-white hover:bg-neutral-800 cursor-pointer rounded-lg">
                       Lap {lap}
                     </SelectItem>
                   ))}
@@ -914,7 +921,7 @@ export default function TrackDominanceChart({
                 className="w-4 h-4 rounded-full" 
                 style={{ backgroundColor: primaryColor }}
               ></div>
-              <span className="text-sm text-gray-300">
+              <span className="text-sm text-neutral-300">
                 {selectedDriver} ({getLapDisplayText(selectedLap, selectedDriver)})
               </span>
             </div>
@@ -924,7 +931,7 @@ export default function TrackDominanceChart({
                   className="w-4 h-4 rounded-full" 
                   style={{ backgroundColor: comparisonColor }}
                 ></div>
-                <span className="text-sm text-gray-300">
+                <span className="text-sm text-neutral-300">
                   {comparisonDriver} ({getLapDisplayText(comparisonLap, comparisonDriver)})
                   {needsAlternateColorValue && (
                     <span className="ml-1 text-xs text-white"> (using white for {getColorChangeReason()})</span>
@@ -936,7 +943,7 @@ export default function TrackDominanceChart({
           
           {/* Hover instruction */}
           {comparisonDriver !== 'none' && sectorDeltas.length > 0 && (
-            <div className="mt-3 text-xs text-gray-400">
+            <div className="mt-3 text-xs text-neutral-400">
               💡 Hover over sectors on the track or bars in the chart to see which parts of the track they represent
             </div>
           )}
@@ -947,306 +954,363 @@ export default function TrackDominanceChart({
       {/* Summary Stats */}
       {summaryStats && comparisonDriver !== 'none' && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gray-900/70 border border-gray-700/80">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Mini Sectors Faster</p>
-                  <p className="text-2xl font-semibold" style={{ color: primaryColor }}>{summaryStats.driver1Faster}</p>
-                  <p className="text-xs text-gray-500">{selectedDriver}</p>
+          <motion.div whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.98 }}>
+            <Card className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-2">Mini Sectors Faster</p>
+                    <p className="text-3xl font-black text-white">{summaryStats.driver1Faster}</p>
+                    <p className="text-xs text-neutral-500 mt-1">{selectedDriver}</p>
+                  </div>
+                  <div className="rounded-full p-3 bg-cyan-500/20">
+                    <BarChart2 className="w-6 h-6 text-cyan-500" />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <Card className="bg-gray-900/70 border border-gray-700/80">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Mini Sectors Faster</p>
-                  <p className="text-2xl font-semibold" style={{ color: comparisonColor }}>{summaryStats.driver2Faster}</p>
-                  <p className="text-xs text-gray-500">{comparisonDriver}</p>
+          <motion.div whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.98 }}>
+            <Card className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-2">Mini Sectors Faster</p>
+                    <p className="text-3xl font-black text-white">{summaryStats.driver2Faster}</p>
+                    <p className="text-xs text-neutral-500 mt-1">{comparisonDriver}</p>
+                  </div>
+                  <div className="rounded-full p-3 bg-teal-500/20">
+                    <BarChart2 className="w-6 h-6 text-teal-500" />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <Card className="bg-gray-900/70 border border-gray-700/80">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Average Time Delta</p>
-                  <p className="text-2xl font-semibold text-white">{summaryStats.rawAvgDelta.toFixed(3)}s</p>
-                  <p className="text-xs text-gray-500">
-                    in favor of {summaryStats.averageFaster === 'driver1' ? selectedDriver : comparisonDriver}
-                  </p>
+          <motion.div whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.98 }}>
+            <Card className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-2">Average Time Delta</p>
+                    <p className="text-3xl font-black text-white">{summaryStats.rawAvgDelta.toFixed(3)}s</p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      in favor of {summaryStats.averageFaster === 'driver1' ? selectedDriver : comparisonDriver}
+                    </p>
+                  </div>
+                  <div className="rounded-full p-3 bg-blue-500/20">
+                    <Clock className="w-6 h-6 text-blue-500" />
+                  </div>
                 </div>
-                <Clock className="w-5 h-5 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
           
-          <Card className="bg-gray-900/70 border border-gray-700/80">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-400">Max Time Delta</p>
-                  <p className="text-2xl font-semibold text-white">{summaryStats.rawMaxDelta.toFixed(3)}s</p>
-                  <p className="text-xs text-gray-500">
-                    in favor of {summaryStats.maxFaster === 'driver1' ? selectedDriver : comparisonDriver}
-                  </p>
+          <motion.div whileHover={{ scale: 1.03, y: -4 }} whileTap={{ scale: 0.98 }}>
+            <Card className="bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-neutral-400 uppercase tracking-wider font-bold mb-2">Max Time Delta</p>
+                    <p className="text-3xl font-black text-white">{summaryStats.rawMaxDelta.toFixed(3)}s</p>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      in favor of {summaryStats.maxFaster === 'driver1' ? selectedDriver : comparisonDriver}
+                    </p>
+                  </div>
+                  <div className="rounded-full p-3 bg-amber-500/20">
+                    <Zap className="w-6 h-6 text-amber-500" />
+                  </div>
                 </div>
-                <Zap className="w-5 h-5 text-yellow-400" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       )}
       
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Track Map with Sector Analysis */}
-        <Card className="bg-gray-900/70 border border-gray-700/80">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <Map className="w-5 h-5" />
-              Track Dominance Map
-              {hoveredSector && (
-                <span className="ml-2 text-sm text-blue-400">
-                  (Sector {hoveredSector})
-                </span>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <Card className="card-glass overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-white font-black text-lg flex items-center gap-2">
+                <Map className="w-5 h-5" />
+                Track Dominance Map
+                {hoveredSector && (
+                  <span className="ml-2 text-sm text-cyan-400">
+                    (Sector {hoveredSector})
+                  </span>
+                )}
+              </CardTitle>
+              {dominanceData && comparisonDriver === 'none' && (
+                <p className="text-sm text-neutral-400">Select a comparison driver to see track dominance</p>
               )}
-            </CardTitle>
-            {dominanceData && comparisonDriver === 'none' && (
-              <p className="text-sm text-gray-400">Select a comparison driver to see track dominance</p>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gray-800 rounded-lg p-4 min-h-[300px] flex items-center justify-center relative">
-              {/* Show loading indicator in corner instead of covering everything */}
-              {isTelemetryLoading && (
-                <div className="absolute top-2 right-2 z-10">
-                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
-              )}
-              
-              {/* Always show the track visualization - don't hide it during loading */}
-              {(isLoading || isDominanceLoading) ? (
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              ) : (
-                <F1TrackViz
-                  trackSlug={selectedRace}
-                  sectorDeltas={sectorDeltas}
-                  selectedDriver={selectedDriver}
-                  comparisonDriver={comparisonDriver}
-                  driverColorMap={driverColorMap}
-                  driverTeams={driverTeams}
-                  hoveredSector={hoveredSector}
-                  setHoveredSector={setHoveredSector}
-                />
-              )}
-            </div>
-            
-            {/* Legend */}
-            {comparisonDriver !== 'none' && (
-              <div className="flex items-center justify-center gap-6 mt-4">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: primaryColor }}
-                  ></div>
-                  <span className="text-sm text-gray-300">{selectedDriver} Faster</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full" 
-                    style={{ backgroundColor: comparisonColor }}
-                  ></div>
-                  <span className="text-sm text-gray-300">{comparisonDriver} Faster</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <span className="text-sm text-gray-300">Equal/Start-Finish</span>
-                </div>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-neutral-800/60 backdrop-blur-xl rounded-2xl p-4 min-h-[300px] flex items-center justify-center relative">
+                {/* Show loading indicator in corner instead of covering everything */}
+                {isTelemetryLoading && (
+                  <div className="absolute top-2 right-2 z-10">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-cyan-500"></div>
+                  </div>
+                )}
+                
+                {/* Always show the track visualization - don't hide it during loading */}
+                {(isLoading || isDominanceLoading) ? (
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+                ) : (
+                  <F1TrackViz
+                    trackSlug={selectedRace}
+                    sectorDeltas={sectorDeltas}
+                    selectedDriver={selectedDriver}
+                    comparisonDriver={comparisonDriver}
+                    driverColorMap={driverColorMap}
+                    driverTeams={driverTeams}
+                    hoveredSector={hoveredSector}
+                    setHoveredSector={setHoveredSector}
+                  />
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Sector Analysis Chart */}
-        <Card className="bg-gray-900/70 border border-gray-700/80">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <BarChart2 className="w-5 h-5" />
-              Mini Sector Time Deltas
-              {hoveredSector && (
-                <span className="ml-2 text-sm text-blue-400">
-                  (Sector {hoveredSector})
-                </span>
-              )}
-            </CardTitle>
-            {comparisonDriver === 'none' && (
-              <p className="text-sm text-gray-400">Select a comparison driver to see sector analysis</p>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="h-80 relative">
-              {sectorDeltas && sectorDeltas.length > 0 ? (
-                <>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={sectorDeltas} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis 
-                        dataKey="sector" 
-                        tick={{ fill: '#9CA3AF', fontSize: 10 }}
-                        label={{ value: 'Sector Number', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
-                        interval={Math.max(0, Math.floor(sectorDeltas.length / 20))}
-                      />
-                      <YAxis 
-                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                        label={{ value: 'Time Delta (s)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
-                        domain={['dataMin', 'dataMax']}
-                        tickFormatter={(value) => `${value.toFixed(3)}s`}
-                      />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', borderRadius: '8px' }}
-                        labelStyle={{ color: '#FFFFFF' }}
-                        itemStyle={{ color: '#FFFFFF' }}
-                        formatter={(value, name) => {
-                          const delta = Math.abs(value).toFixed(3);
-                          // Fix the logic: negative values mean selectedDriver is faster, positive means comparisonDriver is faster
-                          const faster = value < 0 ? selectedDriver : comparisonDriver;
-                          return [`${faster} faster by ${delta}s`, ''];
-                        }}
-                        labelFormatter={(label) => `Sector ${label}`}
-                      />
-                      <Bar dataKey="timeDelta" name="Sector Advantage">
-                        {sectorDeltas.map((entry, index) => {
-                          const isHovered = hoveredSector === entry.sector;
-                          
-                          // Set opacity based on advantage and hover state
-                          const baseOpacity = Math.max(0.6, Math.min(entry.advantage / 5, 0.95));
-                          const opacity = isHovered ? 1.0 : baseOpacity;
-                          
-                          // Get the driver colors with same team handling
-                          const fillColor = entry.faster === 'driver1' 
-                            ? primaryColor 
-                            : comparisonColor;
-                          
-                          return (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={fillColor} 
-                              opacity={opacity}
-                              stroke={isHovered ? '#6B7280' : 'none'} // Dark theme stroke
-                              strokeWidth={isHovered ? 2 : 0}
-                              style={{
-                                cursor: 'pointer',
-                                transition: 'opacity 0.15s ease, stroke-width 0.15s ease'
-                              }}
-                              onMouseEnter={() => setHoveredSector(entry.sector)}
-                              onMouseLeave={() => setHoveredSector(null)}
-                            />
-                          );
-                        })}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  <div className="text-center">
-                    <BarChart2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>{!selectedDriver ? 'Select a primary driver' : 'Select a comparison driver to analyze sectors'}</p>
+              
+              {/* Legend */}
+              {comparisonDriver !== 'none' && (
+                <div className="flex items-center justify-center gap-6 mt-4">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: primaryColor }}
+                    ></div>
+                    <span className="text-sm text-neutral-300">{selectedDriver} Faster</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: comparisonColor }}
+                    ></div>
+                    <span className="text-sm text-neutral-300">{comparisonDriver} Faster</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
+                    <span className="text-sm text-neutral-300">Equal/Start-Finish</span>
                   </div>
                 </div>
               )}
-            </div>
-            
-            <div className="mt-3 text-xs text-gray-400">
-              <p>Positive values indicate {comparisonDriver} is faster, negative values indicate {selectedDriver} is faster</p>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        {/* Sector Analysis Chart */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Card className="card-glass overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-white font-black text-lg flex items-center gap-2">
+                <BarChart2 className="w-5 h-5" />
+                Mini Sector Time Deltas
+                {hoveredSector && (
+                  <span className="ml-2 text-sm text-cyan-400">
+                    (Sector {hoveredSector})
+                  </span>
+                )}
+              </CardTitle>
+              {comparisonDriver === 'none' && (
+                <p className="text-sm text-neutral-400">Select a comparison driver to see sector analysis</p>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="h-80 relative">
+                {sectorDeltas && sectorDeltas.length > 0 ? (
+                  <>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={sectorDeltas} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(64, 64, 64, 0.3)" />
+                        <XAxis 
+                          dataKey="sector" 
+                          tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 10 }}
+                          label={{ value: 'Sector Number', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: 'rgba(163, 163, 163, 0.9)' } }}
+                          interval={Math.max(0, Math.floor(sectorDeltas.length / 20))}
+                          stroke="rgba(115, 115, 115, 0.5)"
+                        />
+                        <YAxis 
+                          tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }}
+                          label={{ value: 'Time Delta (s)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'rgba(163, 163, 163, 0.9)' } }}
+                          domain={['dataMin', 'dataMax']}
+                          tickFormatter={(value) => `${value.toFixed(3)}s`}
+                          stroke="rgba(115, 115, 115, 0.5)"
+                        />
+                        <Tooltip
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(23, 23, 23, 0.95)', 
+                            borderColor: 'rgba(64, 64, 64, 0.5)', 
+                            borderRadius: '16px',
+                            backdropFilter: 'blur(12px)'
+                          }}
+                          labelStyle={{ color: '#22d3ee', fontWeight: 'bold' }}
+                          itemStyle={{ color: '#FFFFFF' }}
+                          formatter={(value, name) => {
+                            const delta = Math.abs(value).toFixed(3);
+                            // Fix the logic: negative values mean selectedDriver is faster, positive means comparisonDriver is faster
+                            const faster = value < 0 ? selectedDriver : comparisonDriver;
+                            return [`${faster} faster by ${delta}s`, ''];
+                          }}
+                          labelFormatter={(label) => `Sector ${label}`}
+                        />
+                        <Bar dataKey="timeDelta" name="Sector Advantage" radius={[8, 8, 0, 0]}>
+                          {sectorDeltas.map((entry, index) => {
+                            const isHovered = hoveredSector === entry.sector;
+                            
+                            // Set opacity based on advantage and hover state
+                            const baseOpacity = Math.max(0.6, Math.min(entry.advantage / 5, 0.95));
+                            const opacity = isHovered ? 1.0 : baseOpacity;
+                            
+                            // Get the driver colors with same team handling
+                            const fillColor = entry.faster === 'driver1' 
+                              ? primaryColor 
+                              : comparisonColor;
+                            
+                            return (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={fillColor} 
+                                opacity={opacity}
+                                stroke={isHovered ? '#6B7280' : 'none'} // Dark theme stroke
+                                strokeWidth={isHovered ? 2 : 0}
+                                style={{
+                                  cursor: 'pointer',
+                                  transition: 'opacity 0.15s ease, stroke-width 0.15s ease'
+                                }}
+                                onMouseEnter={() => setHoveredSector(entry.sector)}
+                                onMouseLeave={() => setHoveredSector(null)}
+                              />
+                            );
+                          })}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-neutral-400">
+                    <div className="text-center">
+                      <BarChart2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p>{!selectedDriver ? 'Select a primary driver' : 'Select a comparison driver to analyze sectors'}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-3 text-xs text-neutral-400">
+                <p>Positive values indicate {comparisonDriver} is faster, negative values indicate {selectedDriver} is faster</p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
       
       {/* Speed Trace Chart */}
       {comparisonDriver !== 'none' && speedTraceData.length > 0 && (
-        <Card className="bg-gray-900/70 border border-gray-700/80">
-          <CardHeader>
-            <CardTitle className="text-white text-lg flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Speed Trace Comparison
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={speedTraceData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis 
-                    dataKey="distance" 
-                    tick={{ fill: '#9CA3AF', fontSize: 10 }}
-                    label={{ value: 'Distance (m)', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
-                    tickFormatter={(value) => `${Math.round(value)}m`}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                    label={{ value: 'Speed (km/h)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: '#9CA3AF' } }}
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', borderRadius: '8px' }}
-                    labelStyle={{ color: '#F3F4F6' }}
-                    formatter={(value, name) => {
-                      const formattedValue = `${value} km/h`;
-                      const driver = name === 'primarySpeed' ? selectedDriver : comparisonDriver;
-                      return [formattedValue, driver];
-                    }}
-                    labelFormatter={(value) => `Distance: ${value}m`}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="primarySpeed" 
-                    name="primarySpeed"
-                    stroke={primaryColor}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="comparisonSpeed"
-                    name="comparisonSpeed" 
-                    stroke={comparisonColor}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <Card className="card-glass overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-white font-black text-lg flex items-center gap-2">
+                <TrendingUp className="w-5 h-5" />
+                Speed Trace Comparison
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={speedTraceData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(64, 64, 64, 0.3)" />
+                    <XAxis 
+                      dataKey="distance" 
+                      tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 10 }}
+                      label={{ value: 'Distance (m)', position: 'insideBottom', offset: -5, style: { textAnchor: 'middle', fill: 'rgba(163, 163, 163, 0.9)' } }}
+                      tickFormatter={(value) => `${Math.round(value)}m`}
+                      stroke="rgba(115, 115, 115, 0.5)"
+                    />
+                    <YAxis 
+                      tick={{ fill: 'rgba(163, 163, 163, 0.9)', fontSize: 12 }}
+                      label={{ value: 'Speed (km/h)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fill: 'rgba(163, 163, 163, 0.9)' } }}
+                      stroke="rgba(115, 115, 115, 0.5)"
+                    />
+                    <Tooltip
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(23, 23, 23, 0.95)', 
+                        borderColor: 'rgba(64, 64, 64, 0.5)', 
+                        borderRadius: '16px',
+                        backdropFilter: 'blur(12px)'
+                      }}
+                      labelStyle={{ color: '#22d3ee', fontWeight: 'bold' }}
+                      itemStyle={{ color: '#FFFFFF' }}
+                      formatter={(value, name) => {
+                        const formattedValue = `${value} km/h`;
+                        const driver = name === 'primarySpeed' ? selectedDriver : comparisonDriver;
+                        return [formattedValue, driver];
+                      }}
+                      labelFormatter={(value) => `Distance: ${value}m`}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="primarySpeed" 
+                      name="primarySpeed"
+                      stroke={primaryColor}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="comparisonSpeed"
+                      name="comparisonSpeed" 
+                      stroke={comparisonColor}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
       
       {/* Additional info */}
-      <Card className="bg-gray-900/70 border border-gray-700/80">
-        <CardContent className="p-4">
-          <div className="text-sm text-gray-400">
-            <p className="mb-2">
-              <strong>How it works:</strong> This analysis uses official F1 track layouts from FastF1 API telemetry data. 
-              The track is divided into 25 mini sectors to analyze performance differences between drivers lap times.
-            </p>
-            <p className="mb-2">
-              Colored segments on the track indicate sector dominance - {selectedDriver}'s team color where {selectedDriver} was faster, 
-              {comparisonDriver !== 'none' ? ` ${comparisonDriver}'s ` : ' comparison driver\'s '} 
-              {needsAlternateColorValue ? 'alternate color (white)' : 'team color'} where they had the advantage.
-              {needsAlternateColorValue && ` White color is used for better visibility when drivers are from ${getColorChangeReason()}.`}
-            </p>
-            <p>
-              <strong>💡 Interactive:</strong> Hover over any sector on the track map or bar in the chart to highlight the corresponding location on both visualizations.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+      >
+        <Card className="card-glass overflow-hidden">
+          <CardContent className="p-6">
+            <div className="text-sm text-neutral-400">
+              <p className="mb-2">
+                <strong className="text-white">How it works:</strong> This analysis uses official F1 track layouts from FastF1 API telemetry data. 
+                The track is divided into 25 mini sectors to analyze performance differences between drivers lap times.
+              </p>
+              <p className="mb-2">
+                Colored segments on the track indicate sector dominance - {selectedDriver}'s team color where {selectedDriver} was faster, 
+                {comparisonDriver !== 'none' ? ` ${comparisonDriver}'s ` : ' comparison driver\'s '} 
+                {needsAlternateColorValue ? 'alternate color (white)' : 'team color'} where they had the advantage.
+                {needsAlternateColorValue && ` White color is used for better visibility when drivers are from ${getColorChangeReason()}.`}
+              </p>
+              <p>
+                <strong className="text-white">💡 Interactive:</strong> Hover over any sector on the track map or bar in the chart to highlight the corresponding location on both visualizations.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

@@ -294,19 +294,20 @@ export default async function SeasonsPage({ params }) {
   }
 
   return (
-    <div className="container mx-auto px-4 max-w-6xl">
-      {/* Season Header with Selector and Tabs */}
-      <SeasonTabs
-        season={season}
-        isOverall={isOverall}
-        drivers={drivers}
-        constructors={constructors}
-        overviewStats={overviewStats}
-        error={error}
-        teamColors={teamColors}
-        lightTeams={lightTeams}
-        availableSeasons={availableSeasons}
-      />
+    <div className="bg-primary">
+      <div className="max-w-[1400px] mx-auto px-6 py-8 pb-12">
+        <SeasonTabs
+          season={seasonNum || 'overall'}
+          isOverall={isOverall}
+          drivers={drivers}
+          constructors={constructors}
+          overviewStats={overviewStats}
+          error={error}
+          teamColors={teamColors}
+          lightTeams={lightTeams}
+          availableSeasons={availableSeasons}
+        />
+      </div>
     </div>
   );
 }

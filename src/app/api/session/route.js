@@ -18,7 +18,7 @@ export async function GET(request) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error("Error querying sessiondata:", error);
+    //DEBUG: console.error("Error querying sessiondata:", error);
     return new Response(
       JSON.stringify({ error: "Failed to fetch session data" }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }

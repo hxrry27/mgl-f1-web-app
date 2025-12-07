@@ -6,7 +6,7 @@ export async function GET() {
     const res = await pool.query('SELECT slug FROM tracks ORDER BY slug ASC');
     return Response.json(res.rows);
   } catch (error) {
-    console.error('Error fetching tracks:', error);
+    //DEBUG: console.error('Error fetching tracks:', error);
     return Response.json({ error: 'Failed to fetch tracks' }, { status: 500 });
   }
 }

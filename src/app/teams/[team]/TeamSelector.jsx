@@ -1,26 +1,23 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, UsersRound } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { teams } from '@/lib/data';
 
-// Function to normalize team names for URLs
 const normalizeTeamName = (name) => {
   return name.toLowerCase().replace(/\s+/g, '-');
 };
 
-// Function to get team name from URL
 const getTeamFromUrl = (name) => {
   return teams.find(team => normalizeTeamName(team) === name) || name;
 };
 
 export default function TeamSelector({ currentTeam }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [isChanging, setIsChanging] = useState(false);
 
   const handleTeamChange = async (newTeamUrl) => {
@@ -30,10 +27,7 @@ export default function TeamSelector({ currentTeam }) {
     if (newTeamName === currentTeamName) return;
     
     setIsChanging(true);
-    const newPath = `/teams/${newTeamUrl}`;
-    router.push(newPath);
-    
-    // Reset loading state after navigation
+    router.push(`/teams/${newTeamUrl}`);
     setTimeout(() => setIsChanging(false), 300);
   };
 
@@ -57,62 +51,77 @@ export default function TeamSelector({ currentTeam }) {
   const canGoForward = teams.map(normalizeTeamName).indexOf(currentTeam) < teams.length - 1;
 
   return (
-    <div className="flex items-center gap-3 p-4 bg-gray-900/50 border border-gray-700/60 rounded-lg backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-gray-400">
+    <div className="flex items-center gap-3 p-4 bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl">
+      <div className="flex items-center gap-2 text-neutral-400">
         <UsersRound className="w-4 h-4" />
-        <span className="text-sm font-medium">Team</span>
+        <span className="text-sm font-bold uppercase tracking-wider">Team</span>
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Previous Team Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigateToTeam('prev')}
           disabled={!canGoBack || isChanging}
-          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+          className={cn(
+            "h-10 w-10 p-0 rounded-xl transition-all",
+            "bg-neutral-800/80 hover:bg-neutral-700 hover:scale-110",
+            "text-neutral-400 hover:text-cyan-400",
+            "disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-neutral-800/80"
+          )}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        {/* Team Selector */}
         <Select
           value={currentTeam}
           onValueChange={handleTeamChange}
           disabled={isChanging}
         >
           <SelectTrigger className={cn(
-            "w-48 h-8 bg-gray-800/60 border-gray-600 text-white text-center font-semibold",
-            isChanging && "opacity-50"
+            "w-48 h-10 bg-neutral-800/80 border-neutral-700 rounded-xl",
+            "text-white font-black text-center",
+            "hover:bg-neutral-700 hover:border-cyan-500/50 transition-all",
+            isChanging && "opacity-50 cursor-wait"
           )}>
             <SelectValue>
               {getTeamFromUrl(currentTeam)}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-600">
+          
+          <SelectContent className="bg-neutral-900 border-neutral-700 backdrop-blur-xl rounded-xl">
             {teams.map((team) => (
-              <SelectItem key={team} value={normalizeTeamName(team)} className="text-white">
+              <SelectItem 
+                key={team} 
+                value={normalizeTeamName(team)}
+                className="text-white font-medium hover:bg-neutral-800 focus:bg-neutral-800 rounded-lg cursor-pointer"
+              >
                 {team}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Next Team Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigateToTeam('next')}
           disabled={!canGoForward || isChanging}
-          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+          className={cn(
+            "h-10 w-10 p-0 rounded-xl transition-all",
+            "bg-neutral-800/80 hover:bg-neutral-700 hover:scale-110",
+            "text-neutral-400 hover:text-cyan-400",
+            "disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-neutral-800/80"
+          )}
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
       
       {isChanging && (
-        <div className="text-xs text-gray-400 animate-pulse">
-          Loading...
+        <div className="flex items-center gap-2 text-xs text-neutral-500 animate-pulse ml-2">
+          <div className="h-2 w-2 bg-cyan-400 rounded-full animate-ping" />
+          <span className="font-medium">Loading...</span>
         </div>
       )}
     </div>

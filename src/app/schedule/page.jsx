@@ -199,7 +199,7 @@ export default function SchedulePage() {
                 
                 {race.status_class === 'completed' && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Link href={`/results/season/${currentSeason}/${race.track}`} passHref>
+                    <Link href={`/races/season/${currentSeason}/${race.track}`} passHref>
                       <button className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm flex items-center gap-1">
                         <Trophy className="h-4 w-4" /> Results
                       </button>

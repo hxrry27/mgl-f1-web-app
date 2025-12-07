@@ -1,7 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-import { f1Theme } from '@/lib/shadcn-theme'
-
-module.exports = {
+const config = {
   darkMode: ["class"],
   content: [
     './pages/**/*.{js,jsx}',
@@ -75,4 +73,6 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
+
+export default config;

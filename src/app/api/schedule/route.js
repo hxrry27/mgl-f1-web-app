@@ -112,7 +112,7 @@ export async function GET(req) {
       return new Response(JSON.stringify(result), { status: 200 });
     }
   } catch (error) {
-    console.error('Schedule fetch error:', error);
+    //DEBUG: console.error('Schedule fetch error:', error);
     return new Response(JSON.stringify({ schedule: [] }), { status: 500 });
   }
 }

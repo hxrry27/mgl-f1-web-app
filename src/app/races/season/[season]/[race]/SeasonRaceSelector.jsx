@@ -114,20 +114,20 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
             ? racesWithResults[0].slug  // Most recent race with results
             : data.races[0].slug;       // Fallback to first race if none have results
           
-          const newPath = `/results/season/${newSeason}/${targetRace}`;
+          const newPath = `/races/season/${newSeason}/${targetRace}`;
           router.push(newPath);
         } else {
           // Fallback to hardcoded if API returns no races
           const seasonRaces = SEASON_RACES[newSeason] || [];
           const firstRace = seasonRaces[0] || 'bahrain';
-          const newPath = `/results/season/${newSeason}/${firstRace}`;
+          const newPath = `/races/season/${newSeason}/${firstRace}`;
           router.push(newPath);
         }
       } else {
         // Fallback to hardcoded if API fails
         const seasonRaces = SEASON_RACES[newSeason] || [];
         const firstRace = seasonRaces[0] || 'bahrain';
-        const newPath = `/results/season/${newSeason}/${firstRace}`;
+        const newPath = `/races/season/${newSeason}/${firstRace}`;
         router.push(newPath);
       }
     } catch (error) {
@@ -135,7 +135,7 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
       // Fallback to hardcoded
       const seasonRaces = SEASON_RACES[newSeason] || [];
       const firstRace = seasonRaces[0] || 'bahrain';
-      const newPath = `/results/season/${newSeason}/${firstRace}`;
+      const newPath = `/races/season/${newSeason}/${firstRace}`;
       router.push(newPath);
     }
     
@@ -152,7 +152,7 @@ export default function SeasonRaceSelector({ currentSeason, currentRace }) {
     }
     
     setIsChanging(true);
-    const newPath = `/results/season/${currentSeason}/${newRace}`;
+    const newPath = `/races/season/${currentSeason}/${newRace}`;
     router.push(newPath);
     
     setTimeout(() => setIsChanging(false), 300);

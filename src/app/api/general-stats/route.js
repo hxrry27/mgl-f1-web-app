@@ -6,7 +6,7 @@ const pool = require('@/lib/db');
 
 // Move your ENTIRE computation logic to this function
 async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
-  console.log(`Computing general stats for season ${season}, race ${raceSlug}, session type ${sessionType}`);
+  //DEBUG: console.log(`Computing general stats for season ${season}, race ${raceSlug}, session type ${sessionType}`);
 
   // 1. Get the race_id by joining races with tracks to find by track slug
   const raceResult = await pool.query(`
@@ -21,7 +21,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
   }
 
   const raceId = raceResult.rows[0].id;
-  console.log(`Found race ID: ${raceId}`);
+  //DEBUG: console.log(`Found race ID: ${raceId}`);
 
   // 2. Get session UID for this race
   const sessionResult = await pool.query(
@@ -35,7 +35,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
 
   // Select the appropriate session based on session type
   const sessionUids = sessionResult.rows.map(row => row.session_uid);
-  console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
+  //DEBUG: console.log(`Found ${sessionUids.length} sessions for this race: ${sessionUids.join(', ')}`);
   
   let sessionUid;
   if (sessionType === 'qualifying' && sessionUids.length > 0) {
@@ -46,7 +46,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
     sessionUid = sessionUids[sessionUids.length - 1];
   }
   
-  console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
+  //DEBUG: console.log(`Selected session UID: ${sessionUid} for ${sessionType}`);
 
   // 3. Get the driver info from participants table
   const driversResult = await pool.query(`
@@ -65,7 +65,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
       p.car_index
   `, [sessionUid]);
 
-  console.log(`Found ${driversResult.rows.length} drivers`);
+  //DEBUG: console.log(`Found ${driversResult.rows.length} drivers`);
 
   // Create driver mapping for car_index to driver info
   const driverMap = {};
@@ -88,7 +88,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
   const hasFrameIdentifier = frameIdentifierCheck.rows.length > 0 && 
                             frameIdentifierCheck.rows[0].has_frames > 0;
 
-  console.log(`Frame identifiers available: ${hasFrameIdentifier ? 'Yes' : 'No'}`);
+  //DEBUG: console.log(`Frame identifiers available: ${hasFrameIdentifier ? 'Yes' : 'No'}`);
 
   // 4. ERS data - deployed and harvested (per lap max/min) with explicit debugging
   const ersQuery = `
@@ -465,7 +465,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
     ] = await Promise.all([
       pool.query(ersQuery, [sessionUid]),
       pool.query(ersTotalQuery, [sessionUid]).catch(err => {
-        console.error('Error fetching ERS total data:', err);
+        //DEBUG: console.error('Error fetching ERS total data:', err);
         return { rows: [] }; // Return empty result on error
       }),
       pool.query(speedQuery, [sessionUid]),
@@ -476,13 +476,13 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
       pool.query(surfaceQuery, [sessionUid]),
     ]);
 
-    console.log("All queries executed successfully");
+    //DEBUG: console.log("All queries executed successfully");
 
     // Process ERS data with explicit debugging
     const ersData = ersResults.rows.map(row => {
       // Log the raw values from the database for debugging
-      console.log(`Car ${row.car_index} - Raw deployed: ${row.raw_max_deployed}, Raw harvested: ${row.raw_max_harvested}`);
-      console.log(`Car ${row.car_index} - Calculated MJ deployed: ${row.max_deployed_mj}, Calculated MJ harvested: ${row.max_harvested_mj}`);
+      //DEBUG: console.log(`Car ${row.car_index} - Raw deployed: ${row.raw_max_deployed}, Raw harvested: ${row.raw_max_harvested}`);
+      //DEBUG: console.log(`Car ${row.car_index} - Calculated MJ deployed: ${row.max_deployed_mj}, Calculated MJ harvested: ${row.max_harvested_mj}`);
       
       // Ensure values are properly handled as numbers
       const maxDeployedMj = parseFloat(row.max_deployed_mj || 0);
@@ -499,7 +499,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
         ? row.raw_max_harvested / 1000000 
         : maxHarvestedMj;
       
-      console.log(`Car ${row.car_index} - Final MJ deployed: ${fixedMaxDeployed}, Final MJ harvested: ${fixedMaxHarvested}`);
+      //DEBUG: console.log(`Car ${row.car_index} - Final MJ deployed: ${fixedMaxDeployed}, Final MJ harvested: ${fixedMaxHarvested}`);
         
       return {
         car_index: row.car_index,
@@ -1062,7 +1062,7 @@ async function computeGeneralStatsFromDatabase(season, raceSlug, sessionType) {
 
     return formattedStats;
   } catch (queryError) {
-    console.error('Error executing queries:', queryError);
+    //DEBUG: console.error('Error executing queries:', queryError);
     throw new Error(`Error executing database queries: ${queryError.message}`);
   }
 }
@@ -1097,7 +1097,7 @@ export async function GET(request) {
     );
 
   } catch (error) {
-    console.error('Error in general stats API:', error);
+    //DEBUG: console.error('Error in general stats API:', error);
     return NextResponse.json(
       { message: 'Internal server error', error: error.message },
       { status: 500 }

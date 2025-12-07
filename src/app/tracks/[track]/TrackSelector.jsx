@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, MapPin } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
-// Available tracks
 const tracks = [
   'bahrain', 'jeddah', 'melbourne', 'baku', 'miami', 'imola', 'monaco', 
   'barcelona', 'montreal', 'spielberg', 'silverstone', 'hungaroring', 
@@ -47,17 +46,13 @@ const trackNames = {
 
 export default function TrackSelector({ currentTrack }) {
   const router = useRouter();
-  const pathname = usePathname();
   const [isChanging, setIsChanging] = useState(false);
 
   const handleTrackChange = async (newTrack) => {
     if (newTrack === currentTrack) return;
     
     setIsChanging(true);
-    const newPath = `/tracks/${newTrack}`;
-    router.push(newPath);
-    
-    // Reset loading state after navigation
+    router.push(`/tracks/${newTrack}`);
     setTimeout(() => setIsChanging(false), 300);
   };
 
@@ -80,62 +75,77 @@ export default function TrackSelector({ currentTrack }) {
   const canGoForward = tracks.indexOf(currentTrack) < tracks.length - 1;
 
   return (
-    <div className="flex items-center gap-3 p-4 bg-gray-900/50 border border-gray-700/60 rounded-lg backdrop-blur-sm">
-      <div className="flex items-center gap-2 text-gray-400">
+    <div className="flex items-center gap-3 p-4 bg-neutral-900/60 backdrop-blur-xl border border-neutral-700/50 rounded-2xl">
+      <div className="flex items-center gap-2 text-neutral-400">
         <MapPin className="w-4 h-4" />
-        <span className="text-sm font-medium">Track</span>
+        <span className="text-sm font-bold uppercase tracking-wider">Track</span>
       </div>
       
       <div className="flex items-center gap-2">
-        {/* Previous Track Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigateToTrack('prev')}
           disabled={!canGoBack || isChanging}
-          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+          className={cn(
+            "h-10 w-10 p-0 rounded-xl transition-all",
+            "bg-neutral-800/80 hover:bg-neutral-700 hover:scale-110",
+            "text-neutral-400 hover:text-cyan-400",
+            "disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-neutral-800/80"
+          )}
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        {/* Track Selector */}
         <Select
           value={currentTrack}
           onValueChange={handleTrackChange}
           disabled={isChanging}
         >
           <SelectTrigger className={cn(
-            "w-48 h-8 bg-gray-800/60 border-gray-600 text-white text-center font-semibold",
-            isChanging && "opacity-50"
+            "w-48 h-10 bg-neutral-800/80 border-neutral-700 rounded-xl",
+            "text-white font-black text-center",
+            "hover:bg-neutral-700 hover:border-cyan-500/50 transition-all",
+            isChanging && "opacity-50 cursor-wait"
           )}>
             <SelectValue>
               {trackNames[currentTrack] || currentTrack}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-gray-800 border-gray-600">
+          
+          <SelectContent className="bg-neutral-900 border-neutral-700 backdrop-blur-xl rounded-xl">
             {tracks.map((track) => (
-              <SelectItem key={track} value={track} className="text-white">
+              <SelectItem 
+                key={track} 
+                value={track}
+                className="text-white font-medium hover:bg-neutral-800 focus:bg-neutral-800 rounded-lg cursor-pointer"
+              >
                 {trackNames[track] || track}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
-        {/* Next Track Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={() => navigateToTrack('next')}
           disabled={!canGoForward || isChanging}
-          className="h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-gray-800"
+          className={cn(
+            "h-10 w-10 p-0 rounded-xl transition-all",
+            "bg-neutral-800/80 hover:bg-neutral-700 hover:scale-110",
+            "text-neutral-400 hover:text-cyan-400",
+            "disabled:opacity-30 disabled:hover:scale-100 disabled:hover:bg-neutral-800/80"
+          )}
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-5 h-5" />
         </Button>
       </div>
       
       {isChanging && (
-        <div className="text-xs text-gray-400 animate-pulse">
-          Loading...
+        <div className="flex items-center gap-2 text-xs text-neutral-500 animate-pulse ml-2">
+          <div className="h-2 w-2 bg-cyan-400 rounded-full animate-ping" />
+          <span className="font-medium">Loading...</span>
         </div>
       )}
     </div>

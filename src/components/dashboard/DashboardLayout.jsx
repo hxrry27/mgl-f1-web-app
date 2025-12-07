@@ -4,8 +4,8 @@ import React from 'react';
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="bg-gray-900 bg-opacity-90 text-white h-full overflow-y-auto">
-      <div className="container mx-auto px-4 py-6">
+    <div className="min-h-screen bg-primary text-white overflow-y-auto">
+      <div className="container mx-auto px-4 py-6 pt-24">
         {children}
       </div>
     </div>

@@ -42,10 +42,10 @@ export default function ClientResultsSidebar({ season: initialSeason, races: ini
         {races.map((race) => (
           <button
             key={race}
-            onClick={() => router.push(`/results/season/${currentSeason}/${race}`)}
+            onClick={() => router.push(`/races/season/${currentSeason}/${race}`)}
             className={cn(
               "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
-              pathname === `/results/season/${currentSeason}/${race}` ? 
+              pathname === `/races/season/${currentSeason}/${race}` ? 
                 "bg-gray-800 text-white" : 
                 "text-gray-300 hover:bg-gray-800 hover:text-white"
             )}

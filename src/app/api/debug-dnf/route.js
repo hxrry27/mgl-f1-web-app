@@ -60,7 +60,7 @@ export async function GET(request) {
       uniqueStatuses: uniqueStatusResults.rows
     });
   } catch (error) {
-    console.error('Error in debug DNF API:', error);
+    //DEBUG: console.error('Error in debug DNF API:', error);
     return NextResponse.json(
       { error: 'Failed to debug DNF data', details: error.message },
       { status: 500 }
