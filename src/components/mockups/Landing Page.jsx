@@ -61,7 +61,7 @@ function StandingsBox({ drivers }) {
       transition={{ delay: 0.6, duration: 0.8 }}
       className="hidden xl:block w-[550px] ml-auto"
     >
-<Link href="/standings/season/12" className="block group">
+<Link href="/seasons/12" className="block group">
   <div className="relative min-h-[600px] w-full bg-neutral-900/60 backdrop-blur-xl rounded-3xl border border-neutral-700/50 overflow-hidden">
     
     <div className="p-8">
@@ -69,7 +69,7 @@ function StandingsBox({ drivers }) {
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-cyan-500/30">
         <h3 className="text-xl font-black text-white">Driver Standings</h3>
         <span className="text-cyan-400 text-sm font-bold flex items-center gap-1 group-hover:gap-2 transition-all">
-          View All <ArrowRight className="h-4 w-4" />
+          View Season <ArrowRight className="h-4 w-4" />
         </span>
       </div>
 
@@ -356,7 +356,7 @@ export default function NewLandingLayout() {
                 
                 {/* Next Race Button */}
                 {nextRace ? (
-                  <Link href={`/races/season/${nextRace.season}/${nextRace.slug}`}>
+                  <Link href={`/tracks/${nextRace.slug}`}>
                     <motion.div
                       whileHover={{ scale: 1.05, y: -2 }}
                       whileTap={{ scale: 0.95 }}
@@ -398,7 +398,7 @@ export default function NewLandingLayout() {
 
       {/* Mobile Bottom Card */}
       <div className="xl:hidden fixed bottom-0 left-0 right-0 z-20">
-        <Link href="/standings/season/12">
+        <Link href="/seasons/12">
           <div className="bg-neutral-900/95 backdrop-blur-xl p-6 border-t border-neutral-800">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-black text-white">Driver Standings</h3>

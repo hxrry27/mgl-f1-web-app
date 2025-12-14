@@ -69,6 +69,20 @@ function StatCard({ title, winner, allData, season, isUpcoming }) {
   );
 }
 
+// Helper function to check for ties and format winner display
+function getWinnerDisplay(data) {
+  if (!data || data.length === 0) return "Insufficient Data";
+  
+  const topValue = data[0].value;
+  const tiedDrivers = data.filter(d => d.value === topValue);
+  
+  if (tiedDrivers.length > 1) {
+    return `Multiple Drivers (${topValue})`;
+  }
+  
+  return `${data[0].name} (${topValue})`;
+}
+
 // Season Overview Tab Component
 function SeasonOverview({ overviewStats, season, isOverall, seasonStats, seasonInfo }) {
   const getSeasonStatus = () => {
@@ -264,23 +278,11 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats, seasonI
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <StatCard 
                   title="Most Career Wins" 
-                  winner={(() => {
-                    const winsData = generateStatData('wins', seasonStats);
-                    return winsData.length > 0 ? `${winsData[0].name} (${winsData[0].value})` : "Insufficient Data";
-                  })()} 
-                  allData={generateStatData('wins', seasonStats)} 
-                  season={season} 
-                  isUpcoming={false} 
+                  winner={getWinnerDisplay(generateStatData('wins', seasonStats))}
                 />
                 <StatCard 
                   title="Most Career Podiums" 
-                  winner={(() => {
-                    const podiumsData = generateStatData('podiums', seasonStats);
-                    return podiumsData.length > 0 ? `${podiumsData[0].name} (${podiumsData[0].value})` : "Insufficient Data";
-                  })()} 
-                  allData={generateStatData('podiums', seasonStats)} 
-                  season={season} 
-                  isUpcoming={false} 
+                  winner={getWinnerDisplay(generateStatData('podiums', seasonStats))} 
                 />
                 <StatCard 
                   title="Most Career Fastest Laps" 
@@ -375,21 +377,21 @@ function SeasonOverview({ overviewStats, season, isOverall, seasonStats, seasonI
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <StatCard title="Most Wins" winner={isUpcoming ? "N/A" : (() => { const winsData = generateStatData('wins', seasonStats); return winsData.length > 0 ? `${winsData[0].name} (${winsData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('wins', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most Podiums" winner={isUpcoming ? "N/A" : (() => { const podiumsData = generateStatData('podiums', seasonStats); return podiumsData.length > 0 ? `${podiumsData[0].name} (${podiumsData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('podiums', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most Fastest Laps" winner={isUpcoming ? "N/A" : (() => { const fastestLapsData = generateStatData('fastestLaps', seasonStats); return fastestLapsData.length > 0 ? `${fastestLapsData[0].name} (${fastestLapsData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('fastestLaps', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most Poles" winner={isUpcoming ? "N/A" : (() => { const polesData = generateStatData('poles', seasonStats); return polesData.length > 0 ? `${polesData[0].name} (${polesData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('poles', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Best Avg Grid Position" winner={isUpcoming ? "N/A" : (() => { const avgGridData = generateStatData('avgGrid', seasonStats); return avgGridData.length > 0 ? `${avgGridData[0].name} (${avgGridData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('avgGrid', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Best Avg Finish Position" winner={isUpcoming ? "N/A" : (() => { const avgFinishData = generateStatData('avgFinish', seasonStats); return avgFinishData.length > 0 ? `${avgFinishData[0].name} (${avgFinishData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('avgFinish', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most DNFs" winner={isUpcoming ? "N/A" : (() => { const dnfsData = generateStatData('dnfs', seasonStats); return dnfsData.length > 0 && dnfsData[0].value > 0 ? `${dnfsData[0].name} (${dnfsData[0].value})` : "None"; })()} allData={generateStatData('dnfs', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most Penalties" winner={isUpcoming ? "N/A" : (() => { const penaltiesData = generateStatData('penalties', seasonStats); return penaltiesData.length > 0 && penaltiesData[0].value > 0 ? `${penaltiesData[0].name} (${penaltiesData[0].value})` : "None"; })()} allData={generateStatData('penalties', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most DSQs" winner={isUpcoming ? "N/A" : (() => { const dsqsData = generateStatData('dsqs', seasonStats); return dsqsData.length > 0 && dsqsData[0].value > 0 ? `${dsqsData[0].name} (${dsqsData[0].value})` : "None"; })()} allData={generateStatData('dsqs', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Best Avg Points" winner={isUpcoming ? "N/A" : (() => { const avgPointsData = generateStatData('avgPoints', seasonStats); return avgPointsData.length > 0 ? `${avgPointsData[0].name} (${avgPointsData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('avgPoints', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most Avg Places Gained" winner={isUpcoming ? "N/A" : (() => { const placesGainedData = generateStatData('placesGained', seasonStats); return placesGainedData.length > 0 ? `${placesGainedData[0].name} (${placesGainedData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('placesGained', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Most Avg Overtakes" winner={isUpcoming ? "N/A" : (() => { const overtakesData = generateStatData('overtakes', seasonStats); return overtakesData.length > 0 ? `${overtakesData[0].name} (${overtakesData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('overtakes', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Best Finish Rate" winner={isUpcoming ? "N/A" : (() => { const finishRateData = generateStatData('finishRate', seasonStats); return finishRateData.length > 0 ? `${finishRateData[0].name} (${finishRateData[0].value})` : "Insufficient Data"; })()} allData={generateStatData('finishRate', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Max Finish Streak" winner={isUpcoming ? "N/A" : (() => { const finishStreakData = generateStatData('finishStreak', seasonStats); return finishStreakData.length > 0 ? `${finishStreakData[0].name} (${finishStreakData[0].value} races)` : "Insufficient Data"; })()} allData={generateStatData('finishStreak', seasonStats)} season={season} isUpcoming={isUpcoming} />
-                <StatCard title="Max Points Streak" winner={isUpcoming ? "N/A" : (() => { const pointsStreakData = generateStatData('pointsStreak', seasonStats); return pointsStreakData.length > 0 ? `${pointsStreakData[0].name} (${pointsStreakData[0].value} races)` : "Insufficient Data"; })()} allData={generateStatData('pointsStreak', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most Wins" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('wins', seasonStats))} allData={generateStatData('wins', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most Podiums" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('podiums', seasonStats))} allData={generateStatData('podiums', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most Fastest Laps" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('fastestLaps', seasonStats))} allData={generateStatData('fastestLaps', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most Poles" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('poles', seasonStats))} allData={generateStatData('poles', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Best Avg Grid Position" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('avgGrid', seasonStats))} allData={generateStatData('avgGrid', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Best Avg Finish Position" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('avgFinish', seasonStats))} allData={generateStatData('avgFinish', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most DNFs" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('dnfs', seasonStats))} allData={generateStatData('dnfs', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most Penalties" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('penalties', seasonStats))} allData={generateStatData('penalties', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most DSQs" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('dsqs', seasonStats))} allData={generateStatData('dsqs', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Best Avg Points" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('avgPoints', seasonStats))} allData={generateStatData('avgPoints', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most Avg Places Gained" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('placesGained', seasonStats))} allData={generateStatData('placesGained', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Most Avg Overtakes" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('overtakes', seasonStats))} allData={generateStatData('overtakes', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Best Finish Rate" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('finishRate', seasonStats))} allData={generateStatData('finishRate', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Max Finish Streak" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('finishStreak', seasonStats))} allData={generateStatData('finishStreak', seasonStats)} season={season} isUpcoming={isUpcoming} />
+                <StatCard title="Max Points Streak" winner={isUpcoming ? "N/A" : getWinnerDisplay(generateStatData('pointsStreak', seasonStats))} allData={generateStatData('pointsStreak', seasonStats)} season={season} isUpcoming={isUpcoming} />
               </div>
             </CardContent>
           </Card>

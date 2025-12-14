@@ -19,7 +19,7 @@ async function getAvailableSeasons() {
 }
 
 // Process race results for dynamic standings calculation
-async function processRaceResults(raceIds) {
+async function processRaceResults(raceIds, season) {
   const resultsRes = await pool.query(
     'SELECT rr.race_id, rr.position, rr.adjusted_position, d.name AS driver, t.name AS team, rr.time_int, rr.fastest_lap_time_int, ' +
     'rr.penalty_secs_ingame, rr.post_race_penalty_secs, rr.status ' +
@@ -57,7 +57,7 @@ async function processRaceResults(raceIds) {
     const team = result.team;
     const points = position <= 10 ? pointsSystem[position - 1] : 0;
     const isFastestLap = result.fastest_lap_time_int && fastestLapDrivers.get(result.race_id)?.includes(driver) && position <= 10;
-    const fastestLapPoint = isFastestLap ? 1 : 0;
+    const fastestLapPoint = isFastestLap && parseInt(season) < 12 ? 1 : 0;
     const totalPoints = points + fastestLapPoint;
 
     if (driverStandingsMap.has(driver)) {
