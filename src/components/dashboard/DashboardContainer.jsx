@@ -154,11 +154,29 @@ export default function DashboardContainer() {
 
           if (data.races && data.races.length) {
             setRaces(data.races);
-            setSelectedRace(data.races[data.races.length - 1].slug); // Select most recent race
+            
+            // Find the most recent race with results
+            const racesWithResults = data.races.filter(race => race.has_results);
+            
+            if (racesWithResults.length > 0) {
+              // Select the last race that has results
+              setSelectedRace(racesWithResults[racesWithResults.length - 1].slug);
+            } else {
+              // Fallback: select most recent race where date has passed
+              const now = new Date();
+              const pastRaces = data.races.filter(race => new Date(race.date) < now);
+              
+              if (pastRaces.length > 0) {
+                setSelectedRace(pastRaces[pastRaces.length - 1].slug);
+              } else {
+                // If all races are in the future, just select the first one
+                setSelectedRace(data.races[0].slug);
+              }
+            }
           }
         }
       } catch (error) {
-         console.error('Error fetching races:', error);
+        console.error('Error fetching races:', error);
       } finally {
         setIsRaceDataLoading(false);
       }

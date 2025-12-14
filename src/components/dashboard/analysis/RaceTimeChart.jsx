@@ -341,7 +341,7 @@ export default function RaceTimeChart({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent 
-              className="bg-neutral-900 backdrop-blur-xl border-neutral-700 rounded-2xl text-white max-h-[70vh] overflow-y-auto w-[320px]"
+              className="bg-neutral-900 backdrop-blur-xl border-neutral-700 rounded-2xl text-white max-h-200h overflow-y-auto w-[320px]"
             >
               <DropdownMenuLabel className="text-xs text-neutral-400 flex justify-between items-center px-3 py-2">
                 <span className="uppercase tracking-wider font-bold">Select Drivers</span>
@@ -419,7 +419,7 @@ export default function RaceTimeChart({
                           {compounds.length > 0 && (
                             <DropdownMenuPortal>
                               <DropdownMenuSubContent 
-                                className="bg-neutral-900 backdrop-blur-xl border-neutral-700 rounded-2xl text-white"
+                                className="bg-neutral-900 backdrop-blur-xl border-neutral-700 rounded-2xl text-white max-h-[100px] overflow-y-auto"
                               >
                                 <DropdownMenuLabel className="text-xs text-neutral-400 uppercase tracking-wider font-bold">Compounds Used</DropdownMenuLabel>
                                 
